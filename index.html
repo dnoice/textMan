@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>textMan - Text Manipulation Tool</title>
+    <!-- Meta Tags for Responsive Design and SEO -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="textMan is your ultimate text manipulation tool. Easily edit, transform, and manage your text online."
+    />
+    <meta
+      name="keywords"
+      content="text manipulation, text editor, online notepad, text tools, textMan"
+    />
+    <meta name="author" content="textMan" />
+    <!-- Include Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Include Roboto and Roboto Mono fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Updated Link to Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+
+  <body>
+    <!-- Header Section -->
+    <header>
+      <div class="header-content">
+        <h1>
+          <svg
+            class="svg-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            width="40"
+            height="40"
+          >
+            <path
+              d="m 4.6897368,0.24316456 c 0.00673,0.0847914 0.056649,0.16014336 0.1321024,0.19940779 C 4.8030119,0.59010989 4.7782662,0.73596116 4.748263,0.8802662 4.1081578,3.3163994 2.1144184,5.4696841 0.07978769,6.9363762 0.02140052,6.9784654 -0.01263535,7.0689094 0.00427428,7.1388813 0.65491752,9.8312325 1.4497543,12.492236 2.191894,15.161823 c 0.020815,0.07487 -0.025598,0.136761 -0.1036117,0.138213 l -1.22245345,0.02275 c -0.0780134,0.0015 -0.13907869,0.06584 -0.13638202,0.143824 0.009602,0.277651 0.0192939,0.555298 0.0287788,0.832953 0.002662,0.07799 0.0680428,0.13984 0.14605155,0.138164 0.18453192,-0.004 0.36906412,-0.0079 0.55359642,-0.01188 0.078009,-0.0017 0.1313729,0.05945 0.119192,0.136518 L 1.3068062,18.27233 a 0.12076254,0.12076254 0 0 0 0.1192244,0.139615 l 7.7108916,0.0036 A 0.12171273,0.12171273 0 0 0 9.2573615,18.275913 L 9.0018147,16.562518 c -0.011512,-0.07718 0.042398,-0.138376 0.1204069,-0.136703 0.1845318,0.004 0.3690645,0.0079 0.5535971,0.01188 0.078009,0.0017 0.1433786,-0.06017 0.1460336,-0.138157 0.00945,-0.277655 0.019124,-0.555303 0.028759,-0.832952 0.00267,-0.07798 -0.058351,-0.142372 -0.136364,-0.143824 L 8.4917945,15.30001 C 8.413777,15.298554 8.3653308,15.235882 8.3839073,15.160099 9.0432309,12.470418 10.008006,9.8495905 10.57979,7.1392976 10.594603,7.0691013 10.559534,6.9772511 10.502064,6.9338969 8.4507576,5.3863687 6.4918496,3.4245917 5.8318376,0.8802662 5.8018333,0.73595616 5.7768933,0.59015793 5.7582615,0.44257235 5.8337145,0.40330799 5.8836335,0.32795578 5.8903639,0.24316456 5.8892385,0.08453221 5.7239606,-0.05182606 5.5789529,0.01939889 5.5655453,0.02598446 5.5562224,0.04514308 5.5570958,0.06026137 5.6792171,2.1741757 5.7110306,4.2811476 5.6430184,6.3948662 5.6407033,6.4668152 5.6944213,6.542747 5.7612045,6.5695778 6.1628751,6.7309537 6.6241847,7.0675822 6.6110741,7.4628137 6.5928048,7.9421481 6.0832649,8.4217463 5.2900496,8.4177095 4.5144319,8.4234719 3.9877344,7.9536693 3.969026,7.4628137 3.9559055,7.0672863 4.4177347,6.7307575 4.8189582,6.5695558 4.8857073,6.5427377 4.9377482,6.4668937 4.933649,6.3950246 4.8131851,4.2830276 4.9509065,2.1701573 5.0237136,0.05843694 5.0242001,0.04432648 5.0144244,0.02589073 5.0008303,0.01924235 4.8558383,-0.05166824 4.6908606,0.08475318 4.6897368,0.24316456 Z"
+              stroke-width="0.45102"
+              fill="currentColor"
+              id="path1"
+            />
+          </svg>
+          textMan
+        </h1>
+        <p>Your ultimate text manipulation tool</p>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+      <!-- Notepad Section -->
+      <div class="notepad-section">
+        <h2><i class="fas fa-edit"></i> Notepad</h2>
+        <!-- Notepad Toolbar -->
+        <div class="notepad-toolbar">
+          <button id="undoButton" disabled aria-label="Undo">
+            <i class="fas fa-undo"></i> Undo
+          </button>
+          <button id="redoButton" disabled aria-label="Redo">
+            <i class="fas fa-redo"></i> Redo
+          </button>
+          <button id="copyButton" aria-label="Copy">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+          <button id="pasteButton" aria-label="Paste">
+            <i class="fas fa-paste"></i> Paste
+          </button>
+        </div>
+        <!-- Notepad Textarea -->
+        <textarea
+          id="notepad"
+          placeholder="Enter your text here..."
+          aria-label="Text editor"
+        ></textarea>
+
+        <!-- Word Counter and Other Stats -->
+        <div class="word-count" aria-live="polite">
+          <span id="wordCount">Words: 0</span> |
+          <span id="charCount">Characters: 0</span> |
+          <span id="sentenceCount">Sentences: 0</span> |
+          <span id="paragraphCount">Paragraphs: 0</span> |
+          <span id="avgWordLength">Avg Word Length: 0</span> |
+          <span id="readingTime">Reading Time: 0 min</span>
+        </div>
+      </div>
+
+      <!-- Tools Section -->
+      <div class="tools-section">
+        <!-- Change Order Section -->
+        <div class="tool-section">
+          <h3><i class="fas fa-sort"></i> Change Order</h3>
+          <button id="sortLinesAZButton" aria-label="Sort lines A to Z">
+            <i class="fas fa-sort-alpha-down"></i> A to Z
+          </button>
+          <button id="sortLinesZAButton" aria-label="Sort lines Z to A">
+            <i class="fas fa-sort-alpha-up-alt"></i> Z to A
+          </button>
+          <button
+            id="sortLinesShortestButton"
+            aria-label="Sort lines from shortest to longest"
+          >
+            <i class="fas fa-sort-amount-down"></i> Shortest to Longest
+          </button>
+          <button
+            id="sortLinesLongestButton"
+            aria-label="Sort lines from longest to shortest"
+          >
+            <i class="fas fa-sort-amount-up-alt"></i> Longest to Shortest
+          </button>
+          <button id="shuffleLinesButton" aria-label="Shuffle lines">
+            <i class="fas fa-random"></i> Random Order
+          </button>
+        </div>
+
+        <!-- Transform Section -->
+        <div class="tool-section">
+          <h3><i class="fas fa-exchange-alt"></i> Transform</h3>
+          <button id="toLowerCaseButton" aria-label="Convert text to lowercase">
+            <i class="fas fa-text-height"></i> Lowercase
+          </button>
+          <button id="toUpperCaseButton" aria-label="Convert text to uppercase">
+            <i class="fas fa-text-height"></i> Uppercase
+          </button>
+          <button id="capitalizeWordsButton" aria-label="Capitalize each word">
+            <i class="fas fa-text-height"></i> Capitalize Words
+          </button>
+          <button
+            id="capitalizeFirstWordButton"
+            aria-label="Capitalize first word of each sentence"
+          >
+            <i class="fas fa-text-height"></i> Capitalize First Word
+          </button>
+          <button id="invertTextButton" aria-label="Invert text">
+            <i class="fas fa-exchange-alt"></i> Invert Text
+          </button>
+        </div>
+
+        <!-- Add Prefix/Suffix Section -->
+        <div class="tool-section">
+          <h3><i class="fas fa-plus"></i> Add Prefix/Suffix</h3>
+          <div class="input-button-group">
+            <input
+              type="text"
+              id="prefixInput"
+              placeholder="Enter prefix"
+              aria-label="Prefix input"
+            />
+            <button id="addPrefixButton" aria-label="Add prefix">
+              <i class="fas fa-plus-square"></i> Add Prefix
+            </button>
+          </div>
+          <div class="input-button-group">
+            <input
+              type="text"
+              id="suffixInput"
+              placeholder="Enter suffix"
+              aria-label="Suffix input"
+            />
+            <button id="addSuffixButton" aria-label="Add suffix">
+              <i class="fas fa-plus-square"></i> Add Suffix
+            </button>
+          </div>
+        </div>
+
+        <!-- Remove Section -->
+        <div class="tool-section">
+          <h3><i class="fas fa-minus"></i> Remove</h3>
+          <button
+            id="removeDuplicatesButton"
+            aria-label="Remove duplicate rows"
+          >
+            <i class="fas fa-clone"></i> Duplicate Rows
+          </button>
+          <button id="removeEmptyLinesButton" aria-label="Remove empty rows">
+            <i class="fas fa-eraser"></i> Empty Rows
+          </button>
+          <button id="removeAccentsButton" aria-label="Remove accents">
+            <i class="fas fa-language"></i> Accents
+          </button>
+          <button id="removeSpacesButton" aria-label="Remove extra spaces">
+            <i class="fas fa-compress-arrows-alt"></i> Extra Spaces
+          </button>
+          <button id="removeAllSpacesButton" aria-label="Remove all spaces">
+            <i class="fas fa-times-circle"></i> All Spaces
+          </button>
+          <button id="removeNumbersButton" aria-label="Remove numbers">
+            <i class="fas fa-sort-numeric-down"></i> Numbers
+          </button>
+          <button id="removePunctuationButton" aria-label="Remove punctuation">
+            <i class="fas fa-ban"></i> Punctuation
+          </button>
+          <button id="removeLineBreaksButton" aria-label="Remove line breaks">
+            <i class="fas fa-text-width"></i> Line Breaks
+          </button>
+          <button id="trimRowsDuplicatesEmptyButton" aria-label="Clean up text">
+            <i class="fas fa-broom"></i> Clean Up
+          </button>
+        </div>
+
+        <!-- Search and Replace Section -->
+        <div class="tool-section">
+          <h3><i class="fas fa-search"></i> Search and Replace</h3>
+          <div class="input-button-group">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search for..."
+              aria-label="Search input"
+            />
+            <button id="searchTextButton" aria-label="Search text">
+              <i class="fas fa-search"></i> Search
+            </button>
+          </div>
+          <div class="input-button-group">
+            <input
+              type="text"
+              id="replaceInput"
+              placeholder="Replace with..."
+              aria-label="Replace input"
+            />
+            <button
+              id="searchAndReplaceButton"
+              aria-label="Search and replace text"
+            >
+              <i class="fas fa-exchange-alt"></i> Replace
+            </button>
+          </div>
+        </div>
+
+        <!-- Keep/Remove Lines Containing Section -->
+        <div class="tool-section">
+          <h3><i class="fas fa-filter"></i> Filter Lines</h3>
+          <div class="input-button-group">
+            <input
+              type="text"
+              id="keepLinesInput"
+              placeholder="Term..."
+              aria-label="Keep lines containing input"
+            />
+            <button
+              id="keepLinesButton"
+              aria-label="Keep lines containing term"
+            >
+              <i class="fas fa-filter"></i> Keep Lines Containing
+            </button>
+          </div>
+          <div class="input-button-group">
+            <input
+              type="text"
+              id="removeLinesInput"
+              placeholder="Term..."
+              aria-label="Remove lines containing input"
+            />
+            <button
+              id="removeLinesButton"
+              aria-label="Remove lines containing term"
+            >
+              <i class="fas fa-filter"></i> Remove Lines Containing
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions Section -->
+    <details class="instructions-container">
+      <summary><i class="fas fa-lightbulb"></i> Instructions</summary>
+      <p>
+        Welcome to textMan, your ultimate tool for text manipulation. Follow the
+        steps below to edit, transform, and manage your text effortlessly.
+      </p>
+      <ol>
+        <li>
+          <strong>Notepad:</strong> Type or paste your text into the notepad
+          area. Use the toolbar to undo, redo, copy, or paste text. While
+          keyboard shortcuts like <kbd>Ctrl + Z</kbd> and
+          <kbd>Ctrl + Y</kbd> can be used, the toolbar buttons are recommended
+          for the best experience.
+        </li>
+        <li>
+          <strong>Change Order:</strong> Reorganize your text by sorting lines
+          alphabetically (A to Z or Z to A), by length (shortest to longest or
+          vice versa), or shuffle the lines randomly.
+        </li>
+        <li>
+          <strong>Transform Text:</strong> Convert your text to lowercase,
+          uppercase, or capitalize each word. You can also invert the text if
+          needed.
+        </li>
+        <li>
+          <strong>Add Prefix/Suffix:</strong> Easily add a prefix or suffix to
+          each line of text using the input fields and buttons provided.
+        </li>
+        <li>
+          <strong>Remove Unwanted Content:</strong> Use the available options to
+          remove duplicates, empty lines, extra spaces, accents, numbers,
+          punctuation, or line breaks from your text.
+        </li>
+        <li>
+          <strong>Search and Replace:</strong> Find specific words or phrases in
+          your text and replace them with a new term of your choice.
+        </li>
+        <li>
+          <strong>Filter Lines:</strong> Keep or remove lines that contain a
+          specific word or phrase, helping you refine your text efficiently.
+        </li>
+      </ol>
+      <p>
+        After making your changes, simply click the corresponding button to
+        apply the operation. You can always use the undo and redo buttons to
+        revert or repeat your actions. Have fun manipulating your text with
+        textMan!
+      </p>
+    </details>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Footer Section -->
+    <footer>
+      <p>&copy; 2023 textMan. All rights reserved.</p>
+      <div class="social-icons">
+        <a
+          href="https://www.facebook.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Facebook"
+        >
+          <i class="fab fa-facebook"></i>
+        </a>
+        <a
+          href="https://www.twitter.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Twitter"
+        >
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a
+          href="https://www.instagram.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
+        >
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a
+          href="https://www.linkedin.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="LinkedIn"
+        >
+          <i class="fab fa-linkedin"></i>
+        </a>
+      </div>
+    </footer>
+
+    <!--  Link to JQuery CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Link to your Main JavaScript file -->
+    <script src="js/main.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const notepad = document.getElementById("notepad");
+        const wordCount = document.getElementById("wordCount");
+        const charCount = document.getElementById("charCount");
+        const sentenceCount = document.getElementById("sentenceCount");
+        const paragraphCount = document.getElementById("paragraphCount");
+        const avgWordLength = document.getElementById("avgWordLength");
+        const readingTime = document.getElementById("readingTime");
+
+        function updateCount() {
+          const text = notepad.value;
+
+          // Words and characters
+          const words = text.match(/\b\w+\b/g) || [];
+          const chars = text.length;
+
+          // Sentences (split by period, exclamation mark, or question mark followed by a space)
+          const sentences = text.split(/[.!?]\s/).filter(Boolean);
+
+          // Paragraphs (split by double line breaks)
+          const paragraphs = text.split(/\n\s*\n/).filter(Boolean);
+
+          // Average word length
+          const avgLength =
+            words.length > 0 ? (chars / words.length).toFixed(2) : 0;
+
+          // Reading time (based on 200 words per minute)
+          const minutes = Math.ceil(words.length / 200);
+
+          // Update the counts
+          wordCount.textContent = `Words: ${words.length}`;
+          charCount.textContent = `Characters: ${chars}`;
+          sentenceCount.textContent = `Sentences: ${sentences.length}`;
+          paragraphCount.textContent = `Paragraphs: ${paragraphs.length}`;
+          avgWordLength.textContent = `Avg Word Length: ${avgLength}`;
+          readingTime.textContent = `Reading Time: ${minutes} min`;
+        }
+
+        // Listen for input events in the notepad and update counts
+        notepad.addEventListener("input", updateCount);
+
+        // Initial update when the page loads
+        updateCount();
+      });
+    </script>
+  </body>
+</html>
