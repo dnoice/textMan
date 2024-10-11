@@ -21,7 +21,7 @@ class WebAppWindow(QMainWindow):
         
         # Load the local HTML file (use the correct path)
         self.browser.setUrl(QUrl.fromLocalFile(
-            'C:/Users/DnnsS/OneDrive/Desktop/dd1/devi/sandbox/textMan/index.html'))
+            r'C:\Users\DnnsS\OneDrive\Desktop\dd1\devi\textMan-main\textMan-main\index.html'))
 
         # Add the browser widget to the layout
         layout.addWidget(self.browser)
