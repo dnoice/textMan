@@ -454,150 +454,100 @@ mark {
   color: var(--accent-color);
 }
 
-@keyframes slideIn {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeOut {
-  to {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-footer {
-  background-color: var(--secondary-bg-color);
-  color: var(--primary-text-color);
-  text-align: center;
-  padding: 15px;
-  position: relative;
-  width: 100%;
-  border-top: 2px solid var(--header-border-color);
-}
-
-footer p {
-  margin: 0;
-  font-size: 0.9em;
-}
-
-.social-icons {
-  margin-top: 10px;
-}
-
-.social-icons a {
-  color: var(--primary-text-color);
-  margin: 0 10px;
-  font-size: 1.2em;
-  transition: color 0.3s;
-}
-
-.social-icons a:hover {
-  color: var(--accent-color);
-}
-
+/* Tablet and below */
 @media screen and (max-width: 1024px) {
   .main-container {
-    flex-direction: column;
+    flex-direction: column; /* Stack sections vertically */
     height: auto;
   }
 
   .notepad-section,
   .tools-section {
     width: 100%;
-    margin: 20px 0;
-  }
-
-  .notepad-section {
-    min-width: auto;
+    margin: 10px 0;
   }
 }
 
+/* Mobile adjustments for 768px and below */
 @media screen and (max-width: 768px) {
-  header h1 {
-    font-size: 2em;
+  /* Stack sections with extra padding */
+  .notepad-section,
+  .tools-section {
+    min-width: auto;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: none;
   }
 
-  header p {
-    font-size: 1em;
-  }
-
-  .notepad-section h2 {
-    font-size: 1.5em;
-  }
-
-  .notepad-toolbar button {
-    padding: 5px 8px;
-    font-size: 0.9em;
-  }
-
-  .tool-section h3 {
-    font-size: 1.2em;
-  }
-
-  .tool-section button {
-    padding: 8px 12px;
-    font-size: 0.9em;
-  }
-
-  .input-button-group input[type="text"] {
-    padding: 5px;
-  }
-
+  /* Full-width buttons for easier tap access */
+  .notepad-toolbar button,
+  .tool-section button,
   .input-button-group button {
-    padding: 5px 8px;
-    font-size: 0.9em;
-  }
-
-  footer p {
-    font-size: 0.8em;
-  }
-
-  .social-icons a {
+    padding: 10px 0;
+    width: 100%;
     font-size: 1em;
+  }
+
+  /* Horizontal scrolling for tools section */
+  .tools-section {
+    overflow-x: auto;
+    padding-bottom: 15px;
   }
 }
 
+/* Small mobile adjustments for 480px and below */
 @media screen and (max-width: 480px) {
   header h1 {
+    font-size: 1.8em;
+  }
+
+  header p {
+    font-size: 0.9em;
+  }
+
+  /* Adjust notepad for small screens */
+  #notepad {
+    max-height: 50vh; /* Limit height dynamically */
+    font-size: 14px;
+    padding: 10px;
+    overflow-y: auto; /* Enable scroll if content exceeds height */
+  }
+
+  /* Ensure word count fits properly */
+  .word-count {
+    font-size: 0.8em;
+    text-align: left;
+    margin-top: 5px;
+  }
+}
+
+/* Consolidated for very small devices 360px and below */
+@media screen and (max-width: 360px) {
+  /* Shrink header font sizes */
+  header h1 {
     font-size: 1.5em;
   }
 
-  header p {
-    font-size: 0.9em;
+  header p,
+  footer p {
+    font-size: 0.7em;
   }
 
-  .notepad-section h2 {
-    font-size: 1.2em;
-  }
-
-  .notepad-toolbar button {
-    padding: 5px 8px;
-    font-size: 0.8em;
-  }
-
+  /* Adjust font sizes and padding for compact view */
+  .notepad-section h2,
   .tool-section h3 {
     font-size: 1em;
   }
 
-  .tool-section button {
-    padding: 8px 12px;
-    font-size: 0.8em;
-  }
-
-  .input-button-group input[type="text"] {
-    padding: 5px;
-  }
-
+  .notepad-toolbar button,
   .input-button-group button {
     padding: 5px 8px;
     font-size: 0.8em;
   }
 
-  footer p {
-    font-size: 0.7em;
+  .input-button-group input[type="text"] {
+    padding: 5px;
+    font-size: 0.9em;
   }
 
   .social-icons a {
@@ -605,85 +555,30 @@ footer p {
   }
 }
 
-@media screen and (max-width: 360px) {
+/* Super compact view for ultra-small devices */
+@media screen and (max-width: 320px) {
   header h1 {
     font-size: 1.2em;
   }
 
   header p {
+    font-size: 0.6em;
+  }
+
+  .notepad-section h2,
+  .tool-section h3 {
     font-size: 0.8em;
   }
 
-  .notepad-section h2 {
-    font-size: 1em;
-  }
-
-  .notepad-toolbar button {
-    padding: 5px 8px;
-    font-size: 0.7em;
-  }
-
-  .tool-section h3 {
-    font-size: 0.9em;
-  }
-
-  .tool-section button {
-    padding: 8px 12px;
-    font-size: 0.7em;
-  }
-
-  .input-button-group input[type="text"] {
-    padding: 5px;
-  }
-
+  .notepad-toolbar button,
   .input-button-group button {
     padding: 5px 8px;
     font-size: 0.7em;
   }
 
-  footer p {
-    font-size: 0.6em;
-  }
-
-  .social-icons a {
-    font-size: 0.8em;
-  }
-}
-
-@media screen and (max-width: 375px) {
-  header h1 {
-    font-size: 1em;
-  }
-
-  header p {
-    font-size: 0.7em;
-  }
-
-  .notepad-section h2 {
-    font-size: 0.9em;
-  }
-
-  .notepad-toolbar button {
-    padding: 5px 8px;
-    font-size: 0.6em;
-  }
-
-  .tool-section h3 {
-    font-size: 0.8em;
-  }
-
-  .tool-section button {
-    padding: 8px 12px;
-    font-size: 0.6em;
-  }
-
   .input-button-group input[type="text"] {
     padding: 5px;
-  }
-
-  .input-button-group button {
-    padding: 5px 8px;
-    font-size: 0.6em;
+    font-size: 0.8em;
   }
 
   footer p {
@@ -691,51 +586,8 @@ footer p {
   }
 
   .social-icons a {
-    font-size: 0.7em;
-  }
-}
-
-@media screen and (max-width: 390px) {
-  header h1 {
-    font-size: 0.9em;
-  }
-
-  header p {
-    font-size: 0.6em;
-  }
-
-  .notepad-section h2 {
     font-size: 0.8em;
   }
-
-  .notepad-toolbar button {
-    padding: 5px 8px;
-    font-size: 0.5em;
-  }
-
-  .tool-section h3 {
-    font-size: 0.7em;
-  }
-
-  .tool-section button {
-    padding: 8px 12px;
-    font-size: 0.5em;
-  }
-
-  .input-button-group input[type="text"] {
-    padding: 5px;
-  }
-
-  .input-button-group button {
-    padding: 5px 8px;
-    font-size: 0.5em;
-  }
-
-  footer p {
-    font-size: 0.4em;
-  }
-
-  .social-icons a {
-    font-size: 0.6em;
-  }
 }
+
+
