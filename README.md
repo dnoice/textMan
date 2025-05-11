@@ -9,7 +9,7 @@
   <a href="https://github.com/dnoice/textMan/issues"><img src="https://img.shields.io/github/issues/dnoice/textMan?style=flat-square&logo=github" alt="Open Issues"></a>
 </p>
 
-# textMan: Advanced Text Manipulation Tool 🚀
+# textMan: Advanced Text Manipulation Tool
 
 > **textMan** bridges the gap between simple editors and complex IDEs, empowering everyone—from casual tweakers to power users—to wield text transformations with ease and intelligence.
 
