@@ -1,10 +1,5 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 :root {
+  /* color variables */
   --accent-color: #6bbb8c;
   --primary-bg-color: #1e1e1e;
   --secondary-bg-color: #252526;
@@ -12,32 +7,64 @@
   --light-bg-color: #3c3c3c;
   --light-hover-bg-color: #555;
 
+  /* text color variables */
   --primary-text-color: #d4d4d4;
   --secondary-text-color: #ffffff;
   --muted-text-color: #cccccc;
 
+  /*  spacing and UI variables */
   --header-padding: 20px 0;
   --header-border-color: var(--accent-color);
-
   --button-bg-color: var(--accent-color);
   --button-hover-bg-color: #005f99;
   --button-text-color: #ffffff;
   --button-padding: 8px 12px;
-
   --scrollbar-width: 5px;
   --scrollbar-thumb-bg-color: var(--light-bg-color);
   --scrollbar-thumb-hover-bg-color: var(--light-hover-bg-color);
   --border-radius: 4px;
-
   --card-border-color: var(--light-bg-color);
   --card-padding: 20px;
   --card-border-radius: 12px;
   --box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
   --hover-box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.5);
 
+  /* font size variables */
   --font-size-large: 2.5em;
   --font-size-medium: 1.2em;
   --font-size-small: 14px;
+
+  /* breakpoint variables */
+  --breakpoint-xs: 320px;   /* Extra small devices */
+  --breakpoint-sm: 576px;   /* Small devices */
+  --breakpoint-md: 768px;   /* Medium devices */
+  --breakpoint-lg: 992px;   /* Large devices */
+  --breakpoint-xl: 1200px;  /* Extra large devices */
+  
+  /* special device breakpoints */
+  --breakpoint-fold-closed: 600px;  /* Z Fold-like when closed */
+  --breakpoint-fold-open: 800px;    /* Z Fold-like when open */
+  --breakpoint-tablet-min: 600px;   /* Minimum tablet width */
+  --breakpoint-tablet-max: 991px;   /* Maximum tablet width */
+
+  /* responsive spacing variables */
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 15px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+  
+  /* responsive height variables */
+  --notepad-height-desktop: calc(100% - 130px);
+  --notepad-height-tablet: 40vh;
+  --notepad-height-mobile: 50vh;
+  --notepad-min-height-tablet: 250px;
+  --notepad-max-height-tablet: 350px;
+  
+  /* touch-friendly dimensions */
+  --touch-target-size: 44px;     /* Minimum recommended touch target size */
+  --button-height-touch: 40px;   /* Height for touch-friendly buttons */
+  --input-height-touch: 40px;    /* Height for touch-friendly inputs */
 }
 
 body {
@@ -270,7 +297,7 @@ details:not([open]) .instructions-container ol {
 
 #notepad {
   width: 100%;
-  height: calc(100% - 130px);
+  height: var(--notepad-height-desktop);
   resize: none;
   font-size: 16px;
   padding: 10px;
@@ -454,8 +481,28 @@ mark {
   color: var(--accent-color);
 }
 
-/* Tablet and below */
-@media screen and (max-width: 1024px) {
+/* ======================================
+   RESPONSIVE DESIGN: MEDIA QUERIES
+   ====================================== */
+
+/* Extra large devices (larger desktops) */
+@media screen and (min-width: var(--breakpoint-xl)) {
+  /* Any specific adjustments for very large screens */
+  .main-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+}
+
+/* Large devices (desktops, less than 1200px) */
+@media screen and (max-width: var(--breakpoint-xl)) {
+  .header-content {
+    padding: 0 var(--spacing-lg);
+  }
+}
+
+/* Large tablets and small desktops (less than 1024px) */
+@media screen and (max-width: var(--breakpoint-lg)) {
   .main-container {
     flex-direction: column; /* Stack sections vertically */
     height: auto;
@@ -464,18 +511,142 @@ mark {
   .notepad-section,
   .tools-section {
     width: 100%;
-    margin: 10px 0;
+    margin: var(--spacing-sm) 0;
   }
 }
 
-/* Mobile adjustments for 768px and below */
-@media screen and (max-width: 768px) {
+/* Tablet-specific (between 600px and 991px) */
+@media screen and (min-width: var(--breakpoint-tablet-min)) and (max-width: var(--breakpoint-tablet-max)) {
+  /* Container adjustments */
+  .main-container {
+    flex-direction: column;
+    height: auto;
+    padding: 0 var(--spacing-sm);
+  }
+
+  /* Notepad section adjustments */
+  .notepad-section {
+    min-width: auto;
+    width: 100%;
+    margin: var(--spacing-sm) 0;
+    padding: var(--spacing-md);
+  }
+
+  /* Critical fix: Ensure adequate notepad height */
+  #notepad {
+    height: var(--notepad-height-tablet) !important;
+    min-height: var(--notepad-min-height-tablet);
+    max-height: var(--notepad-max-height-tablet);
+    padding: var(--spacing-md);
+  }
+
+  /* Word count display in notepad footer */
+  .word-count {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: flex-start;
+    font-size: calc(var(--font-size-small) - 1px);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+  }
+
+  .word-count span {
+    margin-left: 0;
+    white-space: nowrap;
+  }
+
+  /* Tools section adjustments */
+  .tools-section {
+    min-width: auto;
+    width: 100%;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  /* Tool section layout optimization */
+  .tool-section {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .tool-section h3 {
+    font-size: 1.3em;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  /* Button container for flex layout */
+  .tool-section > div:not(.input-button-group) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  /* Make buttons more appropriate for tablet touch */
+  .tool-section button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) 0;
+    font-size: var(--font-size-small);
+    height: var(--button-height-touch);
+    min-width: 100px;
+  }
+
+  /* Optimize input groups for tablets */
+  .input-button-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .input-button-group input[type="text"] {
+    height: var(--input-height-touch);
+    font-size: var(--font-size-small);
+    padding: var(--spacing-sm);
+  }
+
+  .input-button-group button {
+    height: var(--button-height-touch);
+    min-width: 110px;
+    padding: 0 var(--spacing-md);
+  }
+
+  /* Instructions container */
+  details.instructions-container {
+    margin: var(--spacing-md) 0;
+    padding: var(--spacing-md);
+  }
+
+  details[open] {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Special case for foldable devices */
+@media screen and (min-width: var(--breakpoint-fold-closed)) and (max-width: var(--breakpoint-fold-open)) and (min-height: 800px) {
+  #notepad {
+    height: 35vh !important;
+    min-height: 300px;
+  }
+  
+  /* Optimize tool sections for folded layout */
+  .tool-section {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  /* Ensure adequate spacing between UI components */
+  .tool-section h3 {
+    padding-bottom: var(--spacing-xs);
+  }
+}
+
+/* Medium devices (tablets, less than 768px) */
+@media screen and (max-width: var(--breakpoint-md)) {
   /* Adjust sections and padding */
   .notepad-section,
   .tools-section {
     min-width: auto;
-    padding: 15px;
-    margin: 10px 0;
+    padding: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
     box-shadow: none;
   }
 
@@ -483,20 +654,20 @@ mark {
   .notepad-toolbar {
     display: flex;
     overflow-x: auto;
-    gap: 5px; /* Space between buttons */
+    gap: var(--spacing-xs);
   }
 
   .notepad-toolbar button {
-    padding: 8px 10px;
+    padding: var(--spacing-sm) var(--spacing-sm);
     flex: 1 0 auto; /* Keep buttons inline and scrollable */
     font-size: 0.9em;
   }
 
   /* Notepad area */
   #notepad {
-    height: 40vh; /* Increased height for usability */
-    font-size: 16px;
-    padding: 10px;
+    height: var(--notepad-height-mobile);
+    font-size: var(--font-size-small);
+    padding: var(--spacing-sm);
     overflow-y: auto;
   }
 
@@ -516,7 +687,7 @@ mark {
 
   /* Input fields */
   .input-button-group input[type="text"] {
-    padding: 5px;
+    padding: var(--spacing-xs);
     font-size: 0.9em;
   }
 
@@ -531,8 +702,8 @@ mark {
   }
 }
 
-/* Small mobile adjustments for 480px and below */
-@media screen and (max-width: 480px) {
+/* Small devices (landscape phones, less than 576px) */
+@media screen and (max-width: var(--breakpoint-sm)) {
   /* Header text adjustments */
   header h1 {
     font-size: 1.8em;
@@ -546,14 +717,22 @@ mark {
   #notepad {
     height: 50vh;
     font-size: 14px;
-    padding: 10px;
+    padding: var(--spacing-sm);
   }
 
   /* Word count display */
   .word-count {
     font-size: 0.8em;
     text-align: left;
-    margin-top: 5px;
+    margin-top: var(--spacing-xs);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  .word-count span {
+    margin-left: 0;
+    margin-right: var(--spacing-xs);
   }
 
   /* Tool section titles and button padding */
@@ -562,35 +741,26 @@ mark {
   }
 
   .tool-section button {
-    padding: 8px 12px;
+    padding: var(--spacing-sm) var(--spacing-md);
     font-size: 0.8em;
+    margin: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) 0;
   }
 
   /* Input fields and button sizes */
   .input-button-group input[type="text"] {
-    padding: 5px;
+    padding: var(--spacing-xs);
     font-size: 0.8em;
   }
 
   .input-button-group button,
   .notepad-toolbar button {
-    padding: 5px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.8em;
-  }
-
-  /* Footer */
-  footer p {
-    font-size: 0.7em;
-  }
-
-  /* Social icons */
-  .social-icons a {
-    font-size: 0.9em;
   }
 }
 
-/* Very small devices 360px and below */
-@media screen and (max-width: 360px) {
+/* Very small devices (phones, less than 360px) */
+@media screen and (max-width: var(--breakpoint-xs)) {
   /* Header */
   header h1 {
     font-size: 1.5em;
@@ -607,7 +777,7 @@ mark {
 
   /* Compact toolbar */
   .notepad-toolbar button {
-    padding: 5px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.7em;
   }
 
@@ -617,18 +787,18 @@ mark {
   }
 
   .tool-section button {
-    padding: 5px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.7em;
   }
 
   /* Input fields */
   .input-button-group input[type="text"] {
-    padding: 5px;
+    padding: var(--spacing-xs);
     font-size: 0.7em;
   }
 
   .input-button-group button {
-    padding: 5px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.7em;
   }
 
@@ -643,7 +813,7 @@ mark {
   }
 }
 
-/* Super compact view for ultra-small devices 320px and below */
+/* Super compact view for ultra-small devices (320px and below) */
 @media screen and (max-width: 320px) {
   header h1 {
     font-size: 1.2em;
@@ -660,32 +830,20 @@ mark {
 
   /* Toolbar button adjustments */
   .notepad-toolbar button {
-    padding: 5px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.6em;
     flex: 1 0 auto;
   }
 
   /* Input fields */
   .input-button-group input[type="text"] {
-    padding: 5px;
+    padding: var(--spacing-xs);
     font-size: 0.7em;
   }
 
   /* Input buttons */
   .input-button-group button {
-    padding: 5px 8px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.6em;
   }
-
-  /* Footer text */
-  footer p {
-    font-size: 0.5em;
-  }
-
-  /* Social icons */
-  .social-icons a {
-    font-size: 0.7em;
-  }
 }
-
-
