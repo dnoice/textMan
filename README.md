@@ -1,12 +1,5 @@
 <p align="center">
-  <img src="resources/assets/images/textMan_banner_image.png" alt="textMan Banner Image" width="200" />
-</p>
-
-<p align="center">
-  <a href="https://github.com/dnoice/textMan/actions"><img src="https://img.shields.io/github/workflow/status/dnoice/textMan/CI?style=flat-square&logo=github" alt="Build Status"></a>
-  <a href="https://coveralls.io/github/dnoice/textMan"><img src="https://img.shields.io/coveralls/github/dnoicee/textMan?style=flat-square&logo=coveralls" alt="Coverage Status"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License"></a>
-  <a href="https://github.com/dnoice/textMan/issues"><img src="https://img.shields.io/github/issues/dnoice/textMan?style=flat-square&logo=github" alt="Open Issues"></a>
+  <img src="resources/assets/images/textMan_banner_image.png" alt="textMan Banner Image" width="400" />
 </p>
 
 # textMan: Advanced Text Manipulation Tool
