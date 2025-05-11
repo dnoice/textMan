@@ -1,0 +1,423 @@
+Collecting click>=8.1.3 (from -r requirements.txt (line 2))
+  Downloading click-8.1.8-py3-none-any.whl.metadata (2.3 kB)
+Collecting rich>=13.3.5 (from -r requirements.txt (line 3))
+  Downloading rich-14.0.0-py3-none-any.whl.metadata (18 kB)
+Collecting pydantic>=2.0.0 (from -r requirements.txt (line 4))
+  Downloading pydantic-2.11.4-py3-none-any.whl.metadata (66 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━ 66.6/66.6 kB 1.6 MB/s eta 0:00:00
+Collecting python-dotenv>=1.0.0 (from -r requirements.txt (line 5))
+  Downloading python_dotenv-1.1.0-py3-none-any.whl.metadata (24 kB)
+Collecting regex>=2023.3.23 (from -r requirements.txt (line 8))
+  Downloading regex-2024.11.6-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (40 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━ 40.5/40.5 kB 1.8 MB/s eta 0:00:00
+Collecting chardet>=5.1.0 (from -r requirements.txt (line 9))
+  Downloading chardet-5.2.0-py3-none-any.whl.metadata (3.4 kB)
+Collecting diff-match-patch>=20200713 (from -r requirements.txt (line 10))
+  Downloading diff_match_patch-20241021-py3-none-any.whl.metadata (5.5 kB)
+Collecting beautifulsoup4>=4.12.0 (from -r requirements.txt (line 11))
+  Downloading beautifulsoup4-4.13.4-py3-none-any.whl.metadata (3.8 kB)
+Collecting lxml>=4.9.2 (from -r requirements.txt (line 12))
+  Downloading lxml-5.4.0-cp312-cp312-manylinux_2_28_aarch64.whl.metadata (3.5 kB)
+Collecting markdown>=3.4.3 (from -r requirements.txt (line 13))
+  Downloading markdown-3.8-py3-none-any.whl.metadata (5.1 kB)
+Collecting PyYAML>=6.0.0 (from -r requirements.txt (line 14))
+  Downloading PyYAML-6.0.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (2.1 kB)
+Collecting Pygments>=2.15.0 (from -r requirements.txt (line 15))
+  Downloading pygments-2.19.1-py3-none-any.whl.metadata (2.5 kB)
+Collecting nltk>=3.8.1 (from -r requirements.txt (line 18))
+  Downloading nltk-3.9.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting spacy>=3.5.0 (from -r requirements.txt (line 19))
+  Downloading spacy-3.8.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (27 kB)
+Collecting textblob>=0.17.1 (from -r requirements.txt (line 20))
+  Downloading textblob-0.19.0-py3-none-any.whl.metadata (4.4 kB)
+Collecting fastapi>=0.95.0 (from -r requirements.txt (line 23))
+  Downloading fastapi-0.115.12-py3-none-any.whl.metadata (27 kB)
+Collecting uvicorn>=0.21.1 (from -r requirements.txt (line 24))
+  Downloading uvicorn-0.34.2-py3-none-any.whl.metadata (6.5 kB)
+Collecting jinja2>=3.1.2 (from -r requirements.txt (line 25))
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting aiofiles>=23.1.0 (from -r requirements.txt (line 26))
+  Downloading aiofiles-24.1.0-py3-none-any.whl.metadata (10 kB)
+Collecting httpx>=0.24.0 (from -r requirements.txt (line 27))
+  Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+Collecting pandas>=2.0.0 (from -r requirements.txt (line 30))
+  Downloading pandas-2.2.3-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl.metadata (89 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━ 89.9/89.9 kB 2.5 MB/s eta 0:00:00
+Collecting tabulate>=0.9.0 (from -r requirements.txt (line 31))
+  Downloading tabulate-0.9.0-py3-none-any.whl.metadata (34 kB)
+Collecting PyQt6>=6.5.0 (from -r requirements.txt (line 34))
+  Downloading PyQt6-6.9.0-cp39-abi3-manylinux_2_39_aarch64.whl.metadata (2.1 kB)
+Collecting pytest>=7.3.1 (from -r requirements.txt (line 39))
+  Downloading pytest-8.3.5-py3-none-any.whl.metadata (7.6 kB)
+Collecting pytest-cov>=4.1.0 (from -r requirements.txt (line 40))
+  Downloading pytest_cov-6.1.1-py3-none-any.whl.metadata (28 kB)
+Collecting hypothesis>=6.70.0 (from -r requirements.txt (line 41))
+  Downloading hypothesis-6.131.15-py3-none-any.whl.metadata (5.6 kB)
+Collecting black>=23.3.0 (from -r requirements.txt (line 44))
+  Downloading black-25.1.0-py3-none-any.whl.metadata (81 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━ 81.3/81.3 kB 3.0 MB/s eta 0:00:00
+Collecting isort>=5.12.0 (from -r requirements.txt (line 45))
+  Downloading isort-6.0.1-py3-none-any.whl.metadata (11 kB)
+Collecting mypy>=1.3.0 (from -r requirements.txt (line 46))
+  Downloading mypy-1.15.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl.metadata (2.1 kB)
+Collecting flake8>=6.0.0 (from -r requirements.txt (line 47))
+  Downloading flake8-7.2.0-py2.py3-none-any.whl.metadata (3.8 kB)
+Collecting pre-commit>=3.3.1 (from -r requirements.txt (line 48))
+  Downloading pre_commit-4.2.0-py2.py3-none-any.whl.metadata (1.3 kB)
+Collecting sphinx>=7.0.0 (from -r requirements.txt (line 51))
+  Downloading sphinx-8.2.3-py3-none-any.whl.metadata (7.0 kB)
+Collecting sphinx-rtd-theme>=1.2.0 (from -r requirements.txt (line 52))
+  Downloading sphinx_rtd_theme-3.0.2-py2.py3-none-any.whl.metadata (4.4 kB)
+Collecting markdown-it-py>=2.2.0 (from rich>=13.3.5->-r requirements.txt (line 3))
+  Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting annotated-types>=0.6.0 (from pydantic>=2.0.0->-r requirements.txt (line 4))
+  Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.33.2 (from pydantic>=2.0.0->-r requirements.txt (line 4))
+  Downloading pydantic_core-2.33.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (6.8 kB)
+Collecting typing-extensions>=4.12.2 (from pydantic>=2.0.0->-r requirements.txt (line 4))
+  Downloading typing_extensions-4.13.2-py3-none-any.whl.metadata (3.0 kB)
+Collecting typing-inspection>=0.4.0 (from pydantic>=2.0.0->-r requirements.txt (line 4))
+  Downloading typing_inspection-0.4.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting soupsieve>1.2 (from beautifulsoup4>=4.12.0->-r requirements.txt (line 11))
+  Downloading soupsieve-2.7-py3-none-any.whl.metadata (4.6 kB)
+Collecting joblib (from nltk>=3.8.1->-r requirements.txt (line 18))
+  Downloading joblib-1.5.0-py3-none-any.whl.metadata (5.6 kB)
+Collecting tqdm (from nltk>=3.8.1->-r requirements.txt (line 18))
+  Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━ 57.7/57.7 kB 4.3 MB/s eta 0:00:00
+Collecting spacy-legacy<3.1.0,>=3.0.11 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading spacy_legacy-3.0.12-py2.py3-none-any.whl.metadata (2.8 kB)
+Collecting spacy-loggers<2.0.0,>=1.0.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading spacy_loggers-1.0.5-py3-none-any.whl.metadata (23 kB)
+Collecting murmurhash<1.1.0,>=0.28.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading murmurhash-1.0.12-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (2.1 kB)
+Collecting cymem<2.1.0,>=2.0.2 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading cymem-2.0.11-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (8.5 kB)
+Collecting preshed<3.1.0,>=3.0.2 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading preshed-3.0.9-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (2.2 kB)
+Collecting thinc<8.4.0,>=8.3.4 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading thinc-8.3.6-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (15 kB)
+Collecting wasabi<1.2.0,>=0.9.1 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading wasabi-1.1.3-py3-none-any.whl.metadata (28 kB)
+Collecting srsly<3.0.0,>=2.4.3 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading srsly-2.5.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (19 kB)
+Collecting catalogue<2.1.0,>=2.0.6 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading catalogue-2.0.10-py3-none-any.whl.metadata (14 kB)
+Collecting weasel<0.5.0,>=0.1.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading weasel-0.4.1-py3-none-any.whl.metadata (4.6 kB)
+Collecting typer<1.0.0,>=0.3.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading typer-0.15.3-py3-none-any.whl.metadata (15 kB)
+Collecting numpy>=1.19.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading numpy-2.2.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (63 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━ 63.4/63.4 kB 2.6 MB/s eta 0:00:00
+Collecting requests<3.0.0,>=2.13.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading requests-2.32.3-py3-none-any.whl.metadata (4.6 kB)
+Collecting setuptools (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading setuptools-80.3.1-py3-none-any.whl.metadata (6.5 kB)
+Collecting packaging>=20.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting langcodes<4.0.0,>=3.2.0 (from spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading langcodes-3.5.0-py3-none-any.whl.metadata (29 kB)
+Collecting starlette<0.47.0,>=0.40.0 (from fastapi>=0.95.0->-r requirements.txt (line 23))
+  Downloading starlette-0.46.2-py3-none-any.whl.metadata (6.2 kB)
+Collecting h11>=0.8 (from uvicorn>=0.21.1->-r requirements.txt (line 24))
+  Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=3.1.2->-r requirements.txt (line 25))
+  Downloading MarkupSafe-3.0.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (4.0 kB)
+Collecting anyio (from httpx>=0.24.0->-r requirements.txt (line 27))
+  Downloading anyio-4.9.0-py3-none-any.whl.metadata (4.7 kB)
+Collecting certifi (from httpx>=0.24.0->-r requirements.txt (line 27))
+  Downloading certifi-2025.4.26-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx>=0.24.0->-r requirements.txt (line 27))
+  Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting idna (from httpx>=0.24.0->-r requirements.txt (line 27))
+  Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)
+Collecting python-dateutil>=2.8.2 (from pandas>=2.0.0->-r requirements.txt (line 30))
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pytz>=2020.1 (from pandas>=2.0.0->-r requirements.txt (line 30))
+  Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata>=2022.7 (from pandas>=2.0.0->-r requirements.txt (line 30))
+  Downloading tzdata-2025.2-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting PyQt6-sip<14,>=13.8 (from PyQt6>=6.5.0->-r requirements.txt (line 34))
+  Downloading PyQt6_sip-13.10.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (472 bytes)
+Collecting PyQt6-Qt6<6.10.0,>=6.9.0 (from PyQt6>=6.5.0->-r requirements.txt (line 34))
+  Downloading PyQt6_Qt6-6.9.0-py3-none-manylinux_2_39_aarch64.whl.metadata (534 bytes)
+Collecting iniconfig (from pytest>=7.3.1->-r requirements.txt (line 39))
+  Downloading iniconfig-2.1.0-py3-none-any.whl.metadata (2.7 kB)
+Collecting pluggy<2,>=1.5 (from pytest>=7.3.1->-r requirements.txt (line 39))
+  Downloading pluggy-1.5.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting coverage>=7.5 (from coverage[toml]>=7.5->pytest-cov>=4.1.0->-r requirements.txt (line 40))
+  Downloading coverage-7.8.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (8.5 kB)
+Collecting attrs>=22.2.0 (from hypothesis>=6.70.0->-r requirements.txt (line 41))
+  Downloading attrs-25.3.0-py3-none-any.whl.metadata (10 kB)
+Collecting sortedcontainers<3.0.0,>=2.1.0 (from hypothesis>=6.70.0->-r requirements.txt (line 41))
+  Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl.metadata (10 kB)
+Collecting mypy-extensions>=0.4.3 (from black>=23.3.0->-r requirements.txt (line 44))
+  Downloading mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+Collecting pathspec>=0.9.0 (from black>=23.3.0->-r requirements.txt (line 44))
+  Downloading pathspec-0.12.1-py3-none-any.whl.metadata (21 kB)
+Collecting platformdirs>=2 (from black>=23.3.0->-r requirements.txt (line 44))
+  Downloading platformdirs-4.3.8-py3-none-any.whl.metadata (12 kB)
+Collecting mccabe<0.8.0,>=0.7.0 (from flake8>=6.0.0->-r requirements.txt (line 47))
+  Downloading mccabe-0.7.0-py2.py3-none-any.whl.metadata (5.0 kB)
+Collecting pycodestyle<2.14.0,>=2.13.0 (from flake8>=6.0.0->-r requirements.txt (line 47))
+  Downloading pycodestyle-2.13.0-py2.py3-none-any.whl.metadata (4.5 kB)
+Collecting pyflakes<3.4.0,>=3.3.0 (from flake8>=6.0.0->-r requirements.txt (line 47))
+  Downloading pyflakes-3.3.2-py2.py3-none-any.whl.metadata (3.5 kB)
+Collecting cfgv>=2.0.0 (from pre-commit>=3.3.1->-r requirements.txt (line 48))
+  Downloading cfgv-3.4.0-py2.py3-none-any.whl.metadata (8.5 kB)
+Collecting identify>=1.0.0 (from pre-commit>=3.3.1->-r requirements.txt (line 48))
+  Downloading identify-2.6.10-py2.py3-none-any.whl.metadata (4.4 kB)
+Collecting nodeenv>=0.11.1 (from pre-commit>=3.3.1->-r requirements.txt (line 48))
+  Downloading nodeenv-1.9.1-py2.py3-none-any.whl.metadata (21 kB)
+Collecting virtualenv>=20.10.0 (from pre-commit>=3.3.1->-r requirements.txt (line 48))
+  Downloading virtualenv-20.31.2-py3-none-any.whl.metadata (4.5 kB)
+Collecting sphinxcontrib-applehelp>=1.0.7 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading sphinxcontrib_applehelp-2.0.0-py3-none-any.whl.metadata (2.3 kB)
+Collecting sphinxcontrib-devhelp>=1.0.6 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading sphinxcontrib_devhelp-2.0.0-py3-none-any.whl.metadata (2.3 kB)
+Collecting sphinxcontrib-htmlhelp>=2.0.6 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl.metadata (2.3 kB)
+Collecting sphinxcontrib-jsmath>=1.0.1 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting sphinxcontrib-qthelp>=1.0.6 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading sphinxcontrib_qthelp-2.0.0-py3-none-any.whl.metadata (2.3 kB)
+Collecting sphinxcontrib-serializinghtml>=1.1.9 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl.metadata (2.4 kB)
+Collecting docutils<0.22,>=0.20 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading docutils-0.21.2-py3-none-any.whl.metadata (2.8 kB)
+Collecting snowballstemmer>=2.2 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading snowballstemmer-3.0.0.1-py3-none-any.whl.metadata (7.7 kB)
+Collecting babel>=2.13 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading babel-2.17.0-py3-none-any.whl.metadata (2.0 kB)
+Collecting alabaster>=0.7.14 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading alabaster-1.0.0-py3-none-any.whl.metadata (2.8 kB)
+Collecting imagesize>=1.3 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading imagesize-1.4.1-py2.py3-none-any.whl.metadata (1.5 kB)
+Collecting roman-numerals-py>=1.0.0 (from sphinx>=7.0.0->-r requirements.txt (line 51))
+  Downloading roman_numerals_py-3.1.0-py3-none-any.whl.metadata (3.6 kB)
+Collecting sphinxcontrib-jquery<5,>=4 (from sphinx-rtd-theme>=1.2.0->-r requirements.txt (line 52))
+  Downloading sphinxcontrib_jquery-4.1-py2.py3-none-any.whl.metadata (2.6 kB)
+Collecting language-data>=1.2 (from langcodes<4.0.0,>=3.2.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading language_data-1.3.0-py3-none-any.whl.metadata (4.3 kB)
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.3.5->-r requirements.txt (line 3))
+  Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas>=2.0.0->-r requirements.txt (line 30))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting charset-normalizer<4,>=2 (from requests<3.0.0,>=2.13.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading charset_normalizer-3.4.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (35 kB)
+Collecting urllib3<3,>=1.21.1 (from requests<3.0.0,>=2.13.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading urllib3-2.4.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting sniffio>=1.1 (from anyio->httpx>=0.24.0->-r requirements.txt (line 27))
+  Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting blis<1.4.0,>=1.3.0 (from thinc<8.4.0,>=8.3.4->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading blis-1.3.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (7.4 kB)
+Collecting confection<1.0.0,>=0.0.1 (from thinc<8.4.0,>=8.3.4->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading confection-0.1.5-py3-none-any.whl.metadata (19 kB)
+Collecting shellingham>=1.3.0 (from typer<1.0.0,>=0.3.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+Collecting distlib<1,>=0.3.7 (from virtualenv>=20.10.0->pre-commit>=3.3.1->-r requirements.txt (line 48))
+  Downloading distlib-0.3.9-py2.py3-none-any.whl.metadata (5.2 kB)
+Collecting filelock<4,>=3.12.2 (from virtualenv>=20.10.0->pre-commit>=3.3.1->-r requirements.txt (line 48))
+  Downloading filelock-3.18.0-py3-none-any.whl.metadata (2.9 kB)
+Collecting cloudpathlib<1.0.0,>=0.7.0 (from weasel<0.5.0,>=0.1.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading cloudpathlib-0.21.0-py3-none-any.whl.metadata (14 kB)
+Collecting smart-open<8.0.0,>=5.2.1 (from weasel<0.5.0,>=0.1.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading smart_open-7.1.0-py3-none-any.whl.metadata (24 kB)
+Collecting marisa-trie>=1.1.0 (from language-data>=1.2->langcodes<4.0.0,>=3.2.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading marisa_trie-1.2.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (9.0 kB)
+Collecting wrapt (from smart-open<8.0.0,>=5.2.1->weasel<0.5.0,>=0.1.0->spacy>=3.5.0->-r requirements.txt (line 19))
+  Downloading wrapt-1.17.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (6.4 kB)
+Downloading click-8.1.8-py3-none-any.whl (98 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 98.2/98.2 kB 4.4 MB/s eta 0:00:00
+Downloading rich-14.0.0-py3-none-any.whl (243 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 243.2/243.2 kB 3.7 MB/s eta 0:00:00
+Downloading pydantic-2.11.4-py3-none-any.whl (443 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 443.9/443.9 kB 4.9 MB/s eta 0:00:00
+Downloading pydantic_core-2.33.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.9/1.9 MB 7.5 MB/s eta 0:00:00
+Downloading python_dotenv-1.1.0-py3-none-any.whl (20 kB)
+Downloading regex-2024.11.6-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (794 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 795.0/795.0 kB 7.9 MB/s eta 0:00:00
+Downloading chardet-5.2.0-py3-none-any.whl (199 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 199.4/199.4 kB 7.3 MB/s eta 0:00:00
+Downloading diff_match_patch-20241021-py3-none-any.whl (43 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 43.3/43.3 kB 1.8 MB/s eta 0:00:00
+Downloading beautifulsoup4-4.13.4-py3-none-any.whl (187 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 187.3/187.3 kB 6.9 MB/s eta 0:00:00
+Downloading lxml-5.4.0-cp312-cp312-manylinux_2_28_aarch64.whl (4.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 4.8/4.8 MB 15.4 MB/s eta 0:00:00
+Downloading markdown-3.8-py3-none-any.whl (106 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 106.2/106.2 kB 4.6 MB/s eta 0:00:00
+Downloading PyYAML-6.0.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (739 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 739.2/739.2 kB 13.9 MB/s eta 0:00:00
+Downloading pygments-2.19.1-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 15.3 MB/s eta 0:00:00
+Downloading nltk-3.9.1-py3-none-any.whl (1.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB 24.8 MB/s eta 0:00:00
+Downloading spacy-3.8.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (31.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━ 31.0/31.0 MB 54.1 MB/s eta 0:00:00
+Downloading textblob-0.19.0-py3-none-any.whl (624 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 624.3/624.3 kB 13.7 MB/s eta 0:00:00
+Downloading fastapi-0.115.12-py3-none-any.whl (95 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 95.2/95.2 kB 3.2 MB/s eta 0:00:00
+Downloading uvicorn-0.34.2-py3-none-any.whl (62 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 62.5/62.5 kB 2.0 MB/s eta 0:00:00
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 5.1 MB/s eta 0:00:00
+Downloading aiofiles-24.1.0-py3-none-any.whl (15 kB)
+Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 kB 1.7 MB/s eta 0:00:00
+Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 kB 3.3 MB/s eta 0:00:00
+Downloading pandas-2.2.3-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (15.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━ 15.2/15.2 MB 66.1 MB/s eta 0:00:00
+Downloading tabulate-0.9.0-py3-none-any.whl (35 kB)
+Downloading PyQt6-6.9.0-cp39-abi3-manylinux_2_39_aarch64.whl (8.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 8.2/8.2 MB 50.8 MB/s eta 0:00:00
+Downloading pytest-8.3.5-py3-none-any.whl (343 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 343.6/343.6 kB 9.8 MB/s eta 0:00:00
+Downloading pytest_cov-6.1.1-py3-none-any.whl (23 kB)
+Downloading hypothesis-6.131.15-py3-none-any.whl (501 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 501.1/501.1 kB 15.0 MB/s eta 0:00:00
+Downloading black-25.1.0-py3-none-any.whl (207 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 207.6/207.6 kB 9.3 MB/s eta 0:00:00
+Downloading isort-6.0.1-py3-none-any.whl (94 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 94.2/94.2 kB 2.9 MB/s eta 0:00:00
+Downloading mypy-1.15.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl (11.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━ 11.5/11.5 MB 78.9 MB/s eta 0:00:00
+Downloading flake8-7.2.0-py2.py3-none-any.whl (57 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 57.8/57.8 kB 3.3 MB/s eta 0:00:00
+Downloading pre_commit-4.2.0-py2.py3-none-any.whl (220 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 220.7/220.7 kB 8.7 MB/s eta 0:00:00
+Downloading sphinx-8.2.3-py3-none-any.whl (3.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 3.6/3.6 MB 54.5 MB/s eta 0:00:00
+Downloading sphinx_rtd_theme-3.0.2-py2.py3-none-any.whl (7.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 7.7/7.7 MB 64.3 MB/s eta 0:00:00
+Downloading alabaster-1.0.0-py3-none-any.whl (13 kB)
+Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Downloading attrs-25.3.0-py3-none-any.whl (63 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 63.8/63.8 kB 1.7 MB/s eta 0:00:00
+Downloading babel-2.17.0-py3-none-any.whl (10.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━ 10.2/10.2 MB 55.9 MB/s eta 0:00:00
+Downloading catalogue-2.0.10-py3-none-any.whl (17 kB)
+Downloading cfgv-3.4.0-py2.py3-none-any.whl (7.2 kB)
+Downloading coverage-7.8.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (245 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 246.0/246.0 kB 4.3 MB/s eta 0:00:00
+Downloading cymem-2.0.11-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (224 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 224.8/224.8 kB 5.7 MB/s eta 0:00:00
+Downloading docutils-0.21.2-py3-none-any.whl (587 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 587.4/587.4 kB 19.2 MB/s eta 0:00:00
+Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Downloading identify-2.6.10-py2.py3-none-any.whl (99 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 3.5 MB/s eta 0:00:00
+Downloading imagesize-1.4.1-py2.py3-none-any.whl (8.8 kB)
+Downloading langcodes-3.5.0-py3-none-any.whl (182 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 183.0/183.0 kB 5.3 MB/s eta 0:00:00
+Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 87.5/87.5 kB 3.1 MB/s eta 0:00:00
+Downloading MarkupSafe-3.0.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (24 kB)
+Downloading mccabe-0.7.0-py2.py3-none-any.whl (7.3 kB)
+Downloading murmurhash-1.0.12-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (138 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 138.6/138.6 kB 8.7 MB/s eta 0:00:00
+Downloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Downloading nodeenv-1.9.1-py2.py3-none-any.whl (22 kB)
+Downloading numpy-2.2.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (14.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 62.3 MB/s eta 0:00:00
+Downloading packaging-25.0-py3-none-any.whl (66 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 66.5/66.5 kB 2.7 MB/s eta 0:00:00
+Downloading pathspec-0.12.1-py3-none-any.whl (31 kB)
+Downloading platformdirs-4.3.8-py3-none-any.whl (18 kB)
+Downloading pluggy-1.5.0-py3-none-any.whl (20 kB)
+Downloading preshed-3.0.9-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (149 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 149.2/149.2 kB 5.2 MB/s eta 0:00:00
+Downloading pycodestyle-2.13.0-py2.py3-none-any.whl (31 kB)
+Downloading pyflakes-3.3.2-py2.py3-none-any.whl (63 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 63.2/63.2 kB 3.4 MB/s eta 0:00:00
+Downloading PyQt6_Qt6-6.9.0-py3-none-manylinux_2_39_aarch64.whl (80.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━ 80.3/80.3 MB 36.2 MB/s eta 0:00:00
+Downloading PyQt6_sip-13.10.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (322 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 322.3/322.3 kB 15.0 MB/s eta 0:00:00
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 kB 13.5 MB/s eta 0:00:00
+Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 509.2/509.2 kB 23.9 MB/s eta 0:00:00
+Downloading requests-2.32.3-py3-none-any.whl (64 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 64.9/64.9 kB 3.0 MB/s eta 0:00:00
+Downloading certifi-2025.4.26-py3-none-any.whl (159 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 159.6/159.6 kB 12.0 MB/s eta 0:00:00
+Downloading idna-3.10-py3-none-any.whl (70 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 70.4/70.4 kB 7.7 MB/s eta 0:00:00
+Downloading roman_numerals_py-3.1.0-py3-none-any.whl (7.7 kB)
+Downloading snowballstemmer-3.0.0.1-py3-none-any.whl (103 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 103.2/103.2 kB 8.3 MB/s eta 0:00:00
+Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+Downloading soupsieve-2.7-py3-none-any.whl (36 kB)
+Downloading spacy_legacy-3.0.12-py2.py3-none-any.whl (29 kB)
+Downloading spacy_loggers-1.0.5-py3-none-any.whl (22 kB)
+Downloading sphinxcontrib_applehelp-2.0.0-py3-none-any.whl (119 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 119.3/119.3 kB 14.0 MB/s eta 0:00:00
+Downloading sphinxcontrib_devhelp-2.0.0-py3-none-any.whl (82 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 82.5/82.5 kB 6.7 MB/s eta 0:00:00
+Downloading sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl (98 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 98.7/98.7 kB 6.9 MB/s eta 0:00:00
+Downloading sphinxcontrib_jquery-4.1-py2.py3-none-any.whl (121 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 121.1/121.1 kB 6.3 MB/s eta 0:00:00
+Downloading sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl (5.1 kB)
+Downloading sphinxcontrib_qthelp-2.0.0-py3-none-any.whl (88 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 88.7/88.7 kB 6.6 MB/s eta 0:00:00
+Downloading sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl (92 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 92.1/92.1 kB 5.7 MB/s eta 0:00:00
+Downloading srsly-2.5.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 48.5 MB/s eta 0:00:00
+Downloading starlette-0.46.2-py3-none-any.whl (72 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 72.0/72.0 kB 5.1 MB/s eta 0:00:00
+Downloading anyio-4.9.0-py3-none-any.whl (100 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 100.9/100.9 kB 8.9 MB/s eta 0:00:00
+Downloading thinc-8.3.6-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (4.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 4.2/4.2 MB 76.6 MB/s eta 0:00:00
+Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 4.9 MB/s eta 0:00:00
+Downloading typer-0.15.3-py3-none-any.whl (45 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 45.3/45.3 kB 3.0 MB/s eta 0:00:00
+Downloading typing_extensions-4.13.2-py3-none-any.whl (45 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 45.8/45.8 kB 3.2 MB/s eta 0:00:00
+Downloading typing_inspection-0.4.0-py3-none-any.whl (14 kB)
+Downloading tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 347.8/347.8 kB 20.4 MB/s eta 0:00:00
+Downloading virtualenv-20.31.2-py3-none-any.whl (6.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 6.1/6.1 MB 68.6 MB/s eta 0:00:00
+Downloading wasabi-1.1.3-py3-none-any.whl (27 kB)
+Downloading weasel-0.4.1-py3-none-any.whl (50 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 50.3/50.3 kB 2.6 MB/s eta 0:00:00
+Downloading iniconfig-2.1.0-py3-none-any.whl (6.0 kB)
+Downloading joblib-1.5.0-py3-none-any.whl (307 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 307.7/307.7 kB 22.2 MB/s eta 0:00:00
+Downloading setuptools-80.3.1-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 51.1 MB/s eta 0:00:00
+Downloading blis-1.3.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 3.1/3.1 MB 36.1 MB/s eta 0:00:00
+Downloading charset_normalizer-3.4.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (143 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━ 143.8/143.8 kB 7.6 MB/s eta 0:00:00
+Downloading cloudpathlib-0.21.0-py3-none-any.whl (52 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 52.7/52.7 kB 3.8 MB/s eta 0:00:00
+Downloading confection-0.1.5-py3-none-any.whl (35 kB)
+Downloading distlib-0.3.9-py2.py3-none-any.whl (468 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 469.0/469.0 kB 25.7 MB/s eta 0:00:00
+Downloading filelock-3.18.0-py3-none-any.whl (16 kB)
+Downloading language_data-1.3.0-py3-none-any.whl (5.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 5.4/5.4 MB 84.5 MB/s eta 0:00:00
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading smart_open-7.1.0-py3-none-any.whl (61 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 61.7/61.7 kB 6.7 MB/s eta 0:00:00
+Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+Downloading urllib3-2.4.0-py3-none-any.whl (128 kB)
+   ━━━━━━━━━━━━━━━━━━━━━ 128.7/128.7 kB 11.1 MB/s eta 0:00:00
+Downloading marisa_trie-1.2.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 47.0 MB/s eta 0:00:00
+Downloading wrapt-1.17.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (88 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━ 88.7/88.7 kB 4.6 MB/s eta 0:00:00
+Installing collected packages: sortedcontainers, pytz, PyQt6-Qt6, distlib, cymem, wrapt, wasabi, urllib3, tzdata, typing-extensions, tqdm, tabulate, sphinxcontrib-serializinghtml, sphinxcontrib-qthelp, sphinxcontrib-jsmath, sphinxcontrib-htmlhelp, sphinxcontrib-devhelp, sphinxcontrib-applehelp, spacy-loggers, spacy-legacy, soupsieve, snowballstemmer, sniffio, six, shellingham, setuptools, roman-numerals-py, regex, PyYAML, python-dotenv, PyQt6-sip, Pygments, pyflakes, pycodestyle, pluggy, platformdirs, pathspec, packaging, numpy, nodeenv, mypy-extensions, murmurhash, mdurl, mccabe, MarkupSafe, markdown, lxml, joblib, isort, iniconfig, imagesize, idna, identify, h11, filelock, docutils, diff-match-patch, coverage, cloudpathlib, click, charset-normalizer, chardet, cfgv, certifi, catalogue, babel, attrs, annotated-types, alabaster, aiofiles, virtualenv, uvicorn, typing-inspection, srsly, smart-open, requests, python-dateutil, pytest, PyQt6, pydantic-core, preshed, nltk, mypy, markdown-it-py, marisa-trie, jinja2, hypothesis, httpcore, flake8, blis, black, beautifulsoup4, anyio, textblob, starlette, sphinx, rich, pytest-cov, pydantic, pre-commit, pandas, language-data, httpx, typer, sphinxcontrib-jquery, langcodes, fastapi, confection, weasel, thinc, sphinx-rtd-theme, spacy
+Successfully installed MarkupSafe-3.0.2 PyQt6-6.9.0 PyQt6-Qt6-6.9.0 PyQt6-sip-13.10.0 PyYAML-6.0.2 Pygments-2.19.1 aiofiles-24.1.0 alabaster-1.0.0 annotated-types-0.7.0 anyio-4.9.0 attrs-25.3.0 babel-2.17.0 beautifulsoup4-4.13.4 black-25.1.0 blis-1.3.0 catalogue-2.0.10 certifi-2025.4.26 cfgv-3.4.0 chardet-5.2.0 charset-normalizer-3.4.2 click-8.1.8 cloudpathlib-0.21.0 confection-0.1.5 coverage-7.8.0 cymem-2.0.11 diff-match-patch-20241021 distlib-0.3.9 docutils-0.21.2 fastapi-0.115.12 filelock-3.18.0 flake8-7.2.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 hypothesis-6.131.15 identify-2.6.10 idna-3.10 imagesize-1.4.1 iniconfig-2.1.0 isort-6.0.1 jinja2-3.1.6 joblib-1.5.0 langcodes-3.5.0 language-data-1.3.0 lxml-5.4.0 marisa-trie-1.2.1 markdown-3.8 markdown-it-py-3.0.0 mccabe-0.7.0 mdurl-0.1.2 murmurhash-1.0.12 mypy-1.15.0 mypy-extensions-1.1.0 nltk-3.9.1 nodeenv-1.9.1 numpy-2.2.5 packaging-25.0 pandas-2.2.3 pathspec-0.12.1 platformdirs-4.3.8 pluggy-1.5.0 pre-commit-4.2.0 preshed-3.0.9 pycodestyle-2.13.0 pydantic-2.11.4 pydantic-core-2.33.2 pyflakes-3.3.2 pytest-8.3.5 pytest-cov-6.1.1 python-dateutil-2.9.0.post0 python-dotenv-1.1.0 pytz-2025.2 regex-2024.11.6 requests-2.32.3 rich-14.0.0 roman-numerals-py-3.1.0 setuptools-80.3.1 shellingham-1.5.4 six-1.17.0 smart-open-7.1.0 sniffio-1.3.1 snowballstemmer-3.0.0.1 sortedcontainers-2.4.0 soupsieve-2.7 spacy-3.8.5 spacy-legacy-3.0.12 spacy-loggers-1.0.5 sphinx-8.2.3 sphinx-rtd-theme-3.0.2 sphinxcontrib-applehelp-2.0.0 sphinxcontrib-devhelp-2.0.0 sphinxcontrib-htmlhelp-2.1.0 sphinxcontrib-jquery-4.1 sphinxcontrib-jsmath-1.0.1 sphinxcontrib-qthelp-2.0.0 sphinxcontrib-serializinghtml-2.0.0 srsly-2.5.1 starlette-0.46.2 tabulate-0.9.0 textblob-0.19.0 thinc-8.3.6 tqdm-4.67.1 typer-0.15.3 typing-extensions-4.13.2 typing-inspection-0.4.0 tzdata-2025.2 urllib3-2.4.0 uvicorn-0.34.2 virtualenv-20.31.2 wasabi-1.1.3 weasel-0.4.1 wrapt-1.17.2
