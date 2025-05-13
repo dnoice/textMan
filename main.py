@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-TextMan - Advanced Text Manipulation Tool
+textMan - Advanced Text Manipulation Tool
 ----------------------------------------
-Main entry point for the TextMan application.
+Main entry point for the textMan application.
 
 This module provides the primary command-line interface and entry points
 for different UI modes (terminal, web, desktop).
@@ -19,11 +19,12 @@ from typing import Optional, List, Dict, Any
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
 
-# Import TextMan modules
+# Import textMan modules
 try:
     from app.core.engine import TextEngine
     from app.core.config.settings import Settings
     from app.core.utils.logging_utils import setup_logging
+    from app.core.i18n import get_i18n
 except ImportError as e:
     print(f"Error importing TextMan modules: {e}")
     print("Make sure you've installed all required dependencies.")
@@ -113,6 +114,18 @@ def parse_arguments() -> argparse.Namespace:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set the logging level"
+    )
+    
+    # Language options
+    language_group = parser.add_argument_group("Language Options")
+    language_group.add_argument(
+        "--language", "-l",
+        help="Set the interface language (e.g., 'en', 'es', 'fr', 'de', 'zh')"
+    )
+    language_group.add_argument(
+        "--list-languages",
+        action="store_true",
+        help="List available interface languages and exit"
     )
     
     # Action options
@@ -268,6 +281,25 @@ def list_available_plugins(engine: TextEngine) -> None:
             print(f"  • {plugin['name']} (v{plugin['version']}) - {status}")
             print(f"    {plugin['description']}")
 
+def list_available_languages() -> None:
+    """List all available interface languages."""
+    from app.core.i18n import get_i18n
+    
+    languages = get_i18n().get_available_languages()
+    
+    if not languages:
+        print("No language files found.")
+        return
+    
+    print("Available Languages:")
+    print("===================")
+    
+    for code, name in languages.items():
+        print(f"  • {code}: {name}")
+    
+    print(f"\nCurrent language: {get_i18n().language}")
+    print("\nUse --language CODE to set the interface language.")
+
 def main() -> int:
     """Main entry point for the application."""
     # Parse command line arguments
@@ -276,16 +308,28 @@ def main() -> int:
     # Setup logging
     setup_logging(log_level=args.log_level)
     
-    # Load settings
-    settings = load_settings(args)
-    
-    # Initialize the engine
-    engine = setup_engine(settings)
+    # Set language if specified
+    if args.language:
+        from app.core.i18n import get_i18n
+        if not get_i18n().set_language(args.language):
+            logging.error(f"Language '{args.language}' not available")
+            list_available_languages()
+            return 1
     
     # Handle special actions
     if args.version:
         show_version()
         return 0
+    
+    if args.list_languages:
+        list_available_languages()
+        return 0
+    
+    # Load settings
+    settings = load_settings(args)
+    
+    # Initialize the engine
+    engine = setup_engine(settings)
     
     if args.list_plugins:
         list_available_plugins(engine)
