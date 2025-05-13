@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/assets/images/textMan_banner_image.png" alt="textMan Banner Image" width="400" />
+  <img src="resources/assets/images/textMan_banner_image.png" alt="textMan Banner Image" width="600" />
 </p>
 
 # textMan: Advanced Text Manipulation Tool
@@ -32,14 +32,38 @@ textMan aims to be a comprehensive, extensible text manipulation tool that empow
 
 ## ✨ Key Features
 
-- 📝 **Basic Ops**: case conversion, sorting, formatting, smart find/replace  
-- 🔍 **Advanced Patterns**: regex wizardry, multi‑step search & replace  
-- 📊 **Text Analysis**: readability scores, keyword extraction, sentiment insights  
-- 💻 **Code Processing**: syntax highlighting, auto‑format, minify  
-- 🗃️ **Data Tools**: parse CSV/JSON/XML from plain text  
-- 🔄 **Document Diff**: side‑by‑side diffs, merge assistants  
-- 🔄 **Format Conversion**: Markdown ↔ HTML ↔ LaTeX  
-- 🏷️ **Domain Plugins**: customize NLP, legal‑doc helpers, scientific text  
+- 📝 **Basic Text Operations**: 
+  - ✅ Case conversion (uppercase, lowercase, title case)
+  - ✅ Line manipulation (sort, deduplicate, trim)
+  - ✅ Text statistics (character/word counts, reading time)
+  - ✅ Undo/redo functionality
+
+- 🔍 **Advanced Pattern Processing**: 
+  - ✅ Regular expression search and replace
+  - ✅ Pattern extraction and highlighting
+  - ✅ Line filtering based on content
+
+- 📊 **Text Formatting**: 
+  - ✅ Indentation management
+  - ✅ Line numbering
+  - ✅ Text wrapping
+  - ✅ Text alignment (left, center, right, justify)
+
+- 🔠 **Case Transformations**:
+  - ✅ Snake case, camel case, kebab case
+  - ✅ Sentence case
+  - ✅ Toggle and invert case
+
+- 🔄 **Interface Options**:
+  - ✅ Rich interactive terminal UI
+  - 🔄 Web interface (in progress)
+  - 🔄 Desktop application (planned)
+
+- 🧰 **Plugin Ecosystem**:
+  - ✅ Text manipulation plugins
+  - ✅ Regex tools
+  - ✅ Formatting utilities
+  - 🔄 More specialized plugins coming soon
 
 ## 🏗️ Architecture
 
@@ -52,21 +76,21 @@ textMan aims to be a comprehensive, extensible text manipulation tool that empow
 
 ```
 User Interfaces
- ├─ Terminal
- ├─ Web
- └─ Desktop
+ ├─ Terminal (✅ Implemented)
+ ├─ Web (🔄 Planned)
+ └─ Desktop (🔄 Planned)
      │
-Core Engine
+Core Engine (✅ Implemented)
  ├─ Text Manager
  ├─ State Manager (undo/redo)
  └─ Configuration
      │
-Plugin System
- ├─ Text
- ├─ Regex
- ├─ NLP
- ├─ Code
- └─ Data
+Plugin System (✅ Implemented)
+ ├─ Text (✅ Basic plugins available)
+ ├─ Regex (✅ Core functionality available)
+ ├─ NLP (🔄 Planned)
+ ├─ Code (🔄 Planned)
+ └─ Data (🔄 Planned)
 ```
 </details>
 
@@ -86,7 +110,7 @@ Plugin System
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/textMan.git
+git clone https://github.com/dnoice/textMan.git
 cd textMan
 
 # Create & activate virtual environment
@@ -105,97 +129,113 @@ pip install -e .
 1. **Launch Terminal UI**  
 
    ```bash
-   textman --help
+   python main.py --terminal
+   # Or use the test script for a quick demo
+   python tests/terminal_ui_test.py
    ```
 
 2. **Basic Text Processing**  
 
    ```bash
    # Case conversion
-   echo "Hello World" | textman uppercase
+   echo "Hello World" | python main.py --execute uppercase
    # Output: HELLO WORLD
    
    # Sort lines alphabetically
-   cat myfile.txt | textman sort > sorted.txt
+   cat myfile.txt | python main.py --execute sort > sorted.txt
    
    # Remove duplicate lines
-   textman --file input.txt --output unique.txt unique
+   python main.py --file input.txt --output unique.txt --execute unique
    ```
 
-3. **Advanced Regex**  
+3. **Using Terminal Interface Commands**  
+
+   Once in the terminal UI, you can use these commands:
+   
+   ```
+   help              - Show available commands
+   show              - Display the current text
+   load <filepath>   - Load a file
+   save [filepath]   - Save current text to a file
+   
+   # Text operations
+   uppercase         - Convert text to uppercase
+   lowercase         - Convert text to lowercase
+   capitalize        - Capitalize each word
+   sort              - Sort lines alphabetically
+   unique            - Remove duplicate lines
+   trim              - Remove extra whitespace
+   stats             - Show text statistics
+   
+   # Plugin execution
+   plugin <name> [options] - Execute a plugin
+   plugins           - List available plugins
+   ```
+
+4. **Using Plugins**
 
    ```bash
-   # Replace all numbers with [NUM]
-   textman regex --pattern "\d+" --replace "[NUM]" --input report.txt
+   # In terminal UI
+   plugin text_case mode=snake     # Convert to snake_case
+   plugin regex operation=extract pattern="\b\w+@\w+\.\w+\b"    # Extract emails
+   plugin format operation=number  # Add line numbers
    
-   # Extract all email addresses
-   textman regex --extract "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}" --input contacts.txt
+   # From command line
+   python main.py --file input.txt --execute "plugin text_case mode=camel"
    ```
 
-4. **Working with Files**
-
-   ```bash
-   # Load, transform, and save
-   textman --file document.txt --output result.txt capitalize
-   
-   # Chain multiple operations
-   textman --file data.txt trim unique sort
-   ```
-
-> 💡 **Tip:** Use `textman --list-plugins` to discover all installed plugins and their capabilities.
+> 💡 **Tip:** Use `python main.py --list-plugins` to discover all installed plugins and their capabilities.
 
 ## 🔌 Plugin System
 
-- **Discover plugins**: `textman plugin list`  
-- **Install from PyPI**: `pip install textman-plugin-<name>`  
-- **Create your own plugin**:  
+textMan features a powerful plugin system that allows you to extend its functionality.
 
-  ```bash
-  textman plugin scaffold myplugin
-  cd myplugin
-  ```
+### Available Plugins
 
-<details>
-  <summary><strong>Plugin API Example</strong></summary>
+1. **Text Case Plugin** (text_case)
+   - Snake case conversion: `plugin text_case mode=snake`
+   - Camel case conversion: `plugin text_case mode=camel`
+   - Kebab case conversion: `plugin text_case mode=kebab`
+   - Title case: `plugin text_case mode=title`
+   - Sentence case: `plugin text_case mode=sentence`
+   - Toggle case: `plugin text_case mode=toggle`
+   - Invert text: `plugin text_case mode=invert`
+
+2. **Regex Plugin** (regex)
+   - Replace: `plugin regex operation=replace pattern="\d+" replacement="[NUM]"`
+   - Extract: `plugin regex operation=extract pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,}"`
+   - Match: `plugin regex operation=match pattern="\b\w{5,}\b"`
+   - Split: `plugin regex operation=split pattern="\s+"`
+   - Highlight: `plugin regex operation=highlight pattern="\b\w+\b" highlight_format="[{}]"`
+
+3. **Formatting Plugin** (format)
+   - Indentation: `plugin format operation=indent indent_size=4`
+   - Line numbering: `plugin format operation=number`
+   - Text wrapping: `plugin format operation=wrap wrap_width=80`
+   - Text alignment: `plugin format operation=align align=center width=50`
+   - Add prefix/suffix: `plugin format operation=prefix prefix="- "`
+
+### Creating Your Own Plugin
 
 ```python
-from textman.plugins import Plugin
+from app.core.models.plugin import Plugin, PluginCategory
 
-class MyTransform(Plugin):
-    """Custom text transformation plugin."""
+class MyPlugin(Plugin):
+    """Custom plugin example."""
     
-    name = "my-transform"
-    version = "1.0.0"
-    description = "Transforms text in a specific way"
-    category = "text"  # Options: text, regex, nlp, code, data, utility
+    def __init__(self):
+        super().__init__(
+            name="my_plugin",
+            description="My custom plugin",
+            version="1.0.0",
+            category=PluginCategory.TEXT
+        )
     
-    def process(self, text: str, option1: str = "default", option2: bool = False) -> str:
-        """Transform the input text.
-        
-        Args:
-            text: The input text to transform
-            option1: First configuration option
-            option2: Second configuration option
-            
-        Returns:
-            The transformed text
-        """
-        # Implement your text transformation logic
-        result = text
-        if option2:
-            result = result.upper()
-        
-        return f"{option1}: {result}"
+    def process(self, text: str, *args, **kwargs) -> str:
+        """Process text with my custom logic."""
+        # Your text processing code here
+        return text.upper()  # Example: convert to uppercase
 ```
-</details>
-
-Plugin categories include:
-- **Text**: Basic text transformations
-- **Regex**: Regular expression operations
-- **NLP**: Natural language processing
-- **Code**: Programming language specific tools
-- **Data**: Structured data extraction and formatting
-- **Utility**: Miscellaneous tools
 
 ## 🛣️ Roadmap
 
@@ -206,46 +246,53 @@ Plugin categories include:
 - [x] Implement core engine with basic text operations
 - [x] Design plugin architecture
 - [x] Develop state management (undo/redo)
-- [ ] Build command-line interface
-- [ ] Implement basic plugins:
-  - [ ] Text operations (case conversion, sorting)
-  - [ ] Regular expression tools
-  - [ ] Basic formatting features
+- [x] Build command-line interface
+- [x] Implement Terminal UI
+- [x] Implement basic plugins:
+  - [x] Text operations (case conversion, sorting)
+  - [x] Regular expression tools
+  - [x] Basic formatting features
+- [ ] Add comprehensive unit tests
+- [ ] Complete initial documentation
 </details>
 
 <details>
-  <summary><strong>Phase 2: Core Capabilities</strong></summary>
+  <summary><strong>Phase 2: Core Capabilities (🔄 Next)</strong></summary>
 
-- [ ] Text analysis capabilities:
-  - [ ] Word/character counting and statistics
-  - [ ] Readability metrics
-  - [ ] Basic keyword extraction
-- [ ] Multi-file handling:
+- [ ] Expand text analysis capabilities:
+  - [ ] Advanced readability metrics
+  - [ ] Keyword extraction
+  - [ ] Text summarization
+- [ ] Implement multi-file handling:
   - [ ] Batch operations
   - [ ] Auto-save functionality
   - [ ] Session restoration
-- [ ] Diff and comparison tools:
+- [ ] Add diff and comparison tools:
   - [ ] Text difference highlighting
   - [ ] Merge capabilities
   - [ ] Version comparison
+- [ ] Develop additional plugins:
+  - [ ] Code formatting plugins
+  - [ ] Data extraction plugins
+  - [ ] Markdown/HTML conversion
 </details>
 
 <details>
-  <summary><strong>Phase 3: Advanced Features</strong></summary>
+  <summary><strong>Phase 3: Web Interface and Advanced Features</strong></summary>
 
-- [ ] Web interface:
+- [ ] Implement web interface:
   - [ ] RESTful API
   - [ ] Interactive browser UI
   - [ ] Real-time collaboration
-- [ ] Advanced processing:
+- [ ] Add advanced processing:
   - [ ] NLP capabilities (tokenization, named entity recognition)
   - [ ] Sentiment analysis
-  - [ ] Text summarization
-- [ ] Code-specific features:
+  - [ ] Advanced translation features
+- [ ] Improve code-specific features:
   - [ ] Syntax highlighting for multiple languages
   - [ ] Code formatting
   - [ ] Linting integration
-- [ ] Data extraction tools:
+- [ ] Enhance data extraction:
   - [ ] Tabular data parsing
   - [ ] Extract structured information (emails, URLs, dates)
   - [ ] Convert between data formats
@@ -269,7 +316,7 @@ Plugin categories include:
   - [ ] Locale-specific text processing
 </details>
 
-See our [Project Board](https://github.com/yourusername/textMan/projects) for detailed development status.
+See our [Project Board](https://github.com/dnoice/textMan/projects) for detailed development status.
 
 ## 👥 Contributing
 
@@ -303,7 +350,7 @@ See our [Project Board](https://github.com/yourusername/textMan/projects) for de
 
 ## 🌐 Community
 
-- [**GitHub Discussions**](https://github.com/yourusername/textMan/discussions) - Ask questions and share ideas
+- [**GitHub Discussions**](https://github.com/dnoice/textMan/discussions) - Ask questions and share ideas
 - [**Discord**](https://discord.gg/textman) - Join our community chat
 - [**Twitter**](https://twitter.com/textmanproject) - Follow for updates
 - [**Documentation**](https://textman.readthedocs.io/) - Comprehensive guides and API reference
@@ -312,8 +359,10 @@ We welcome contributions of all kinds - whether you're fixing bugs, improving do
 
 ## 📄 License
 
-Released under the **MIT License**. See [LICENSE](LICENSE) for details.
+Released under the **CC0 1.0 Universal License**. See [LICENSE](LICENSE) for details.
 
 <p align="center">
   Made with 💡 and 🔤 by the textMan Team  
+  
+  Lead Developer: Dennis 'dnoice' Smaltz
 </p>
