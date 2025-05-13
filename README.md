@@ -60,9 +60,9 @@ textMan aims to be a comprehensive, extensible text manipulation tool that empow
   - 🔄 Desktop application (planned)
 
 - 🧰 **Plugin Ecosystem**:
-  - ✅ Text manipulation plugins
-  - ✅ Regex tools
-  - ✅ Formatting utilities
+  - ✅ textCase: Advanced case transformations
+  - ✅ regexTools: Pattern matching and extraction
+  - ✅ formatText: Layout and presentation utilities
   - 🔄 More specialized plugins coming soon
 
 ## 🏗️ Architecture
@@ -86,11 +86,11 @@ Core Engine (✅ Implemented)
  └─ Configuration
      │
 Plugin System (✅ Implemented)
- ├─ Text (✅ Basic plugins available)
- ├─ Regex (✅ Core functionality available)
- ├─ NLP (🔄 Planned)
- ├─ Code (🔄 Planned)
- └─ Data (🔄 Planned)
+ ├─ textCase (✅ Basic plugins available)
+ ├─ regexTools (✅ Core functionality available)
+ ├─ nlpAnalyze (🔄 Planned)
+ ├─ codeFormat (🔄 Planned)
+ └─ dataExtract (🔄 Planned)
 ```
 </details>
 
@@ -168,7 +168,7 @@ pip install -e .
    stats             - Show text statistics
    
    # Plugin execution
-   plugin <name> [options] - Execute a plugin
+   plugin <n> [options] - Execute a plugin
    plugins           - List available plugins
    ```
 
@@ -192,7 +192,7 @@ textMan features a powerful plugin system that allows you to extend its function
 
 ### Available Plugins
 
-1. **Text Case Plugin** (text_case)
+1. **textCase Plugin** (text_case)
    - Snake case conversion: `plugin text_case mode=snake`
    - Camel case conversion: `plugin text_case mode=camel`
    - Kebab case conversion: `plugin text_case mode=kebab`
@@ -201,14 +201,14 @@ textMan features a powerful plugin system that allows you to extend its function
    - Toggle case: `plugin text_case mode=toggle`
    - Invert text: `plugin text_case mode=invert`
 
-2. **Regex Plugin** (regex)
+2. **regexTools Plugin** (regex)
    - Replace: `plugin regex operation=replace pattern="\d+" replacement="[NUM]"`
    - Extract: `plugin regex operation=extract pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,}"`
    - Match: `plugin regex operation=match pattern="\b\w{5,}\b"`
    - Split: `plugin regex operation=split pattern="\s+"`
    - Highlight: `plugin regex operation=highlight pattern="\b\w+\b" highlight_format="[{}]"`
 
-3. **Formatting Plugin** (format)
+3. **formatText Plugin** (format)
    - Indentation: `plugin format operation=indent indent_size=4`
    - Line numbering: `plugin format operation=number`
    - Text wrapping: `plugin format operation=wrap wrap_width=80`
@@ -226,7 +226,7 @@ class MyPlugin(Plugin):
     def __init__(self):
         super().__init__(
             name="my_plugin",
-            description="My custom plugin",
+            description="My custom textMan plugin",
             version="1.0.0",
             category=PluginCategory.TEXT
         )
@@ -249,9 +249,9 @@ class MyPlugin(Plugin):
 - [x] Build command-line interface
 - [x] Implement Terminal UI
 - [x] Implement basic plugins:
-  - [x] Text operations (case conversion, sorting)
-  - [x] Regular expression tools
-  - [x] Basic formatting features
+  - [x] textCase: Case transformations
+  - [x] regexTools: Regular expression operations
+  - [x] formatText: Layout and formatting features
 - [ ] Add comprehensive unit tests
 - [ ] Complete initial documentation
 </details>
@@ -272,9 +272,9 @@ class MyPlugin(Plugin):
   - [ ] Merge capabilities
   - [ ] Version comparison
 - [ ] Develop additional plugins:
-  - [ ] Code formatting plugins
-  - [ ] Data extraction plugins
-  - [ ] Markdown/HTML conversion
+  - [ ] codeFormat: Code formatting plugins
+  - [ ] dataExtract: Data extraction plugins
+  - [ ] markConvert: Markdown/HTML conversion
 </details>
 
 <details>
@@ -285,17 +285,17 @@ class MyPlugin(Plugin):
   - [ ] Interactive browser UI
   - [ ] Real-time collaboration
 - [ ] Add advanced processing:
-  - [ ] NLP capabilities (tokenization, named entity recognition)
-  - [ ] Sentiment analysis
-  - [ ] Advanced translation features
+  - [ ] nlpAnalyze: Natural language processing capabilities
+  - [ ] sentimentScore: Sentiment analysis
+  - [ ] translateText: Advanced translation features
 - [ ] Improve code-specific features:
-  - [ ] Syntax highlighting for multiple languages
-  - [ ] Code formatting
-  - [ ] Linting integration
+  - [ ] syntaxColor: Syntax highlighting for multiple languages
+  - [ ] codeFormat: Advanced code formatting
+  - [ ] lintCheck: Linting integration
 - [ ] Enhance data extraction:
-  - [ ] Tabular data parsing
-  - [ ] Extract structured information (emails, URLs, dates)
-  - [ ] Convert between data formats
+  - [ ] tableExtract: Tabular data parsing
+  - [ ] structuredInfo: Extract structured information
+  - [ ] formatConvert: Convert between data formats
 </details>
 
 <details>
@@ -303,17 +303,17 @@ class MyPlugin(Plugin):
 
 - [ ] Desktop GUI application
 - [ ] Integration capabilities:
-  - [ ] API hooks for external applications
-  - [ ] Cloud storage support
-  - [ ] Version control integration
+  - [ ] apiConnect: API hooks for external applications
+  - [ ] cloudSync: Cloud storage support
+  - [ ] gitConnect: Version control integration
 - [ ] Document features:
-  - [ ] Template system
-  - [ ] Markdown processing
-  - [ ] Document generation
+  - [ ] templateApply: Template system
+  - [ ] markConvert: Markdown processing
+  - [ ] docGenerate: Document generation
 - [ ] Localization support:
-  - [ ] Multi-language interfaces
-  - [ ] Translation assistance
-  - [ ] Locale-specific text processing
+  - [ ] langUI: Multi-language interfaces
+  - [ ] translateAssist: Translation assistance
+  - [ ] localeFormat: Locale-specific text processing
 </details>
 
 See our [Project Board](https://github.com/dnoice/textMan/projects) for detailed development status.
