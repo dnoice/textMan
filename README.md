@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/assets/images/textMan_banner_image.png" alt="textMan Banner Image" width="600" />
+  <img src="resources/assets/images/textMan_banner_image.png" alt="textMan Banner Image" width="500" />
 </p>
 
 # textMan: Advanced Text Manipulation Tool
