@@ -9,6 +9,7 @@ This module provides a rich terminal interface with:
 - Visual text display
 - Interactive command execution
 - Plugin management
+- Internationalization support
 """
 
 import os
@@ -33,6 +34,7 @@ from rich.markdown import Markdown
 from app.core.engine import TextEngine
 from app.core.models.plugin import Plugin, PluginCategory
 from app.core.exceptions.plugin_exceptions import PluginError, PluginNotFoundError
+from app.core.i18n import get_i18n, _
 
 
 class CommandHighlighter(RegexHighlighter):
@@ -61,6 +63,9 @@ class TerminalUI:
         self.history = []
         self.history_index = 0
         self.max_history = 100
+        
+        # Set up i18n
+        self.i18n = get_i18n()
         
         # Set up rich console
         self.theme = Theme({
@@ -100,29 +105,7 @@ class TerminalUI:
             "plugin": self.cmd_plugin,
             "plugins": self.cmd_list_plugins,
             "clear": self.cmd_clear,
-        }
-        
-        # Command help text
-        self.command_help = {
-            "help": "Show help for commands",
-            "exit": "Exit the application",
-            "quit": "Exit the application",
-            "load": "Load text from a file (Usage: load <filepath> [encoding])",
-            "save": "Save text to a file (Usage: save <filepath> [encoding])",
-            "show": "Display the current text (Usage: show [--lines] [--syntax <lang>])",
-            "stats": "Show text statistics",
-            "undo": "Undo the last operation",
-            "redo": "Redo the last undone operation",
-            "uppercase": "Convert text to uppercase",
-            "lowercase": "Convert text to lowercase",
-            "capitalize": "Capitalize each word in the text",
-            "sort": "Sort lines alphabetically (Usage: sort [--reverse])",
-            "unique": "Remove duplicate lines",
-            "trim": "Trim whitespace from the beginning and end of each line",
-            "replace": "Find and replace text (Usage: replace <find> <replace> [--ignore-case])",
-            "plugin": "Execute a plugin (Usage: plugin <name> [args...])",
-            "plugins": "List available plugins (Usage: plugins [--details])",
-            "clear": "Clear the screen",
+            "language": self.cmd_language,  # New language command
         }
     
     def run(self) -> None:
@@ -138,17 +121,17 @@ class TerminalUI:
                 self.execute_command(command)
                 
             except KeyboardInterrupt:
-                self.console.print("\n[textman.warning]Operation interrupted by user[/]")
+                self.console.print(f"\n[textman.warning]{_('operation_interrupted')}[/]")
                 continue
                 
             except Exception as e:
-                self.console.print(f"[textman.error]Error: {e}[/]")
+                self.console.print(f"[textman.error]{_('error', error=str(e))}[/]")
     
     def show_welcome(self) -> None:
         """Show the welcome message."""
         self.console.print(Panel.fit(
-            "[bold yellow]TextMan[/bold yellow] - Advanced Text Manipulation Tool\n"
-            "Type [bold cyan]help[/bold cyan] to see available commands",
+            f"[bold yellow]TextMan[/bold yellow] - {_('welcome_message')}\n"
+            f"{_('help_message')}",
             title="Welcome",
             border_style="blue",
         ))
@@ -183,7 +166,7 @@ class TerminalUI:
         try:
             parts = shlex.split(command_str)
         except ValueError as e:
-            self.console.print(f"[textman.error]Invalid command: {e}[/]")
+            self.console.print(f"[textman.error]{_('error_invalid_command', command=str(e))}[/]")
             return
         
         if not parts:
@@ -196,13 +179,13 @@ class TerminalUI:
             try:
                 self.commands[cmd](*args)
             except TypeError as e:
-                self.console.print(f"[textman.error]Invalid arguments: {e}[/]")
-                self.console.print(f"[textman.info]Usage: {self.command_help.get(cmd, '')}[/]")
+                self.console.print(f"[textman.error]{_('error_invalid_args', error=str(e))}[/]")
+                self.console.print(f"[textman.info]{_('command_'+cmd, default='')}[/]")
             except Exception as e:
-                self.console.print(f"[textman.error]Error executing command: {e}[/]")
+                self.console.print(f"[textman.error]{_('error_command_execution', error=str(e))}[/]")
         else:
-            self.console.print(f"[textman.error]Unknown command: {cmd}[/]")
-            self.console.print("Type [bold cyan]help[/bold cyan] to see available commands")
+            self.console.print(f"[textman.error]{_('error_invalid_command', command=cmd)}[/]")
+            self.console.print(f"{_('help_message')}")
     
     # Command implementations
     # -----------------------
@@ -215,16 +198,17 @@ class TerminalUI:
         """
         if command:
             if command in self.commands:
-                self.console.print(f"[bold cyan]{command}[/bold cyan]: {self.command_help.get(command, 'No help available')}")
+                self.console.print(f"[bold cyan]{command}[/bold cyan]: {_('command_'+command, default='No help available')}")
             else:
-                self.console.print(f"[textman.error]Unknown command: {command}[/]")
+                self.console.print(f"[textman.error]{_('error_invalid_command', command=command)}[/]")
             return
         
-        table = Table(title="Available Commands")
-        table.add_column("Command", style="cyan")
-        table.add_column("Description")
+        table = Table(title=_("available_commands"))
+        table.add_column(_("command"), style="cyan")
+        table.add_column(_("description"))
         
-        for cmd, help_text in sorted(self.command_help.items()):
+        for cmd in sorted(self.commands.keys()):
+            help_text = _('command_'+cmd, default=cmd)
             table.add_row(cmd, help_text)
         
         self.console.print(table)
@@ -232,10 +216,10 @@ class TerminalUI:
     def cmd_exit(self) -> None:
         """Exit the application."""
         if self.engine.modified:
-            if Confirm.ask("Text has been modified. Save before exiting?"):
+            if Confirm.ask(_("confirm_save_on_exit")):
                 self.cmd_save()
         
-        self.console.print("[textman.info]Exiting TextMan. Goodbye![/]")
+        self.console.print(f"[textman.info]{_('exit_message')}[/]")
         sys.exit(0)
     
     def cmd_load(self, filepath: str, encoding: str = "utf-8") -> None:
@@ -249,13 +233,13 @@ class TerminalUI:
             filepath = Path(filepath).expanduser().resolve()
             text = self.engine.load_file(filepath, encoding)
             
-            self.console.print(f"[textman.success]Loaded file: {filepath}[/]")
-            self.console.print(f"[textman.info]{len(text)} characters loaded[/]")
+            self.console.print(f"[textman.success]{_('file_loaded', filepath=filepath)}[/]")
+            self.console.print(f"[textman.info]{len(text)} {_('characters_loaded')}[/]")
             
         except FileNotFoundError:
-            self.console.print(f"[textman.error]File not found: {filepath}[/]")
+            self.console.print(f"[textman.error]{_('error_file_not_found', filepath=filepath)}[/]")
         except Exception as e:
-            self.console.print(f"[textman.error]Error loading file: {e}[/]")
+            self.console.print(f"[textman.error]{_('error_loading_file', error=str(e))}[/]")
     
     def cmd_save(self, filepath: Optional[str] = None, encoding: str = "utf-8") -> None:
         """Save text to a file.
@@ -266,15 +250,15 @@ class TerminalUI:
         """
         try:
             if filepath is None and self.engine.filepath is None:
-                filepath = Prompt.ask("Enter filepath to save to")
+                filepath = Prompt.ask(_("prompt_enter_filepath"))
             
             saved_path = self.engine.save_file(filepath, encoding)
-            self.console.print(f"[textman.success]Saved to: {saved_path}[/]")
+            self.console.print(f"[textman.success]{_('file_saved', filepath=saved_path)}[/]")
             
         except ValueError as e:
-            self.console.print(f"[textman.error]Error: {e}[/]")
+            self.console.print(f"[textman.error]{_('error', error=str(e))}[/]")
         except Exception as e:
-            self.console.print(f"[textman.error]Error saving file: {e}[/]")
+            self.console.print(f"[textman.error]{_('error_saving_file', error=str(e))}[/]")
     
     def cmd_show(self, *args) -> None:
         """Display the current text.
@@ -293,7 +277,7 @@ class TerminalUI:
         text = self.engine.text
         
         if not text:
-            self.console.print("[textman.info]No text loaded[/]")
+            self.console.print(f"[textman.info]{_('no_text')}[/]")
             return
         
         # Show text with syntax highlighting if specified
@@ -313,18 +297,18 @@ class TerminalUI:
         """Show text statistics."""
         stats = self.engine.get_statistics()
         
-        table = Table(title="Text Statistics")
-        table.add_column("Metric", style="cyan")
-        table.add_column("Value")
+        table = Table(title=_("text_statistics"))
+        table.add_column(_("metric"), style="cyan")
+        table.add_column(_("value"))
         
-        table.add_row("Characters", str(stats["characters"]))
-        table.add_row("Characters (no spaces)", str(stats["characters_no_spaces"]))
-        table.add_row("Words", str(stats["words"]))
-        table.add_row("Sentences", str(stats["sentences"]))
-        table.add_row("Lines", str(stats["lines"]))
-        table.add_row("Paragraphs", str(stats["paragraphs"]))
-        table.add_row("Average word length", f"{stats['avg_word_length']:.2f}")
-        table.add_row("Reading time", f"{stats['reading_time_minutes']:.2f} minutes")
+        table.add_row(_("stats_characters"), str(stats["characters"]))
+        table.add_row(_("stats_characters_no_spaces"), str(stats["characters_no_spaces"]))
+        table.add_row(_("stats_words"), str(stats["words"]))
+        table.add_row(_("stats_sentences"), str(stats["sentences"]))
+        table.add_row(_("stats_lines"), str(stats["lines"]))
+        table.add_row(_("stats_paragraphs"), str(stats["paragraphs"]))
+        table.add_row(_("stats_avg_word_length"), f"{stats['avg_word_length']:.2f}")
+        table.add_row(_("stats_reading_time"), f"{stats['reading_time_minutes']:.2f} {_('minutes')}")
         
         self.console.print(table)
     
@@ -333,33 +317,33 @@ class TerminalUI:
         text = self.engine.undo()
         
         if text is not None:
-            self.console.print("[textman.success]Undo successful[/]")
+            self.console.print(f"[textman.success]{_('undo_success')}[/]")
         else:
-            self.console.print("[textman.warning]Nothing to undo[/]")
+            self.console.print(f"[textman.warning]{_('nothing_to_undo')}[/]")
     
     def cmd_redo(self) -> None:
         """Redo the last undone operation."""
         text = self.engine.redo()
         
         if text is not None:
-            self.console.print("[textman.success]Redo successful[/]")
+            self.console.print(f"[textman.success]{_('redo_success')}[/]")
         else:
-            self.console.print("[textman.warning]Nothing to redo[/]")
+            self.console.print(f"[textman.warning]{_('nothing_to_redo')}[/]")
     
     def cmd_uppercase(self) -> None:
         """Convert text to uppercase."""
         self.engine.to_uppercase()
-        self.console.print("[textman.success]Text converted to uppercase[/]")
+        self.console.print(f"[textman.success]{_('text_converted_uppercase')}[/]")
     
     def cmd_lowercase(self) -> None:
         """Convert text to lowercase."""
         self.engine.to_lowercase()
-        self.console.print("[textman.success]Text converted to lowercase[/]")
+        self.console.print(f"[textman.success]{_('text_converted_lowercase')}[/]")
     
     def cmd_capitalize(self) -> None:
         """Capitalize each word in the text."""
         self.engine.capitalize_words()
-        self.console.print("[textman.success]Words capitalized[/]")
+        self.console.print(f"[textman.success]{_('words_capitalized')}[/]")
     
     def cmd_sort(self, *args) -> None:
         """Sort lines alphabetically.
@@ -372,19 +356,19 @@ class TerminalUI:
         self.engine.sort_lines(reverse=reverse)
         
         if reverse:
-            self.console.print("[textman.success]Lines sorted in reverse alphabetical order[/]")
+            self.console.print(f"[textman.success]{_('lines_sorted_reverse')}[/]")
         else:
-            self.console.print("[textman.success]Lines sorted alphabetically[/]")
+            self.console.print(f"[textman.success]{_('lines_sorted')}[/]")
     
     def cmd_unique(self) -> None:
         """Remove duplicate lines."""
         self.engine.remove_duplicates()
-        self.console.print("[textman.success]Duplicate lines removed[/]")
+        self.console.print(f"[textman.success]{_('duplicate_lines_removed')}[/]")
     
     def cmd_trim(self) -> None:
         """Trim whitespace from the beginning and end of each line."""
         self.engine.trim_whitespace()
-        self.console.print("[textman.success]Whitespace trimmed from lines[/]")
+        self.console.print(f"[textman.success]{_('whitespace_trimmed')}[/]")
     
     def cmd_replace(self, find: str, replace: str, *args) -> None:
         """Find and replace text.
@@ -397,7 +381,7 @@ class TerminalUI:
         case_sensitive = "--ignore-case" not in args
         
         self.engine.find_replace(find, replace, case_sensitive=case_sensitive)
-        self.console.print(f"[textman.success]Replaced '{find}' with '{replace}'[/]")
+        self.console.print(f"[textman.success]{_('text_replaced', find=find, replace=replace)}[/]")
     
     def cmd_plugin(self, name: str, *args) -> None:
         """Execute a plugin.
@@ -416,13 +400,13 @@ class TerminalUI:
         
         try:
             result = self.engine.apply_plugin(name, **kwargs)
-            self.console.print(f"[textman.success]Plugin '{name}' executed successfully[/]")
+            self.console.print(f"[textman.success]{_('plugin_executed', name=name)}[/]")
             
         except PluginNotFoundError:
-            self.console.print(f"[textman.error]Plugin not found: {name}[/]")
+            self.console.print(f"[textman.error]{_('plugin_not_found', name=name)}[/]")
             
         except PluginError as e:
-            self.console.print(f"[textman.error]Plugin error: {e}[/]")
+            self.console.print(f"[textman.error]{_('plugin_error', error=str(e))}[/]")
     
     def cmd_list_plugins(self, *args) -> None:
         """List available plugins.
@@ -435,22 +419,22 @@ class TerminalUI:
         plugins = self.engine.list_plugins(details=show_details)
         
         if not plugins:
-            self.console.print("[textman.info]No plugins available[/]")
+            self.console.print(f"[textman.info]{_('no_plugins_available')}[/]")
             return
         
         if show_details:
             # Show detailed plugin information by category
             for category, plugin_list in plugins.items():
-                self.console.print(f"\n[bold]{category} Plugins[/bold]")
+                self.console.print(f"\n[bold]{category} {_('plugins')}[/bold]")
                 
                 table = Table(show_header=True)
-                table.add_column("Name", style="cyan")
-                table.add_column("Description")
-                table.add_column("Version")
-                table.add_column("Status")
+                table.add_column(_("name"), style="cyan")
+                table.add_column(_("description"))
+                table.add_column(_("version"))
+                table.add_column(_("status"))
                 
                 for plugin in plugin_list:
-                    status = "[green]Enabled[/]" if plugin.get("enabled", False) else "[red]Disabled[/]"
+                    status = "[green]" + _("enabled") + "[/]" if plugin.get("enabled", False) else "[red]" + _("disabled") + "[/]"
                     table.add_row(
                         plugin["name"],
                         plugin["description"],
@@ -461,10 +445,10 @@ class TerminalUI:
                 self.console.print(table)
         else:
             # Show simple list of plugin names
-            self.console.print("[bold]Available Plugins[/bold]")
+            self.console.print(f"[bold]{_('available_plugins')}[/bold]")
             
             table = Table(show_header=False)
-            table.add_column("Name", style="cyan")
+            table.add_column(_("name"), style="cyan")
             
             for plugin_name in plugins:
                 table.add_row(plugin_name)
@@ -474,3 +458,42 @@ class TerminalUI:
     def cmd_clear(self) -> None:
         """Clear the screen."""
         self.console.clear()
+    
+    def cmd_language(self, language_code: Optional[str] = None) -> None:
+        """Change the interface language or show available languages.
+        
+        Args:
+            language_code: Optional language code to set
+        """
+        if language_code is None:
+            # Show available languages
+            languages = self.i18n.get_available_languages()
+            
+            self.console.print(f"[bold]{_('available_languages')}[/bold]")
+            
+            table = Table(show_header=False)
+            table.add_column(_("code"), style="cyan")
+            table.add_column(_("name"))
+            
+            current_language = self.i18n.language
+            
+            for code, name in languages.items():
+                if code == current_language:
+                    table.add_row(f"{code} [bold yellow]({_('current')})[/bold yellow]", name)
+                else:
+                    table.add_row(code, name)
+            
+            self.console.print(table)
+            self.console.print(f"\n{_('current_language', language=languages.get(current_language, current_language))}")
+        else:
+            # Set language
+            if self.i18n.set_language(language_code):
+                self.console.print(f"[textman.success]{_('language_changed', language=language_code)}[/]")
+            else:
+                self.console.print(f"[textman.error]{_('language_not_available', language=language_code)}[/]")
+                
+                # Show available languages
+                languages = self.i18n.get_available_languages()
+                self.console.print(f"\n{_('available_languages')}")
+                for code, name in languages.items():
+                    self.console.print(f"  [cyan]{code}[/cyan]: {name}")
