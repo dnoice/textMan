@@ -2,7 +2,7 @@
     "language_name": "English",
     "language_code": "en",
     
-    "welcome_message": "Welcome to textMan - Advanced Text Manipulation Tool",
+    "welcome_message": "Advanced Text Manipulation Tool",
     "help_message": "Type 'help' to see available commands",
     "exit_message": "Exiting textMan. Goodbye!",
     "file_loaded": "Loaded file: {filepath}",
@@ -40,6 +40,7 @@
     "error_file_not_found": "File not found: {filepath}",
     "error_loading_file": "Error loading file: {error}",
     "error_saving_file": "Error saving file: {error}",
+    "error": "Error: {error}",
     
     "stats_characters": "Characters: {count}",
     "stats_characters_no_spaces": "Characters (no spaces): {count}",
@@ -55,8 +56,38 @@
     "plugin_executed": "Plugin '{name}' executed successfully",
     "no_plugins_available": "No plugins available",
     
-    "available_languages": "Available languages:",
+    "available_languages": "Available languages",
     "current_language": "Current language: {language}",
     "language_changed": "Language changed to: {language}",
-    "language_not_available": "Language not available: {language}"
+    "language_not_available": "Language not available: {language}",
+    
+    "available_commands": "Available Commands",
+    "command": "Command",
+    "description": "Description",
+    "name": "Name",
+    "value": "Value",
+    "metric": "Metric",
+    "code": "Code",
+    "current": "current",
+    "text_statistics": "Text Statistics",
+    "minutes": "minutes",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "plugins": "Plugins",
+    "version": "Version",
+    "status": "Status",
+    
+    "text_converted_uppercase": "Text converted to uppercase",
+    "text_converted_lowercase": "Text converted to lowercase",
+    "words_capitalized": "Words capitalized",
+    "lines_sorted": "Lines sorted alphabetically",
+    "lines_sorted_reverse": "Lines sorted in reverse alphabetical order",
+    "duplicate_lines_removed": "Duplicate lines removed",
+    "whitespace_trimmed": "Whitespace trimmed from lines",
+    "text_replaced": "Replaced '{find}' with '{replace}'",
+    
+    "confirm_save_on_exit": "Text has been modified. Save before exiting?",
+    "prompt_enter_filepath": "Enter filepath to save to",
+    "characters_loaded": "characters loaded",
+    "operation_interrupted": "Operation interrupted by user"
 }
