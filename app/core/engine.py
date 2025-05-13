@@ -1,7 +1,7 @@
 """
-TextMan Core Engine
+textMan Core Engine
 ------------------
-The central component of the TextMan application responsible for:
+The central component of the textMan application responsible for:
 1. Managing text content
 2. Handling the plugin system
 3. Managing application state (undo/redo)
@@ -25,7 +25,7 @@ from app.core.exceptions.plugin_exceptions import PluginError, PluginNotFoundErr
 
 
 class TextEngine:
-    """Core engine for the TextMan application.
+    """Core engine for the textMan application.
     
     The TextEngine is responsible for managing text content, handling plugins,
     managing application state, and providing core text manipulation operations.
