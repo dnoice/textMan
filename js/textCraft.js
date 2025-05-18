@@ -1,4 +1,4 @@
-// app.js - Main Application Entry Point
+// textCraft.js - Main Application Entry Point
 import { TextEditor } from './modules/editor.js';
 import { UIController } from './modules/ui-controller.js';
 import { TextProcessor } from './modules/text-processor.js';
