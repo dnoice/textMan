@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextCraft - Modern Text Manipulation</title>
+  <meta name="description" content="TextCraft - A modern tool for manipulating text with powerful features.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/textCraft.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <svg class="logo-icon" viewBox="0 0 24 24" width="28" height="28">
+          <path d="M17.5 4.5c-1.95 0-2.5 1-2.5 1.5 0 0.89 0.5 1.5 1 1.5 1.42 0 2 1.5 2 2.5V12h-6V4.25C12 3.06 13.06 2 14.25 2h5.5C20.94 2 22 3.06 22 4.25v5.5C22 10.94 20.94 12 19.75 12H19V9.5C19 7 17.5 4.5 17.5 4.5zM6.5 4.5C4.83 4.5 3.5 5.83 3.5 7.5V9H2v13h10V9H8.5V7.5C8.5 6.84 8.95 6.28 9.57 6.09L17 4.5H6.5z" fill="currentColor"/>
+        </svg>
+        <h1>textCraft</h1>
+      </div>
+      
+      <div class="tool-groups">
+        <div class="tool-group">
+          <h2>Editor</h2>
+          <button class="tool-btn" data-action="undo" disabled>
+            <i class="fas fa-undo"></i> Undo
+          </button>
+          <button class="tool-btn" data-action="redo" disabled>
+            <i class="fas fa-redo"></i> Redo
+          </button>
+          <button class="tool-btn" data-action="clear">
+            <i class="fas fa-trash-alt"></i> Clear
+          </button>
+          <button class="tool-btn" data-action="copy">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+          <button class="tool-btn" data-action="paste">
+            <i class="fas fa-paste"></i> Paste
+          </button>
+        </div>
+        
+        <div class="tool-group">
+          <h2>Transform</h2>
+          <button class="tool-btn" data-action="lowercase">
+            <i class="fas fa-font"></i> Lowercase
+          </button>
+          <button class="tool-btn" data-action="uppercase">
+            <i class="fas fa-font"></i> Uppercase
+          </button>
+          <button class="tool-btn" data-action="capitalize">
+            <i class="fas fa-font"></i> Capitalize Words
+          </button>
+          <button class="tool-btn" data-action="reverse">
+            <i class="fas fa-exchange-alt"></i> Reverse Text
+          </button>
+        </div>
+        
+        <div class="tool-group">
+          <h2>Lines</h2>
+          <button class="tool-btn" data-action="sort-az">
+            <i class="fas fa-sort-alpha-down"></i> Sort A-Z
+          </button>
+          <button class="tool-btn" data-action="sort-za">
+            <i class="fas fa-sort-alpha-up"></i> Sort Z-A
+          </button>
+          <button class="tool-btn" data-action="remove-duplicates">
+            <i class="fas fa-fingerprint"></i> Remove Duplicates
+          </button>
+          <button class="tool-btn" data-action="remove-empty">
+            <i class="fas fa-ban"></i> Remove Empty Lines
+          </button>
+        </div>
+        
+        <div class="tool-group">
+          <h2>Clean Up</h2>
+          <button class="tool-btn" data-action="trim-whitespace">
+            <i class="fas fa-crop"></i> Trim Whitespace
+          </button>
+          <button class="tool-btn" data-action="remove-spaces">
+            <i class="fas fa-compress"></i> Remove Extra Spaces
+          </button>
+          <button class="tool-btn" data-action="remove-linebreaks">
+            <i class="fas fa-grip-lines"></i> Remove Line Breaks
+          </button>
+          <button class="tool-btn" data-action="fix-paragraphs">
+            <i class="fas fa-paragraph"></i> Fix Paragraphs
+          </button>
+        </div>
+      </div>
+      
+      <div class="sidebar-footer">
+        <button id="theme-toggle">
+          <i class="fas fa-moon"></i> Dark Mode
+        </button>
+        <button id="settings-btn">
+          <i class="fas fa-cog"></i> Settings
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content">
+      <!-- Function Drawer -->
+      <div class="function-drawer closed" id="function-drawer">
+        <!-- Search and Replace Panel -->
+        <div class="drawer-panel" id="search-replace-panel">
+          <h3>Search and Replace</h3>
+          <div class="input-group">
+            <label for="search-input">Search for:</label>
+            <input type="text" id="search-input" placeholder="Enter search term...">
+          </div>
+          <div class="input-group">
+            <label for="replace-input">Replace with:</label>
+            <input type="text" id="replace-input" placeholder="Enter replacement...">
+          </div>
+          <div class="option-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="case-sensitive">
+              Case Sensitive
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="whole-word">
+              Whole Words Only
+            </label>
+          </div>
+          <div class="button-group">
+            <button class="primary-btn" id="replace-btn">Replace</button>
+            <button class="secondary-btn" id="replace-all-btn">Replace All</button>
+          </div>
+        </div>
+        
+        <!-- Add Prefix/Suffix Panel -->
+        <div class="drawer-panel" id="prefix-suffix-panel">
+          <h3>Add Prefix/Suffix</h3>
+          <div class="input-group">
+            <label for="prefix-input">Prefix:</label>
+            <input type="text" id="prefix-input" placeholder="Add text before each line...">
+          </div>
+          <div class="input-group">
+            <label for="suffix-input">Suffix:</label>
+            <input type="text" id="suffix-input" placeholder="Add text after each line...">
+          </div>
+          <div class="button-group">
+            <button class="primary-btn" id="add-prefix-btn">Add Prefix</button>
+            <button class="primary-btn" id="add-suffix-btn">Add Suffix</button>
+            <button class="secondary-btn" id="add-both-btn">Add Both</button>
+          </div>
+        </div>
+        
+        <!-- Filter Lines Panel -->
+        <div class="drawer-panel" id="filter-panel">
+          <h3>Filter Lines</h3>
+          <div class="input-group">
+            <label for="filter-input">Search Term:</label>
+            <input type="text" id="filter-input" placeholder="Enter filter term...">
+          </div>
+          <div class="option-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="filter-case-sensitive">
+              Case Sensitive
+            </label>
+          </div>
+          <div class="button-group">
+            <button class="primary-btn" id="keep-lines-btn">Keep Matching Lines</button>
+            <button class="primary-btn" id="remove-lines-btn">Remove Matching Lines</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Text Editor and Stats -->
+      <div class="editor-container">
+        <div class="toolbar">
+          <button class="toolbar-btn" id="search-replace-btn">
+            <i class="fas fa-search"></i> Search & Replace
+          </button>
+          <button class="toolbar-btn" id="prefix-suffix-btn">
+            <i class="fas fa-plus"></i> Prefix/Suffix
+          </button>
+          <button class="toolbar-btn" id="filter-btn">
+            <i class="fas fa-filter"></i> Filter Lines
+          </button>
+        </div>
+        
+        <div class="editor-wrapper">
+          <textarea id="text-editor" placeholder="Enter or paste your text here..."></textarea>
+        </div>
+        
+        <div class="text-stats">
+          <div class="stat-item">
+            <i class="fas fa-font"></i>
+            <span id="word-count">0 words</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-text-width"></i>
+            <span id="char-count">0 characters</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-align-left"></i>
+            <span id="line-count">0 lines</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-paragraph"></i>
+            <span id="paragraph-count">0 paragraphs</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-book-reader"></i>
+            <span id="reading-time">0 min read</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Toast Messages Container -->
+  <div id="toast-container"></div>
+  
+  <!-- Settings Modal -->
+  <div class="modal" id="settings-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-section">
+          <h3>Editor</h3>
+          <div class="setting-item">
+            <label for="font-size">Font Size</label>
+            <select id="font-size">
+              <option value="12px">Small (12px)</option>
+              <option value="14px" selected>Medium (14px)</option>
+              <option value="16px">Large (16px)</option>
+              <option value="18px">X-Large (18px)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="font-family">Font Family</label>
+            <select id="font-family">
+              <option value="'JetBrains Mono', monospace" selected>JetBrains Mono</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="'Inter', sans-serif">Inter</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-section">
+          <h3>Appearance</h3>
+          <div class="setting-item">
+            <label for="theme-selector">Theme</label>
+            <select id="theme-selector">
+              <option value="light">Light</option>
+              <option value="dark" selected>Dark</option>
+              <option value="high-contrast">High Contrast</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="accent-color">Accent Color</label>
+            <select id="accent-color">
+              <option value="teal">Teal</option>
+              <option value="purple" selected>Purple</option>
+              <option value="blue">Blue</option>
+              <option value="orange">Orange</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-section">
+          <h3>Behavior</h3>
+          <div class="setting-item checkbox-item">
+            <label>
+              <input type="checkbox" id="auto-save" checked>
+              Auto-save content
+            </label>
+          </div>
+          <div class="setting-item checkbox-item">
+            <label>
+              <input type="checkbox" id="real-time-stats" checked>
+              Update stats in real-time
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-btn" id="reset-settings-btn">Reset to Defaults</button>
+        <button class="primary-btn" id="save-settings-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script type="module" src="js/textCraft.js"></script>
+</body>
+</html>
