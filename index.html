@@ -460,16 +460,25 @@
       </aside>
     </main>
 
-    <!-- Help & Tips -->
+    <!-- Enhanced Help Section with Visual Cues -->
     <section class="help-section" aria-label="Help and Instructions">
-      <details class="help-container">
+      <details class="help-container enhanced">
         <summary>
-          <i class="fas fa-question-circle"></i> Help & Keyboard Shortcuts
+          <div class="summary-content">
+            <div class="summary-left">
+              <i class="fas fa-question-circle pulse-icon"></i>
+              <span>Help & Keyboard Shortcuts</span>
+            </div>
+            <div class="summary-right">
+              <span class="click-hint">Click to expand</span>
+              <i class="fas fa-chevron-down expand-icon"></i>
+            </div>
+          </div>
         </summary>
         <div class="help-content">
           <div class="help-grid">
             <div class="help-column">
-              <h4>Editor Shortcuts</h4>
+              <h4><i class="fas fa-keyboard"></i> Editor Shortcuts</h4>
               <ul class="shortcuts-list">
                 <li><kbd>Ctrl</kbd> + <kbd>Z</kbd> - Undo</li>
                 <li><kbd>Ctrl</kbd> + <kbd>Y</kbd> - Redo</li>
@@ -481,7 +490,7 @@
               </ul>
             </div>
             <div class="help-column">
-              <h4>Transform Shortcuts</h4>
+              <h4><i class="fas fa-exchange-alt"></i> Transform Shortcuts</h4>
               <ul class="shortcuts-list">
                 <li><kbd>Ctrl</kbd> + <kbd>L</kbd> - Lowercase</li>
                 <li><kbd>Ctrl</kbd> + <kbd>U</kbd> - Uppercase</li>
@@ -491,19 +500,172 @@
               </ul>
             </div>
             <div class="help-column">
-              <h4>Pro Tips</h4>
+              <h4><i class="fas fa-lightbulb"></i> Pro Tips</h4>
               <ul class="tips-list">
-                <li>Double-click any word to select it</li>
-                <li>Triple-click to select a line</li>
-                <li>Hold <kbd>Shift</kbd> while clicking to select range</li>
-                <li>Drag & drop files into the editor</li>
-                <li>Use regex for advanced find/replace</li>
+                <li><i class="fas fa-mouse"></i> Double-click any word to select it</li>
+                <li><i class="fas fa-mouse"></i> Triple-click to select a line</li>
+                <li><i class="fas fa-hand-pointer"></i> Hold <kbd>Shift</kbd> while clicking to select range</li>
+                <li><i class="fas fa-file-import"></i> Drag & drop files into the editor</li>
+                <li><i class="fas fa-code"></i> Use regex for advanced find/replace</li>
               </ul>
             </div>
           </div>
         </div>
       </details>
     </section>
+
+    <!-- Help Sidebar -->
+    <button id="helpToggle" class="help-toggle-btn" aria-label="Toggle help sidebar" data-tooltip="Help & Tips">
+      <i class="fas fa-question-circle"></i>
+    </button>
+
+    <aside id="helpSidebar" class="help-sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-question-circle"></i> Help Center</h2>
+        <button id="closeSidebar" class="close-sidebar" aria-label="Close sidebar">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="sidebar-content">
+        <div class="help-section-sidebar">
+          <h3><i class="fas fa-rocket"></i> Getting Started</h3>
+          <p>Welcome to textMan! Start typing or paste your text in the editor to begin.</p>
+          <ul>
+            <li>Use the toolbar for quick actions</li>
+            <li>Explore tools in the right panel</li>
+            <li>Try keyboard shortcuts for speed</li>
+          </ul>
+        </div>
+
+        <div class="help-section-sidebar">
+          <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
+          <div class="shortcut-category">
+            <h4>Editor Controls</h4>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+              <span>Undo</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>Y</kbd>
+              <span>Redo</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>A</kbd>
+              <span>Select All</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>S</kbd>
+              <span>Save to File</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>O</kbd>
+              <span>Open File</span>
+            </div>
+          </div>
+          
+          <div class="shortcut-category">
+            <h4>Find & Replace</h4>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>F</kbd>
+              <span>Find</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>H</kbd>
+              <span>Replace</span>
+            </div>
+          </div>
+          
+          <div class="shortcut-category">
+            <h4>Text Transform</h4>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>L</kbd>
+              <span>Lowercase</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>U</kbd>
+              <span>Uppercase</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>T</kbd>
+              <span>Title Case</span>
+            </div>
+          </div>
+          
+          <div class="shortcut-category">
+            <h4>Line Operations</h4>
+            <div class="shortcut-item">
+              <kbd>Ctrl</kbd> + <kbd>D</kbd>
+              <span>Duplicate Line</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Alt</kbd> + <kbd>↑</kbd>
+              <span>Move Line Up</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Alt</kbd> + <kbd>↓</kbd>
+              <span>Move Line Down</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section-sidebar">
+          <h3><i class="fas fa-lightbulb"></i> Pro Tips</h3>
+          <div class="pro-tip">
+            <i class="fas fa-magic"></i>
+            <p>Use Quick Actions for one-click transformations</p>
+          </div>
+          <div class="pro-tip">
+            <i class="fas fa-clock"></i>
+            <p>Your work is auto-saved every 30 seconds</p>
+          </div>
+          <div class="pro-tip">
+            <i class="fas fa-moon"></i>
+            <p>Toggle dark mode for comfortable night editing</p>
+          </div>
+          <div class="pro-tip">
+            <i class="fas fa-code"></i>
+            <p>Enable regex in Find & Replace for powerful searches</p>
+          </div>
+          <div class="pro-tip">
+            <i class="fas fa-file-import"></i>
+            <p>Drag and drop text files directly into the editor</p>
+          </div>
+        </div>
+
+        <div class="help-section-sidebar">
+          <h3><i class="fas fa-tools"></i> Tool Categories</h3>
+          <div class="tool-category-info">
+            <h4><i class="fas fa-bolt"></i> Quick Actions</h4>
+            <p>Most common text operations at your fingertips</p>
+          </div>
+          <div class="tool-category-info">
+            <h4><i class="fas fa-exchange-alt"></i> Transform</h4>
+            <p>Change text case, encoding, and format</p>
+          </div>
+          <div class="tool-category-info">
+            <h4><i class="fas fa-sort"></i> Sort & Order</h4>
+            <p>Organize lines alphabetically, by length, or randomly</p>
+          </div>
+          <div class="tool-category-info">
+            <h4><i class="fas fa-search"></i> Find & Replace</h4>
+            <p>Search and replace with regex support</p>
+          </div>
+          <div class="tool-category-info">
+            <h4><i class="fas fa-filter"></i> Filter Lines</h4>
+            <p>Keep or remove lines based on content</p>
+          </div>
+          <div class="tool-category-info">
+            <h4><i class="fas fa-tools"></i> Advanced Tools</h4>
+            <p>JSON formatting, word frequency, and more</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="sidebar-footer">
+        <p>textMan v2.0 - Made with <i class="fas fa-heart"></i></p>
+      </div>
+    </aside>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
