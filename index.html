@@ -212,39 +212,44 @@
             <i class="fas fa-chevron-down toggle-icon"></i>
           </h3>
           <div class="tool-content">
-            <button class="tool-btn" id="toLowerCaseButton">
-              <i class="fas fa-font"></i> Lowercase
-            </button>
-            <button class="tool-btn" id="toUpperCaseButton">
-              <i class="fas fa-font"></i> UPPERCASE
-            </button>
-            <button class="tool-btn" id="capitalizeWordsButton">
-              <i class="fas fa-heading"></i> Title Case
-            </button>
-            <button class="tool-btn" id="sentenceCaseButton">
-              <i class="fas fa-paragraph"></i> Sentence case
-            </button>
-            <button class="tool-btn" id="alternatingCaseButton">
-              <i class="fas fa-random"></i> aLtErNaTiNg CaSe
-            </button>
-            <button class="tool-btn" id="invertCaseButton">
-              <i class="fas fa-sync"></i> iNVERT cASE
-            </button>
-            <button class="tool-btn" id="camelCaseButton">
-              <i class="fas fa-code"></i> camelCase
-            </button>
-            <button class="tool-btn" id="snakeCaseButton">
-              <i class="fas fa-underline"></i> snake_case
-            </button>
-            <button class="tool-btn" id="kebabCaseButton">
-              <i class="fas fa-minus"></i> kebab-case
-            </button>
-            <button class="tool-btn" id="base64EncodeButton">
-              <i class="fas fa-lock"></i> Base64 Encode
-            </button>
-            <button class="tool-btn" id="base64DecodeButton">
-              <i class="fas fa-unlock"></i> Base64 Decode
-            </button>
+            <div class="tool-button-grid">
+              <button class="tool-btn" id="toLowerCaseButton" title="Convert to lowercase">
+                <i class="fas fa-font"></i> lowercase
+              </button>
+              <button class="tool-btn" id="toUpperCaseButton" title="Convert to UPPERCASE">
+                <i class="fas fa-font"></i> UPPERCASE
+              </button>
+              <button class="tool-btn" id="capitalizeWordsButton" title="Title Case">
+                <i class="fas fa-heading"></i> Title Case
+              </button>
+              <button class="tool-btn" id="sentenceCaseButton" title="Sentence case">
+                <i class="fas fa-paragraph"></i> Sentence
+              </button>
+              <button class="tool-btn" id="camelCaseButton" title="camelCase">
+                <i class="fas fa-code"></i> camelCase
+              </button>
+              <button class="tool-btn" id="snakeCaseButton" title="snake_case">
+                <i class="fas fa-underline"></i> snake_case
+              </button>
+              <button class="tool-btn" id="kebabCaseButton" title="kebab-case">
+                <i class="fas fa-minus"></i> kebab-case
+              </button>
+              <button class="tool-btn" id="alternatingCaseButton" title="aLtErNaTiNg">
+                <i class="fas fa-random"></i> aLtErNaTe
+              </button>
+              <button class="tool-btn" id="invertCaseButton" title="iNVERT cASE">
+                <i class="fas fa-sync"></i> iNVERT
+              </button>
+            </div>
+            
+            <div class="tool-button-row">
+              <button class="tool-btn primary" id="base64EncodeButton">
+                <i class="fas fa-lock"></i> Base64 Encode
+              </button>
+              <button class="tool-btn primary" id="base64DecodeButton">
+                <i class="fas fa-unlock"></i> Base64 Decode
+              </button>
+            </div>
           </div>
         </div>
 
@@ -255,30 +260,32 @@
             <i class="fas fa-chevron-down toggle-icon"></i>
           </h3>
           <div class="tool-content">
-            <button class="tool-btn" id="sortLinesAZButton">
-              <i class="fas fa-sort-alpha-down"></i> A → Z
-            </button>
-            <button class="tool-btn" id="sortLinesZAButton">
-              <i class="fas fa-sort-alpha-up"></i> Z → A
-            </button>
-            <button class="tool-btn" id="sortLinesShortestButton">
-              <i class="fas fa-sort-amount-down"></i> Short → Long
-            </button>
-            <button class="tool-btn" id="sortLinesLongestButton">
-              <i class="fas fa-sort-amount-up"></i> Long → Short
-            </button>
-            <button class="tool-btn" id="sortNumericalButton">
-              <i class="fas fa-sort-numeric-down"></i> Numerical
-            </button>
-            <button class="tool-btn" id="shuffleLinesButton">
-              <i class="fas fa-random"></i> Shuffle
-            </button>
-            <button class="tool-btn" id="reverseTextButton">
-              <i class="fas fa-backward"></i> Reverse Text
-            </button>
-            <button class="tool-btn" id="reverseLinesButton">
-              <i class="fas fa-sort"></i> Reverse Lines
-            </button>
+            <div class="tool-button-grid">
+              <button class="tool-btn" id="sortLinesAZButton" title="Sort A to Z">
+                <i class="fas fa-sort-alpha-down"></i> A → Z
+              </button>
+              <button class="tool-btn" id="sortLinesZAButton" title="Sort Z to A">
+                <i class="fas fa-sort-alpha-up"></i> Z → A
+              </button>
+              <button class="tool-btn" id="sortLinesShortestButton" title="Sort by length ascending">
+                <i class="fas fa-sort-amount-down"></i> Short → Long
+              </button>
+              <button class="tool-btn" id="sortLinesLongestButton" title="Sort by length descending">
+                <i class="fas fa-sort-amount-up"></i> Long → Short
+              </button>
+              <button class="tool-btn" id="sortNumericalButton" title="Sort numerically">
+                <i class="fas fa-sort-numeric-down"></i> Numerical
+              </button>
+              <button class="tool-btn" id="shuffleLinesButton" title="Randomize order">
+                <i class="fas fa-random"></i> Shuffle
+              </button>
+              <button class="tool-btn" id="reverseTextButton" title="Reverse entire text">
+                <i class="fas fa-backward"></i> Reverse Text
+              </button>
+              <button class="tool-btn" id="reverseLinesButton" title="Reverse line order">
+                <i class="fas fa-sort"></i> Reverse Lines
+              </button>
+            </div>
           </div>
         </div>
 
@@ -291,23 +298,24 @@
           <div class="tool-content">
             <div class="input-group">
               <input type="text" id="findInput" placeholder="Find..." class="tool-input">
-              <div class="checkbox-group">
-                <label>
-                  <input type="checkbox" id="caseSensitive">
-                  <span>Case sensitive</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="wholeWord">
-                  <span>Whole word</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="useRegex">
-                  <span>Regex</span>
-                </label>
-              </div>
               <button class="tool-btn primary" id="findButton">
                 <i class="fas fa-search"></i> Find All
               </button>
+            </div>
+            
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" id="caseSensitive">
+                <span>Case sensitive</span>
+              </label>
+              <label>
+                <input type="checkbox" id="wholeWord">
+                <span>Whole word</span>
+              </label>
+              <label>
+                <input type="checkbox" id="useRegex">
+                <span>Regex</span>
+              </label>
             </div>
             
             <div class="input-group">
@@ -344,49 +352,52 @@
           <div class="tool-content">
             <div class="input-group">
               <input type="text" id="prefixInput" placeholder="Prefix..." class="tool-input">
-              <button class="tool-btn" id="addPrefixButton">
+              <button class="tool-btn primary" id="addPrefixButton">
                 <i class="fas fa-plus"></i> Add Prefix
               </button>
             </div>
             
             <div class="input-group">
               <input type="text" id="suffixInput" placeholder="Suffix..." class="tool-input">
-              <button class="tool-btn" id="addSuffixButton">
+              <button class="tool-btn primary" id="addSuffixButton">
                 <i class="fas fa-plus"></i> Add Suffix
               </button>
             </div>
             
             <div class="input-group">
               <input type="text" id="wrapInput" placeholder="Wrap with..." class="tool-input">
-              <button class="tool-btn" id="wrapLinesButton">
+              <button class="tool-btn primary" id="wrapLinesButton">
                 <i class="fas fa-quote-right"></i> Wrap Lines
               </button>
             </div>
             
-            <div class="button-group">
-              <button class="tool-btn" id="removeDuplicatesButton">
-                <i class="fas fa-clone"></i> Remove Duplicates
+            <h4 style="margin: var(--spacing-md) 0 var(--spacing-sm); font-size: var(--font-size-sm); color: var(--text-secondary);">
+              <i class="fas fa-eraser"></i> Remove Options
+            </h4>
+            <div class="tool-button-grid">
+              <button class="tool-btn" id="removeDuplicatesButton" title="Remove duplicate lines">
+                <i class="fas fa-clone"></i> Duplicates
               </button>
-              <button class="tool-btn" id="removeEmptyLinesButton">
-                <i class="fas fa-eraser"></i> Remove Empty
+              <button class="tool-btn" id="removeEmptyLinesButton" title="Remove empty lines">
+                <i class="fas fa-eraser"></i> Empty Lines
               </button>
-              <button class="tool-btn" id="removeExtraSpacesButton">
-                <i class="fas fa-compress"></i> Remove Extra Spaces
+              <button class="tool-btn" id="removeExtraSpacesButton" title="Remove extra spaces">
+                <i class="fas fa-compress"></i> Extra Spaces
               </button>
-              <button class="tool-btn" id="removeAllSpacesButton">
-                <i class="fas fa-times"></i> Remove All Spaces
+              <button class="tool-btn" id="removeAllSpacesButton" title="Remove all spaces">
+                <i class="fas fa-times"></i> All Spaces
               </button>
-              <button class="tool-btn" id="removeNumbersButton">
-                <i class="fas fa-hashtag"></i> Remove Numbers
+              <button class="tool-btn" id="removeNumbersButton" title="Remove numbers">
+                <i class="fas fa-hashtag"></i> Numbers
               </button>
-              <button class="tool-btn" id="removePunctuationButton">
-                <i class="fas fa-exclamation"></i> Remove Punctuation
+              <button class="tool-btn" id="removePunctuationButton" title="Remove punctuation">
+                <i class="fas fa-exclamation"></i> Punctuation
               </button>
-              <button class="tool-btn" id="removeLineBreaksButton">
-                <i class="fas fa-align-justify"></i> Remove Line Breaks
+              <button class="tool-btn" id="removeLineBreaksButton" title="Remove line breaks">
+                <i class="fas fa-align-justify"></i> Line Breaks
               </button>
-              <button class="tool-btn" id="removeAccentsButton">
-                <i class="fas fa-language"></i> Remove Accents
+              <button class="tool-btn" id="removeAccentsButton" title="Remove accents">
+                <i class="fas fa-language"></i> Accents
               </button>
             </div>
           </div>
@@ -401,19 +412,22 @@
           <div class="tool-content">
             <div class="input-group">
               <input type="text" id="keepLinesInput" placeholder="Keep lines containing..." class="tool-input">
-              <button class="tool-btn" id="keepLinesButton">
+              <button class="tool-btn primary" id="keepLinesButton">
                 <i class="fas fa-filter"></i> Keep Lines
               </button>
             </div>
             
             <div class="input-group">
               <input type="text" id="removeLinesInput" placeholder="Remove lines containing..." class="tool-input">
-              <button class="tool-btn" id="removeLinesButton">
+              <button class="tool-btn primary" id="removeLinesButton">
                 <i class="fas fa-filter"></i> Remove Lines
               </button>
             </div>
             
-            <div class="button-group">
+            <h4 style="margin: var(--spacing-md) 0 var(--spacing-sm); font-size: var(--font-size-sm); color: var(--text-secondary);">
+              <i class="fas fa-search-plus"></i> Extract Options
+            </h4>
+            <div class="tool-button-row">
               <button class="tool-btn" id="extractUrlsButton">
                 <i class="fas fa-link"></i> Extract URLs
               </button>
@@ -434,27 +448,29 @@
             <i class="fas fa-chevron-down toggle-icon"></i>
           </h3>
           <div class="tool-content">
-            <button class="tool-btn" id="jsonFormatButton">
-              <i class="fas fa-code"></i> Format JSON
-            </button>
-            <button class="tool-btn" id="jsonMinifyButton">
-              <i class="fas fa-compress"></i> Minify JSON
-            </button>
-            <button class="tool-btn" id="csvToTableButton">
-              <i class="fas fa-table"></i> CSV to Table
-            </button>
-            <button class="tool-btn" id="markdownPreviewButton">
-              <i class="fab fa-markdown"></i> Markdown Preview
-            </button>
-            <button class="tool-btn" id="generateLoremButton">
-              <i class="fas fa-paragraph"></i> Lorem Ipsum
-            </button>
-            <button class="tool-btn" id="wordFrequencyButton">
-              <i class="fas fa-chart-bar"></i> Word Frequency
-            </button>
-            <button class="tool-btn" id="textDiffButton">
-              <i class="fas fa-code-branch"></i> Text Diff
-            </button>
+            <div class="tool-button-grid">
+              <button class="tool-btn" id="jsonFormatButton" title="Format JSON">
+                <i class="fas fa-code"></i> Format JSON
+              </button>
+              <button class="tool-btn" id="jsonMinifyButton" title="Minify JSON">
+                <i class="fas fa-compress"></i> Minify JSON
+              </button>
+              <button class="tool-btn" id="csvToTableButton" title="Convert CSV to table">
+                <i class="fas fa-table"></i> CSV → Table
+              </button>
+              <button class="tool-btn" id="markdownPreviewButton" title="Preview markdown">
+                <i class="fab fa-markdown"></i> MD Preview
+              </button>
+              <button class="tool-btn" id="generateLoremButton" title="Generate lorem ipsum">
+                <i class="fas fa-paragraph"></i> Lorem Ipsum
+              </button>
+              <button class="tool-btn" id="wordFrequencyButton" title="Analyze word frequency">
+                <i class="fas fa-chart-bar"></i> Word Freq
+              </button>
+              <button class="tool-btn" id="textDiffButton" title="Compare texts">
+                <i class="fas fa-code-branch"></i> Text Diff
+              </button>
+            </div>
           </div>
         </div>
       </aside>
