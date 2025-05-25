@@ -1,4 +1,4 @@
-// Enhanced textMan v2.0 - Advanced Text Manipulation Suite
+// Enhanced textMan v3.0 - Sidebar Edition
 
 $(document).ready(function () {
   // ===== State Management =====
@@ -7,6 +7,8 @@ $(document).ready(function () {
     redoStack: [],
     currentMode: 'plain',
     isDarkTheme: localStorage.getItem('textman-theme') === 'dark',
+    isSidebarPinned: localStorage.getItem('textman-sidebar-pinned') === 'true',
+    isSidebarOpen: true,
     findMatches: [],
     currentMatchIndex: -1,
     autoSaveInterval: null
@@ -16,6 +18,7 @@ $(document).ready(function () {
   const MAX_UNDO_STACK = 50;
   const AUTOSAVE_DELAY = 30000; // 30 seconds
   const TOAST_DURATION = 3000;
+  const MOBILE_BREAKPOINT = 768;
 
   // ===== DOM Elements Cache =====
   const elements = {
@@ -34,7 +37,15 @@ $(document).ready(function () {
     progressFill: $('#progressBar .progress-fill'),
     contextMenu: $('#contextMenu'),
     findResults: $('#findResults'),
-    fileInput: $('#fileInput')
+    fileInput: $('#fileInput'),
+    sidebar: $('#toolsSidebar'),
+    sidebarToggle: $('#sidebarToggle'),
+    pinButton: $('#pinSidebar'),
+    helpToggle: $('#helpToggle'),
+    helpModal: $('#helpModal'),
+    quickActionsBar: $('#quickActionsBar'),
+    quickActionsToggle: $('#quickActionsToggle'),
+    toolSearch: $('#toolSearch')
   };
 
   // ===== Initialization =====
@@ -46,7 +57,9 @@ $(document).ready(function () {
     initializeEventListeners();
     initializeKeyboardShortcuts();
     initializeCollapsibles();
-    initializeHelpSystem();
+    initializeSidebar();
+    initializeHelpModal();
+    initializeQuickActions();
     setupAutoSave();
     restoreLastSession();
     showWelcomeMessage();
@@ -69,6 +82,132 @@ $(document).ready(function () {
     applyTheme();
     showToast('Theme changed', 'info');
   });
+
+  // ===== Sidebar Management =====
+  function initializeSidebar() {
+    // Apply saved pin state
+    if (state.isSidebarPinned) {
+      elements.pinButton.addClass('pinned');
+    }
+
+    // Set initial sidebar state
+    if (!state.isSidebarPinned && window.innerWidth > MOBILE_BREAKPOINT) {
+      elements.sidebar.addClass('collapsed');
+      state.isSidebarOpen = false;
+    }
+
+    // Sidebar toggle
+    elements.sidebarToggle.click(toggleSidebar);
+
+    // Pin button
+    elements.pinButton.click(function() {
+      state.isSidebarPinned = !state.isSidebarPinned;
+      $(this).toggleClass('pinned');
+      localStorage.setItem('textman-sidebar-pinned', state.isSidebarPinned);
+      
+      if (state.isSidebarPinned) {
+        showToast('Sidebar pinned', 'info');
+      } else {
+        showToast('Sidebar unpinned', 'info');
+      }
+    });
+
+    // Auto-close sidebar on mobile after tool use
+    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+      $('.tool-btn, .quick-btn').click(function() {
+        if (!state.isSidebarPinned) {
+          setTimeout(() => {
+            elements.sidebar.addClass('collapsed');
+            elements.sidebarToggle.removeClass('active');
+            state.isSidebarOpen = false;
+          }, 500);
+        }
+      });
+    }
+
+    // Tool search functionality
+    elements.toolSearch.on('input', debounce(function() {
+      const searchTerm = $(this).val().toLowerCase();
+      filterTools(searchTerm);
+    }, 300));
+  }
+
+  function toggleSidebar() {
+    state.isSidebarOpen = !state.isSidebarOpen;
+    elements.sidebar.toggleClass('collapsed');
+    elements.sidebarToggle.toggleClass('active');
+  }
+
+  function filterTools(searchTerm) {
+    if (!searchTerm) {
+      $('.tool-section').show();
+      $('.tool-btn, .quick-btn').show();
+      return;
+    }
+
+    $('.tool-section').each(function() {
+      const section = $(this);
+      let hasVisibleTools = false;
+
+      section.find('.tool-btn, .quick-btn').each(function() {
+        const button = $(this);
+        const text = button.text().toLowerCase();
+        const title = button.attr('title') || '';
+        
+        if (text.includes(searchTerm) || title.toLowerCase().includes(searchTerm)) {
+          button.show();
+          hasVisibleTools = true;
+        } else {
+          button.hide();
+        }
+      });
+
+      if (hasVisibleTools) {
+        section.show();
+        section.removeClass('collapsed');
+      } else {
+        section.hide();
+      }
+    });
+  }
+
+  // ===== Quick Actions Bar =====
+  function initializeQuickActions() {
+    elements.quickActionsToggle.click(function() {
+      elements.quickActionsBar.slideToggle(200);
+      $(this).toggleClass('active');
+    });
+
+    $('.quick-action-btn').click(function() {
+      const action = $(this).data('action');
+      handleQuickAction(action);
+    });
+  }
+
+  // ===== Help Modal =====
+  function initializeHelpModal() {
+    elements.helpToggle.click(function() {
+      elements.helpModal.fadeIn(300);
+    });
+
+    $('#closeHelp').click(function() {
+      elements.helpModal.fadeOut(300);
+    });
+
+    // Close on outside click
+    elements.helpModal.click(function(e) {
+      if ($(e.target).is('.help-modal')) {
+        elements.helpModal.fadeOut(300);
+      }
+    });
+
+    // Close on ESC
+    $(document).on('keydown', function(e) {
+      if (e.key === 'Escape' && elements.helpModal.is(':visible')) {
+        elements.helpModal.fadeOut(300);
+      }
+    });
+  }
 
   // ===== Line Numbers =====
   function updateLineNumbers() {
@@ -105,7 +244,7 @@ $(document).ready(function () {
     const readingTime = Math.ceil(wordCount / 200);
     elements.readingTime.text(`${readingTime} min read`);
     
-    // Simple language detection (can be enhanced)
+    // Simple language detection
     const language = detectLanguage(text);
     elements.languageDetect.text(language);
   }
@@ -898,11 +1037,18 @@ $(document).ready(function () {
   }
 
   function showTransformMenu() {
-    // Scroll to transform section
-    $('.tool-section').eq(1).find('.section-toggle').click();
-    $('html, body').animate({
-      scrollTop: $('.tool-section').eq(1).offset().top - 20
-    }, 500);
+    // Open sidebar and scroll to transform section
+    if (elements.sidebar.hasClass('collapsed')) {
+      toggleSidebar();
+    }
+    
+    setTimeout(() => {
+      const transformSection = $('.tool-section').eq(1);
+      transformSection.removeClass('collapsed');
+      $('.sidebar-content').animate({
+        scrollTop: transformSection.position().top
+      }, 500);
+    }, 300);
   }
 
   // ===== Keyboard Shortcuts =====
@@ -940,10 +1086,16 @@ $(document).ready(function () {
             break;
           case 'f':
             e.preventDefault();
+            if (elements.sidebar.hasClass('collapsed')) {
+              toggleSidebar();
+            }
             $('#findInput').focus();
             break;
           case 'h':
             e.preventDefault();
+            if (elements.sidebar.hasClass('collapsed')) {
+              toggleSidebar();
+            }
             $('#replaceInput').focus();
             break;
           case 'l':
@@ -962,6 +1114,10 @@ $(document).ready(function () {
             e.preventDefault();
             duplicateCurrentLine();
             break;
+          case 'b':
+            e.preventDefault();
+            toggleSidebar();
+            break;
         }
       }
 
@@ -969,6 +1125,13 @@ $(document).ready(function () {
       if (alt && (key === 'arrowup' || key === 'arrowdown')) {
         e.preventDefault();
         moveCurrentLine(key === 'arrowup' ? -1 : 1);
+      }
+
+      // ESC to close help modal
+      if (key === 'escape') {
+        if (elements.helpModal.is(':visible')) {
+          elements.helpModal.fadeOut(300);
+        }
       }
     });
   }
@@ -1106,7 +1269,7 @@ $(document).ready(function () {
     const now = new Date().toDateString();
     
     if (lastVisit !== now) {
-      showToast('Welcome to textMan v2.0! 🎉', 'success', 5000);
+      showToast('Welcome to textMan v3.0! 🎉', 'success', 5000);
       localStorage.setItem('textman-last-visit', now);
     }
   }
@@ -1144,130 +1307,16 @@ $(document).ready(function () {
     }
   });
 
-  // ===== Help System =====
-  function initializeHelpSystem() {
-    const $helpToggle = $('#helpToggle');
-    const $helpSidebar = $('#helpSidebar');
-    const $closeSidebar = $('#closeSidebar');
-    const $helpContainer = $('.help-container.enhanced');
-    
-    // Sidebar toggle
-    $helpToggle.click(function() {
-      $helpSidebar.addClass('active');
-      $('body').css('overflow', 'hidden'); // Prevent scrolling when sidebar is open
-    });
-    
-    // Close sidebar
-    $closeSidebar.click(function() {
-      $helpSidebar.removeClass('active');
-      $('body').css('overflow', '');
-    });
-    
-    // Close sidebar when clicking outside (on mobile)
-    $helpSidebar.click(function(e) {
-      if ($(e.target).is('.help-sidebar::before')) {
-        $helpSidebar.removeClass('active');
-        $('body').css('overflow', '');
-      }
-    });
-    
-    // ESC key to close sidebar
-    $(document).on('keydown', function(e) {
-      if (e.key === 'Escape' && $helpSidebar.hasClass('active')) {
-        $helpSidebar.removeClass('active');
-        $('body').css('overflow', '');
-      }
-    });
-    
-    // Enhanced help container animations
-    $helpContainer.on('toggle', function() {
-      if (this.open) {
-        $(this).find('.click-hint').fadeOut(200);
-      } else {
-        $(this).find('.click-hint').fadeIn(200);
-      }
-    });
-    
-    // Smooth scroll to help sections from sidebar
-    $('.help-section-sidebar h4').css('cursor', 'pointer').click(function() {
-      const targetSection = $(this).text().toLowerCase();
-      
-      // Close sidebar
-      $helpSidebar.removeClass('active');
-      $('body').css('overflow', '');
-      
-      // Find and scroll to the corresponding tool section
-      $('.tool-section h3').each(function() {
-        if ($(this).text().toLowerCase().includes(targetSection)) {
-          $('html, body').animate({
-            scrollTop: $(this).parent().offset().top - 100
-          }, 500);
-          
-          // Flash the section
-          const $section = $(this).parent();
-          $section.addClass('highlight-flash');
-          setTimeout(() => $section.removeClass('highlight-flash'), 1000);
-          
-          return false; // Break the loop
-        }
-      });
-    });
-    
-    // Animate help icon on page load
-    setTimeout(() => {
-      $helpToggle.addClass('attention-bounce');
-      setTimeout(() => $helpToggle.removeClass('attention-bounce'), 3000);
-    }, 2000);
-  }
+  // ===== Window Resize Handler =====
+  $(window).resize(debounce(function() {
+    // Auto-close sidebar on mobile if not pinned
+    if (window.innerWidth <= MOBILE_BREAKPOINT && !state.isSidebarPinned && state.isSidebarOpen) {
+      elements.sidebar.addClass('collapsed');
+      elements.sidebarToggle.removeClass('active');
+      state.isSidebarOpen = false;
+    }
+  }, 250));
 
   // ===== Initialize Everything =====
   init();
 });
-
-// Add necessary styles for animations
-const style = document.createElement('style');
-style.textContent = `
-  #notepad.drag-over {
-    background-color: rgba(107, 187, 140, 0.1);
-    border-color: #6bbb8c;
-  }
-  
-  .highlight-flash {
-    animation: flash 1s ease-out;
-  }
-  
-  @keyframes flash {
-    0%, 100% { background-color: inherit; }
-    50% { background-color: rgba(107, 187, 140, 0.1); }
-  }
-  
-  .attention-bounce {
-    animation: attentionBounce 0.5s ease-out 3;
-  }
-  
-  @keyframes attentionBounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-  }
-  
-  /* Overlay for sidebar on mobile */
-  @media (max-width: 768px) {
-    .help-sidebar.active::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: -1;
-      animation: fadeIn 0.3s ease-out;
-    }
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-`;
-document.head.appendChild(style);
