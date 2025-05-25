@@ -1,713 +1,1158 @@
-// js/main.js (v1.2 - Refactored jQuery Implementation)
+// Enhanced textMan v2.0 - Advanced Text Manipulation Suite
 
 $(document).ready(function () {
-  // --- Cache jQuery Selections ---
-  // Cache frequently used elements to avoid repeated DOM lookups
-  const $notepad = $("#notepad");
-  const $toastContainer = $("#toast-container");
-  const $undoButton = $("#undoButton");
-  const $redoButton = $("#redoButton");
+  // ===== State Management =====
+  const state = {
+    undoStack: [''],
+    redoStack: [],
+    currentMode: 'plain',
+    isDarkTheme: localStorage.getItem('textman-theme') === 'dark',
+    findMatches: [],
+    currentMatchIndex: -1,
+    autoSaveInterval: null
+  };
 
-  // Stat Elements
-  const $wordCountEl = $("#wordCount");
-  const $charCountEl = $("#charCount");
-  const $sentenceCountEl = $("#sentenceCount");
-  const $paragraphCountEl = $("#paragraphCount");
-  const $avgWordLengthEl = $("#avgWordLength");
-  const $readingTimeEl = $("#readingTime");
+  // ===== Constants =====
+  const MAX_UNDO_STACK = 50;
+  const AUTOSAVE_DELAY = 30000; // 30 seconds
+  const TOAST_DURATION = 3000;
 
-  // Input Fields (cache if used repeatedly, otherwise select inside handler)
-  const $prefixInput = $("#prefixInput");
-  const $suffixInput = $("#suffixInput");
-  const $searchInput = $("#searchInput");
-  const $replaceInput = $("#replaceInput");
-  const $keepLinesInput = $("#keepLinesInput");
-  const $removeLinesInput = $("#removeLinesInput");
+  // ===== DOM Elements Cache =====
+  const elements = {
+    notepad: $('#notepad'),
+    lineNumbers: $('#lineNumbers'),
+    wordCount: $('#wordCount'),
+    charCount: $('#charCount'),
+    lineCount: $('#lineCount'),
+    paragraphCount: $('#paragraphCount'),
+    readingTime: $('#readingTime'),
+    languageDetect: $('#languageDetect'),
+    undoButton: $('#undoButton'),
+    redoButton: $('#redoButton'),
+    themeToggle: $('#themeToggle'),
+    progressBar: $('#progressBar'),
+    progressFill: $('#progressBar .progress-fill'),
+    contextMenu: $('#contextMenu'),
+    findResults: $('#findResults'),
+    fileInput: $('#fileInput')
+  };
 
-  // --- State Management ---
-  const logs = []; // For logging actions and errors
-  let undoStack = [$notepad.val()]; // Initialize with current (potentially empty) state
-  let redoStack = [];
-  const MAX_UNDO_STACK_SIZE = 100; // Limit memory usage
-
-  // --- Logging Function ---
-  function log(type, message, data = {}) {
-    const timestamp = new Date().toISOString();
-    // Basic input sanitization for logging data to prevent injection issues if logs were displayed directly
-    const sanitizedData = JSON.parse(JSON.stringify(data));
-    logs.push({ timestamp, type, message, data: sanitizedData });
-    // Optional: Output logs to console for debugging during development
-    // if (type === 'ERROR') console.error(`[${type}] ${timestamp}: ${message}`, data);
-    // else if (type === 'WARN') console.warn(`[${type}] ${timestamp}: ${message}`, data);
-    // else console.log(`[${type}] ${timestamp}: ${message}`, data);
+  // ===== Initialization =====
+  function init() {
+    applyTheme();
+    updateLineNumbers();
+    updateStats();
+    updateUndoRedoButtons();
+    initializeEventListeners();
+    initializeKeyboardShortcuts();
+    initializeCollapsibles();
+    setupAutoSave();
+    restoreLastSession();
+    showWelcomeMessage();
   }
 
-  // --- Toast Notification Function ---
-  // Enhanced to support types (requires corresponding CSS)
-  function showToast(message, type = "info", duration = 3000) {
-    // Basic sanitization for display
-    const cleanMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    // Create toast element with type class (e.g., .toast.success, .toast.error)
-    const $toast = $(
-      `<div class="toast ${type}"><i class="fas ${
-        type === "success"
-          ? "fa-check-circle"
-          : type === "error"
-          ? "fa-times-circle"
-          : "fa-info-circle"
-      }"></i> ${cleanMessage}</div>`
-    );
-    $toastContainer.append($toast);
+  // ===== Theme Management =====
+  function applyTheme() {
+    if (state.isDarkTheme) {
+      $('body').attr('data-theme', 'dark');
+      elements.themeToggle.html('<i class="fas fa-sun"></i>');
+    } else {
+      $('body').removeAttr('data-theme');
+      elements.themeToggle.html('<i class="fas fa-moon"></i>');
+    }
+  }
 
-    // Animate in (using jQuery's fadeIn/css or adding a class)
-    $toast.css({ opacity: 0, transform: "translateX(100%)" }).animate(
-      {
-        opacity: 1,
-        transform: "translateX(0)",
-      },
-      500 // Animation duration
-    );
+  elements.themeToggle.click(function() {
+    state.isDarkTheme = !state.isDarkTheme;
+    localStorage.setItem('textman-theme', state.isDarkTheme ? 'dark' : 'light');
+    applyTheme();
+    showToast('Theme changed', 'info');
+  });
 
-    // Automatically remove after duration
-    setTimeout(function () {
-      $toast.animate(
-        {
-          opacity: 0,
-          transform: "translateX(100%)",
-        },
-        500, // Animation duration
-        function () {
-          $(this).remove();
-        }
-      );
+  // ===== Line Numbers =====
+  function updateLineNumbers() {
+    const lines = elements.notepad.val().split('\n');
+    let lineNumbersHtml = '';
+    for (let i = 1; i <= lines.length; i++) {
+      lineNumbersHtml += `${i}<br>`;
+    }
+    elements.lineNumbers.html(lineNumbersHtml);
+  }
+
+  // ===== Statistics =====
+  function updateStats() {
+    const text = elements.notepad.val();
+    
+    // Character count
+    const charCount = text.length;
+    elements.charCount.text(`${charCount} characters`);
+    
+    // Word count
+    const words = text.match(/\b[\w']+\b/g) || [];
+    const wordCount = words.length;
+    elements.wordCount.text(`${wordCount} words`);
+    
+    // Line count
+    const lines = text.split('\n');
+    elements.lineCount.text(`${lines.length} lines`);
+    
+    // Paragraph count
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
+    elements.paragraphCount.text(`${paragraphs.length} paragraphs`);
+    
+    // Reading time (200 WPM average)
+    const readingTime = Math.ceil(wordCount / 200);
+    elements.readingTime.text(`${readingTime} min read`);
+    
+    // Simple language detection (can be enhanced)
+    const language = detectLanguage(text);
+    elements.languageDetect.text(language);
+  }
+
+  function detectLanguage(text) {
+    // Simple heuristic - can be replaced with proper library
+    const patterns = {
+      'English': /\b(the|is|and|of|to|in|that|it|with|for)\b/gi,
+      'Spanish': /\b(el|la|de|que|y|en|un|por|con|para)\b/gi,
+      'French': /\b(le|de|la|et|en|un|que|pour|dans|ce)\b/gi,
+      'German': /\b(der|die|das|und|in|den|von|zu|mit|auf)\b/gi
+    };
+    
+    let maxCount = 0;
+    let detectedLang = 'Unknown';
+    
+    for (const [lang, pattern] of Object.entries(patterns)) {
+      const matches = text.match(pattern) || [];
+      if (matches.length > maxCount) {
+        maxCount = matches.length;
+        detectedLang = lang;
+      }
+    }
+    
+    return detectedLang;
+  }
+
+  // ===== Undo/Redo System =====
+  function saveState(action = 'user action') {
+    const currentText = elements.notepad.val();
+    
+    if (state.undoStack[state.undoStack.length - 1] !== currentText) {
+      state.undoStack.push(currentText);
+      state.redoStack = [];
+      
+      if (state.undoStack.length > MAX_UNDO_STACK) {
+        state.undoStack.shift();
+      }
+      
+      updateUndoRedoButtons();
+      console.log(`State saved: ${action}`);
+    }
+  }
+
+  function updateUndoRedoButtons() {
+    elements.undoButton.prop('disabled', state.undoStack.length <= 1);
+    elements.redoButton.prop('disabled', state.redoStack.length === 0);
+  }
+
+  function undo() {
+    if (state.undoStack.length > 1) {
+      state.redoStack.push(state.undoStack.pop());
+      const previousState = state.undoStack[state.undoStack.length - 1];
+      elements.notepad.val(previousState);
+      updateStats();
+      updateLineNumbers();
+      updateUndoRedoButtons();
+      showToast('Undo successful', 'success');
+    }
+  }
+
+  function redo() {
+    if (state.redoStack.length > 0) {
+      const nextState = state.redoStack.pop();
+      state.undoStack.push(nextState);
+      elements.notepad.val(nextState);
+      updateStats();
+      updateLineNumbers();
+      updateUndoRedoButtons();
+      showToast('Redo successful', 'success');
+    }
+  }
+
+  // ===== Toast Notifications =====
+  function showToast(message, type = 'info', duration = TOAST_DURATION) {
+    const iconMap = {
+      success: 'fa-check-circle',
+      error: 'fa-times-circle',
+      info: 'fa-info-circle',
+      warning: 'fa-exclamation-triangle'
+    };
+    
+    const toast = $(`
+      <div class="toast ${type}">
+        <i class="fas ${iconMap[type]}"></i>
+        <span>${message}</span>
+      </div>
+    `);
+    
+    $('#toast-container').append(toast);
+    
+    setTimeout(() => {
+      toast.css('animation', 'slideOut 0.3s ease-out');
+      setTimeout(() => toast.remove(), 300);
     }, duration);
   }
 
-  // --- Error Handling Wrapper ---
-  // Wraps event handlers to catch errors, log them, and show a user notification
-  function safeExecute(fn, actionName = "Unknown action") {
-    return function (...args) {
-      try {
-        // Log the start of the action
-        log("ACTION_START", `Executing: ${actionName}`);
-        const result = fn.apply(this, args);
-        log("ACTION_SUCCESS", `Successfully executed: ${actionName}`);
-        return result;
-      } catch (error) {
-        log("ERROR", `Error during: ${actionName}`, {
-          errorMessage: error.message,
-          stack: error.stack,
-          args: args, // Log arguments passed to the function
-        });
-        showToast(`Error performing ${actionName}: ${error.message}`, "error");
-        // Optionally re-throw if needed elsewhere, but generally better to handle here
-        // throw error;
-      }
-    };
-  }
-
-  // --- Core Text Manipulation Helpers ---
-  const getLines = (text) => text.split(/\r?\n/); // Handle Windows/Unix line endings
-  const setLines = (lines) => lines.join("\n"); // Use consistent Unix line ending
-
-  // --- Undo/Redo Functionality ---
-  function updateUndoRedoButtons() {
-    // Enable undo if more than one state exists (initial state + changes)
-    $undoButton.prop("disabled", undoStack.length <= 1);
-    $redoButton.prop("disabled", redoStack.length === 0);
-  }
-
-  // Saves the current state of the notepad for undo/redo
-  function saveState(sourceAction = "Unknown") {
-    const currentState = $notepad.val();
-    // Avoid saving identical consecutive states or excessive states
-    if (
-      undoStack.length === 0 ||
-      undoStack[undoStack.length - 1] !== currentState
-    ) {
-      undoStack.push(currentState);
-      redoStack = []; // Clear redo stack on new action
-
-      // Limit the size of the undo stack
-      if (undoStack.length > MAX_UNDO_STACK_SIZE) {
-        undoStack.shift(); // Remove the oldest state
-      }
-
-      updateUndoRedoButtons();
-      log("STATE_SAVE", `State saved after action: ${sourceAction}`);
+  // ===== Progress Bar =====
+  function showProgress(percent) {
+    elements.progressBar.show();
+    elements.progressFill.css('width', `${percent}%`);
+    
+    if (percent >= 100) {
+      setTimeout(() => {
+        elements.progressBar.hide();
+        elements.progressFill.css('width', '0%');
+      }, 500);
     }
   }
 
-  // Undo Action
-  $undoButton.click(
-    safeExecute(function () {
-      if (undoStack.length > 1) {
-        // More than just the initial state
-        redoStack.push(undoStack.pop()); // Move current state to redo
-        const previousState = undoStack[undoStack.length - 1];
-        $notepad.val(previousState); // Load previous state
-        updateUndoRedoButtons();
-        updateStatsDisplay(); // Update stats after undo
-        log("ACTION", "Performed undo action");
-        showToast("Undo successful", "success");
-      } else {
-        log("INFO", "Undo stack empty or at initial state");
-        showToast("Nothing more to undo", "info");
-      }
-    }, "Undo")
-  );
-
-  // Redo Action
-  $redoButton.click(
-    safeExecute(function () {
-      if (redoStack.length > 0) {
-        const nextState = redoStack.pop(); // Get state from redo
-        undoStack.push(nextState); // Add it back to undo
-        $notepad.val(nextState); // Load state
-        updateUndoRedoButtons();
-        updateStatsDisplay(); // Update stats after redo
-        log("ACTION", "Performed redo action");
-        showToast("Redo successful", "success");
-      } else {
-        log("INFO", "Redo stack empty");
-        showToast("Nothing more to redo", "info");
-      }
-    }, "Redo")
-  );
-
-  // --- Statistics Update Function ---
-  function updateStatsDisplay() {
-    const text = $notepad.val();
-    try {
-      const chars = text.length;
-      $charCountEl.text(`Characters: ${chars}`);
-
-      const words = text.match(/\b\w+\b/g) || [];
-      $wordCountEl.text(`Words: ${words.length}`);
-
-      // Improved sentence detection (handles more cases like Mr. Mrs. etc.)
-      const sentences =
-        text
-          .match(/[^.!?…]+(?:[.!?…](?![a-zA-Z0-9])\s*|$)/g)
-          ?.map((s) => s.trim())
-          .filter(Boolean) || [];
-      $sentenceCountEl.text(`Sentences: ${sentences.length}`);
-
-      const paragraphs = text.split(/\n\s*\n+/).filter((p) => p.trim() !== "");
-      $paragraphCountEl.text(`Paragraphs: ${paragraphs.length}`);
-
-      const totalWordLength = words.reduce((sum, word) => sum + word.length, 0);
-      const avgLength =
-        words.length > 0 ? (totalWordLength / words.length).toFixed(2) : 0;
-      $avgWordLengthEl.text(`Avg Word Length: ${avgLength}`);
-
-      const readingTime = Math.ceil(words.length / 200); // Approx 200 WPM
-      $readingTimeEl.text(`Reading Time: ${readingTime} min`);
-    } catch (error) {
-      log("ERROR", "Failed to update statistics", { error });
-      // Display error state in UI
-      $wordCountEl.text("Words: Error");
-      $charCountEl.text("Characters: Error");
-      $sentenceCountEl.text("Sentences: Error");
-      $paragraphCountEl.text("Paragraphs: Error");
-      $avgWordLengthEl.text("Avg Word Length: Error");
-      $readingTimeEl.text("Reading Time: Error");
-    }
-  }
-
-  // --- Notepad Input Listener ---
-  // Update stats and save state on input
-  $notepad.on(
-    "input",
-    safeExecute(function () {
-      updateStatsDisplay();
-      saveState("User Typing"); // Save state on typing
-    }, "Notepad Input")
-  );
-
-  // --- Clipboard Operations (Using Modern Async API) ---
-  $("#copyButton").click(
-    safeExecute(async function () {
-      const textToCopy = $notepad.val();
-      if (!textToCopy) {
-        showToast("Nothing to copy!", "warn");
-        log("WARN", "Copy attempt on empty notepad");
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(textToCopy);
-        log("INFO", "Copied text to clipboard using modern API");
-        showToast("Text copied!", "success");
-      } catch (error) {
-        log("ERROR", "Modern clipboard write failed", { error });
-        // Fallback using deprecated execCommand (less reliable)
-        try {
-          $notepad.select(); // Select text in textarea
-          document.execCommand("copy"); // Attempt copy
-          window.getSelection().removeAllRanges(); // Deselect
-          log("WARN", "Used fallback execCommand for copy");
-          showToast("Text copied (using fallback)", "success");
-        } catch (fallbackError) {
-          log("ERROR", "Fallback copy also failed", { fallbackError });
-          showToast("Could not copy text. Check browser permissions.", "error");
-        }
-      }
-    }, "Copy Text")
-  );
-
-  $("#pasteButton").click(
-    safeExecute(async function () {
-      try {
-        const textToPaste = await navigator.clipboard.readText();
-        if (textToPaste) {
-          // Replace selection or append/insert at cursor (more complex)
-          // Simple append for now:
-          const currentVal = $notepad.val();
-          const newVal = currentVal + textToPaste; // Simple append
-          $notepad.val(newVal);
-          saveState("Paste"); // Save state after pasting
-          updateStatsDisplay(); // Update stats after pasting
-          log("INFO", "Pasted text from clipboard using modern API");
-          showToast("Text pasted!", "success");
-        } else {
-          log("INFO", "Clipboard is empty or contains non-text content");
-          showToast("Clipboard is empty or contains no text.", "info");
-        }
-      } catch (error) {
-        log("ERROR", "Failed to read clipboard content", { error });
-        showToast(
-          "Could not paste text. Check browser permissions or clipboard content.",
-          "error"
-        );
-      }
-    }, "Paste Text")
-  );
-
-  // --- Generic Transformation Function ---
-  // Helper to reduce repetition for simple text transformations
-  function applyTextTransform(
-    transformFn,
-    actionName,
-    requiresNonEmpty = true
-  ) {
-    const originalText = $notepad.val();
-    if (requiresNonEmpty && !originalText.trim()) {
-      showToast("Notepad is empty.", "warn");
-      log("WARN", `${actionName} attempt on empty notepad.`);
+  // ===== Text Transformation Functions =====
+  function transformText(transformFn, actionName) {
+    const text = elements.notepad.val();
+    if (!text && actionName !== 'Generate Lorem Ipsum') {
+      showToast('No text to transform', 'warning');
       return;
     }
-    const newText = transformFn(originalText);
-    if (newText !== originalText) {
-      $notepad.val(newText);
-      saveState(actionName);
-      updateStatsDisplay();
-      showToast(`${actionName} applied successfully.`, "success");
-    } else {
-      showToast("No changes were made.", "info");
-    }
+    
+    showProgress(30);
+    
+    setTimeout(() => {
+      try {
+        const transformed = transformFn(text);
+        if (transformed !== text) {
+          elements.notepad.val(transformed);
+          saveState(actionName);
+          updateStats();
+          updateLineNumbers();
+          showToast(`${actionName} applied`, 'success');
+        } else {
+          showToast('No changes made', 'info');
+        }
+        showProgress(100);
+      } catch (error) {
+        console.error(`Error in ${actionName}:`, error);
+        showToast(`Error: ${error.message}`, 'error');
+        showProgress(100);
+      }
+    }, 100);
   }
 
-  // --- Tool Button Event Handlers ---
+  // Case transformations
+  const caseTransformations = {
+    lowercase: text => text.toLowerCase(),
+    uppercase: text => text.toUpperCase(),
+    titlecase: text => text.replace(/\w\S*/g, txt => 
+      txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    ),
+    sentenceCase: text => {
+      return text.toLowerCase().replace(/(^|\. *)([a-z])/g, 
+        (match, p1, p2) => p1 + p2.toUpperCase()
+      );
+    },
+    camelCase: text => {
+      return text.replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => 
+        index === 0 ? word.toLowerCase() : word.toUpperCase()
+      ).replace(/\s+/g, '');
+    },
+    snakeCase: text => text.toLowerCase().replace(/\s+/g, '_'),
+    kebabCase: text => text.toLowerCase().replace(/\s+/g, '-'),
+    alternatingCase: text => {
+      return text.split('').map((char, i) => 
+        i % 2 === 0 ? char.toLowerCase() : char.toUpperCase()
+      ).join('');
+    },
+    invertCase: text => {
+      return text.split('').map(char => 
+        char === char.toUpperCase() ? char.toLowerCase() : char.toUpperCase()
+      ).join('');
+    }
+  };
 
-  // Change Order
-  $("#sortLinesAZButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        const lines = getLines(text);
-        lines.sort((a, b) => a.localeCompare(b)); // Case-sensitive sort
-        return setLines(lines);
-      }, "Sort Lines A-Z");
-    }, "Sort Lines A-Z")
-  );
+  // Line operations
+  function getLines(text) {
+    return text.split(/\r?\n/);
+  }
 
-  $("#sortLinesZAButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        const lines = getLines(text);
-        lines.sort((a, b) => b.localeCompare(a));
-        return setLines(lines);
-      }, "Sort Lines Z-A");
-    }, "Sort Lines Z-A")
-  );
+  function setLines(lines) {
+    return lines.join('\n');
+  }
 
-  $("#sortLinesShortestButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        const lines = getLines(text);
-        lines.sort((a, b) => a.length - b.length);
-        return setLines(lines);
-      }, "Sort Lines Shortest First");
-    }, "Sort Lines Shortest First")
-  );
+  // ===== Event Listeners =====
+  function initializeEventListeners() {
+    // Notepad events
+    elements.notepad.on('input', debounce(function() {
+      updateStats();
+      updateLineNumbers();
+      saveState('typing');
+    }, 500));
 
-  $("#sortLinesLongestButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        const lines = getLines(text);
-        lines.sort((a, b) => b.length - a.length);
-        return setLines(lines);
-      }, "Sort Lines Longest First");
-    }, "Sort Lines Longest First")
-  );
+    // Toolbar buttons
+    elements.undoButton.click(undo);
+    elements.redoButton.click(redo);
+    
+    $('#copyButton').click(() => copyToClipboard());
+    $('#cutButton').click(() => cutText());
+    $('#pasteButton').click(() => pasteFromClipboard());
+    $('#selectAllButton').click(() => elements.notepad.select());
+    $('#clearButton').click(() => {
+      if (confirm('Clear all text?')) {
+        elements.notepad.val('');
+        saveState('clear all');
+        updateStats();
+        updateLineNumbers();
+        showToast('Text cleared', 'info');
+      }
+    });
+    
+    $('#saveButton').click(() => saveToFile());
+    $('#loadButton').click(() => elements.fileInput.click());
+    elements.fileInput.change(loadFromFile);
 
-  $("#shuffleLinesButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
+    // Quick actions
+    $('.quick-btn').click(function() {
+      const action = $(this).data('action');
+      handleQuickAction(action);
+    });
+
+    // Transform buttons
+    $('#toLowerCaseButton').click(() => 
+      transformText(caseTransformations.lowercase, 'Lowercase'));
+    $('#toUpperCaseButton').click(() => 
+      transformText(caseTransformations.uppercase, 'Uppercase'));
+    $('#capitalizeWordsButton').click(() => 
+      transformText(caseTransformations.titlecase, 'Title Case'));
+    $('#sentenceCaseButton').click(() => 
+      transformText(caseTransformations.sentenceCase, 'Sentence Case'));
+    $('#alternatingCaseButton').click(() => 
+      transformText(caseTransformations.alternatingCase, 'Alternating Case'));
+    $('#invertCaseButton').click(() => 
+      transformText(caseTransformations.invertCase, 'Invert Case'));
+    $('#camelCaseButton').click(() => 
+      transformText(caseTransformations.camelCase, 'Camel Case'));
+    $('#snakeCaseButton').click(() => 
+      transformText(caseTransformations.snakeCase, 'Snake Case'));
+    $('#kebabCaseButton').click(() => 
+      transformText(caseTransformations.kebabCase, 'Kebab Case'));
+
+    // Base64
+    $('#base64EncodeButton').click(() => 
+      transformText(text => btoa(unescape(encodeURIComponent(text))), 'Base64 Encode'));
+    $('#base64DecodeButton').click(() => 
+      transformText(text => {
+        try {
+          return decodeURIComponent(escape(atob(text)));
+        } catch (e) {
+          throw new Error('Invalid Base64 string');
+        }
+      }, 'Base64 Decode'));
+
+    // Sort operations
+    $('#sortLinesAZButton').click(() => 
+      transformText(text => setLines(getLines(text).sort()), 'Sort A-Z'));
+    $('#sortLinesZAButton').click(() => 
+      transformText(text => setLines(getLines(text).sort().reverse()), 'Sort Z-A'));
+    $('#sortLinesShortestButton').click(() => 
+      transformText(text => setLines(getLines(text).sort((a, b) => a.length - b.length)), 'Sort by Length'));
+    $('#sortLinesLongestButton').click(() => 
+      transformText(text => setLines(getLines(text).sort((a, b) => b.length - a.length)), 'Sort by Length'));
+    $('#sortNumericalButton').click(() => 
+      transformText(text => setLines(getLines(text).sort((a, b) => {
+        const numA = parseFloat(a) || 0;
+        const numB = parseFloat(b) || 0;
+        return numA - numB;
+      })), 'Sort Numerically'));
+    $('#shuffleLinesButton').click(() => 
+      transformText(text => {
         const lines = getLines(text);
-        // Fisher-Yates Shuffle
         for (let i = lines.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [lines[i], lines[j]] = [lines[j], lines[i]];
         }
         return setLines(lines);
-      }, "Shuffle Lines");
-    }, "Shuffle Lines")
-  );
+      }, 'Shuffle Lines'));
+    $('#reverseTextButton').click(() => 
+      transformText(text => text.split('').reverse().join(''), 'Reverse Text'));
+    $('#reverseLinesButton').click(() => 
+      transformText(text => setLines(getLines(text).reverse()), 'Reverse Lines'));
 
-  // Transform
-  $("#toLowerCaseButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => text.toLowerCase(), "Convert to Lowercase");
-    }, "Convert to Lowercase")
-  );
+    // Find & Replace
+    $('#findButton').click(() => findInText());
+    $('#replaceButton').click(() => replaceAll());
+    $('#replaceOneButton').click(() => replaceNext());
+    $('#prevMatch').click(() => navigateMatches(-1));
+    $('#nextMatch').click(() => navigateMatches(1));
 
-  $("#toUpperCaseButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => text.toUpperCase(), "Convert to Uppercase");
-    }, "Convert to Uppercase")
-  );
+    // Add/Remove operations
+    $('#addPrefixButton').click(() => {
+      const prefix = $('#prefixInput').val();
+      transformText(text => setLines(getLines(text).map(line => prefix + line)), 'Add Prefix');
+    });
+    
+    $('#addSuffixButton').click(() => {
+      const suffix = $('#suffixInput').val();
+      transformText(text => setLines(getLines(text).map(line => line + suffix)), 'Add Suffix');
+    });
+    
+    $('#wrapLinesButton').click(() => {
+      const wrapper = $('#wrapInput').val();
+      transformText(text => setLines(getLines(text).map(line => wrapper + line + wrapper)), 'Wrap Lines');
+    });
 
-  $("#capitalizeWordsButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        return text.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-      }, "Capitalize Words");
-    }, "Capitalize Words")
-  );
+    // Remove operations
+    $('#removeDuplicatesButton').click(() => 
+      transformText(text => setLines([...new Set(getLines(text))]), 'Remove Duplicates'));
+    $('#removeEmptyLinesButton').click(() => 
+      transformText(text => setLines(getLines(text).filter(line => line.trim())), 'Remove Empty Lines'));
+    $('#removeExtraSpacesButton').click(() => 
+      transformText(text => text.replace(/  +/g, ' ').trim(), 'Remove Extra Spaces'));
+    $('#removeAllSpacesButton').click(() => 
+      transformText(text => text.replace(/\s/g, ''), 'Remove All Spaces'));
+    $('#removeNumbersButton').click(() => 
+      transformText(text => text.replace(/\d/g, ''), 'Remove Numbers'));
+    $('#removePunctuationButton').click(() => 
+      transformText(text => text.replace(/[^\w\s]|_/g, ''), 'Remove Punctuation'));
+    $('#removeLineBreaksButton').click(() => 
+      transformText(text => text.replace(/\n/g, ' '), 'Remove Line Breaks'));
+    $('#removeAccentsButton').click(() => 
+      transformText(text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''), 'Remove Accents'));
 
-  $("#capitalizeFirstWordButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        let result = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-        result = result.replace(
-          /([.!?…]\s+)([a-z])/g, // Use ... as sentence end too
-          (match, punctuation, char) => punctuation + char.toUpperCase()
-        );
-        return result;
-      }, "Capitalize First Word of Sentence");
-    }, "Capitalize First Word of Sentence")
-  );
+    // Filter operations
+    $('#keepLinesButton').click(() => {
+      const term = $('#keepLinesInput').val();
+      if (term) {
+        transformText(text => setLines(getLines(text).filter(line => line.includes(term))), 'Keep Lines');
+      }
+    });
+    
+    $('#removeLinesButton').click(() => {
+      const term = $('#removeLinesInput').val();
+      if (term) {
+        transformText(text => setLines(getLines(text).filter(line => !line.includes(term))), 'Remove Lines');
+      }
+    });
 
-  $("#invertTextButton").click(
-    safeExecute(function () {
-      // Correctly handle Unicode characters (like emojis)
-      applyTextTransform(
-        (text) => [...text].reverse().join(""),
-        "Invert Text"
-      );
-    }, "Invert Text")
-  );
+    // Extract operations
+    $('#extractUrlsButton').click(() => 
+      transformText(text => {
+        const urls = text.match(/https?:\/\/[^\s]+/g) || [];
+        return urls.join('\n');
+      }, 'Extract URLs'));
+    
+    $('#extractEmailsButton').click(() => 
+      transformText(text => {
+        const emails = text.match(/[\w.-]+@[\w.-]+\.\w+/g) || [];
+        return emails.join('\n');
+      }, 'Extract Emails'));
+    
+    $('#extractNumbersButton').click(() => 
+      transformText(text => {
+        const numbers = text.match(/\b\d+\.?\d*\b/g) || [];
+        return numbers.join('\n');
+      }, 'Extract Numbers'));
 
-  // Add Prefix/Suffix
-  $("#addPrefixButton").click(
-    safeExecute(function () {
-      const prefix = $prefixInput.val(); // Get value inside handler
-      applyTextTransform(
-        (text) => setLines(getLines(text).map((line) => prefix + line)),
-        `Add Prefix "${prefix}"`,
-        false // Allow applying to empty text
-      );
-      $prefixInput.val(""); // Clear input after use
-    }, "Add Prefix")
-  );
+    // Advanced tools
+    $('#jsonFormatButton').click(() => 
+      transformText(text => {
+        try {
+          return JSON.stringify(JSON.parse(text), null, 2);
+        } catch (e) {
+          throw new Error('Invalid JSON');
+        }
+      }, 'Format JSON'));
+    
+    $('#jsonMinifyButton').click(() => 
+      transformText(text => {
+        try {
+          return JSON.stringify(JSON.parse(text));
+        } catch (e) {
+          throw new Error('Invalid JSON');
+        }
+      }, 'Minify JSON'));
+    
+    $('#generateLoremButton').click(() => {
+      const lorem = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`;
+      transformText(() => lorem, 'Generate Lorem Ipsum');
+    });
+    
+    $('#wordFrequencyButton').click(() => showWordFrequency());
+    $('#csvToTableButton').click(() => csvToTable());
+    $('#markdownPreviewButton').click(() => showMarkdownPreview());
+    $('#textDiffButton').click(() => showTextDiff());
 
-  $("#addSuffixButton").click(
-    safeExecute(function () {
-      const suffix = $suffixInput.val();
-      applyTextTransform(
-        (text) => setLines(getLines(text).map((line) => line + suffix)),
-        `Add Suffix "${suffix}"`,
-        false
-      );
-      $suffixInput.val("");
-    }, "Add Suffix")
-  );
+    // Context menu
+    elements.notepad.on('contextmenu', function(e) {
+      e.preventDefault();
+      showContextMenu(e.pageX, e.pageY);
+    });
+    
+    $(document).click(() => elements.contextMenu.hide());
+    
+    $('.context-item').click(function() {
+      const action = $(this).data('action');
+      handleContextAction(action);
+      elements.contextMenu.hide();
+    });
 
-  // Remove
-  $("#removeDuplicatesButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        const lines = getLines(text);
-        return setLines([...new Set(lines)]);
-      }, "Remove Duplicate Lines");
-    }, "Remove Duplicate Lines")
-  );
-
-  $("#removeEmptyLinesButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        return setLines(getLines(text).filter((line) => line.trim() !== ""));
-      }, "Remove Empty Lines");
-    }, "Remove Empty Lines")
-  );
-
-  $("#removeAccentsButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      }, "Remove Accents");
-    }, "Remove Accents")
-  );
-
-  $("#removeSpacesButton").click(
-    safeExecute(function () {
-      // Removes leading/trailing whitespace from each line and collapses multiple spaces within lines
-      applyTextTransform((text) => {
-        return setLines(
-          getLines(text).map((line) => line.replace(/\s\s+/g, " ").trim())
-        );
-      }, "Remove Extra Spaces");
-    }, "Remove Extra Spaces")
-  );
-
-  $("#removeAllSpacesButton").click(
-    safeExecute(function () {
-      applyTextTransform(
-        (text) => text.replace(/\s/g, ""),
-        "Remove All Spaces"
-      );
-    }, "Remove All Spaces")
-  );
-
-  $("#removeNumbersButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => text.replace(/[0-9]/g, ""), "Remove Numbers");
-    }, "Remove Numbers")
-  );
-
-  $("#removePunctuationButton").click(
-    safeExecute(function () {
-      applyTextTransform(
-        (text) => text.replace(/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g, ""),
-        "Remove Punctuation"
-      );
-    }, "Remove Punctuation")
-  );
-
-  $("#removeLineBreaksButton").click(
-    safeExecute(function () {
-      applyTextTransform(
-        (text) => text.replace(/(\r?\n)+/g, " ").trim(), // Replace with single space
-        "Remove Line Breaks"
-      );
-    }, "Remove Line Breaks")
-  );
-
-  $("#trimRowsDuplicatesEmptyButton").click(
-    safeExecute(function () {
-      applyTextTransform((text) => {
-        let lines = getLines(text);
-        lines = lines.map((line) => line.trim()); // Trim whitespace
-        lines = lines.filter((line) => line !== ""); // Remove empty
-        lines = [...new Set(lines)]; // Remove duplicates
-        return setLines(lines);
-      }, "Clean Up Text");
-    }, "Clean Up Text")
-  );
-
-  // --- Search and Replace ---
-  // Helper function to escape regex special characters from user input
-  function escapeRegex(string) {
-    return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    // Editor mode buttons
+    $('.mode-btn').click(function() {
+      $('.mode-btn').removeClass('active');
+      $(this).addClass('active');
+      state.currentMode = $(this).data('mode');
+      showToast(`Switched to ${state.currentMode} mode`, 'info');
+    });
   }
 
-  $("#searchTextButton").click(
-    safeExecute(function () {
-      const searchTerm = $searchInput.val();
-      if (!searchTerm) {
-        showToast("Please enter text to search for.", "warn");
-        log("WARN", "Search term is empty");
-        return;
-      }
+  // ===== Quick Actions =====
+  function handleQuickAction(action) {
+    switch(action) {
+      case 'lowercase':
+        transformText(caseTransformations.lowercase, 'Lowercase');
+        break;
+      case 'uppercase':
+        transformText(caseTransformations.uppercase, 'Uppercase');
+        break;
+      case 'titlecase':
+        transformText(caseTransformations.titlecase, 'Title Case');
+        break;
+      case 'removeSpaces':
+        transformText(text => text.replace(/  +/g, ' ').trim(), 'Remove Extra Spaces');
+        break;
+      case 'removeDuplicates':
+        transformText(text => setLines([...new Set(getLines(text))]), 'Remove Duplicates');
+        break;
+      case 'reverse':
+        transformText(text => text.split('').reverse().join(''), 'Reverse Text');
+        break;
+    }
+  }
+
+  // ===== Clipboard Operations =====
+  async function copyToClipboard() {
+    try {
+      await navigator.clipboard.writeText(elements.notepad.val());
+      showToast('Copied to clipboard', 'success');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      showToast('Failed to copy', 'error');
+    }
+  }
+
+  async function cutText() {
+    await copyToClipboard();
+    elements.notepad.val('');
+    saveState('cut');
+    updateStats();
+    updateLineNumbers();
+  }
+
+  async function pasteFromClipboard() {
+    try {
+      const text = await navigator.clipboard.readText();
+      const currentText = elements.notepad.val();
+      const cursorPos = elements.notepad[0].selectionStart;
+      const newText = currentText.slice(0, cursorPos) + text + currentText.slice(cursorPos);
+      elements.notepad.val(newText);
+      saveState('paste');
+      updateStats();
+      updateLineNumbers();
+      showToast('Pasted from clipboard', 'success');
+    } catch (err) {
+      console.error('Failed to paste:', err);
+      showToast('Failed to paste', 'error');
+    }
+  }
+
+  // ===== File Operations =====
+  function saveToFile() {
+    const text = elements.notepad.val();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `textman_${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('File saved', 'success');
+  }
+
+  function loadFromFile(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        elements.notepad.val(e.target.result);
+        saveState('load file');
+        updateStats();
+        updateLineNumbers();
+        showToast(`Loaded ${file.name}`, 'success');
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  // ===== Find & Replace =====
+  function findInText() {
+    const searchTerm = $('#findInput').val();
+    if (!searchTerm) {
+      showToast('Enter a search term', 'warning');
+      return;
+    }
+
+    const text = elements.notepad.val();
+    const caseSensitive = $('#caseSensitive').is(':checked');
+    const wholeWord = $('#wholeWord').is(':checked');
+    const useRegex = $('#useRegex').is(':checked');
+
+    let pattern;
+    if (useRegex) {
       try {
-        const content = $notepad.val();
-        // Case-insensitive global search
-        const regex = new RegExp(escapeRegex(searchTerm), "gi");
-        const matches = content.match(regex);
-        const occurrences = matches ? matches.length : 0;
-        showToast(
-          `Found ${occurrences} occurrence(s) of "${searchTerm}".`,
-          occurrences > 0 ? "success" : "info"
-        );
-        log("INFO", `Searched for "${searchTerm}", found ${occurrences}`);
-        // Basic highlighting (can be improved)
-        // Remove previous highlights first
-        // $notepad.highlight(searchTerm); // Requires a highlight plugin
-      } catch (error) {
-        log("ERROR", "Regex search failed", { searchTerm, error });
-        showToast("Invalid search term pattern.", "error");
-      }
-    }, "Search Text")
-  );
-
-  $("#searchAndReplaceButton").click(
-    safeExecute(function () {
-      const searchTerm = $searchInput.val();
-      const replaceTerm = $replaceInput.val(); // Replacement can be empty
-      if (!searchTerm) {
-        showToast("Please enter text to search for.", "warn");
-        log("WARN", "Search term is empty for replace");
+        pattern = new RegExp(searchTerm, caseSensitive ? 'g' : 'gi');
+      } catch (e) {
+        showToast('Invalid regex pattern', 'error');
         return;
       }
-      try {
-        // Use applyTextTransform for state saving and feedback
-        applyTextTransform(
-          (text) => {
-            const regex = new RegExp(escapeRegex(searchTerm), "g"); // Global, case-sensitive. Add 'i' for insensitive.
-            return text.replace(regex, replaceTerm);
-          },
-          `Replace "${searchTerm}" with "${replaceTerm}"`
-        );
-        // Optional: Clear inputs after successful replace
-        // $searchInput.val('');
-        // $replaceInput.val('');
-      } catch (error) {
-        log("ERROR", "Regex replace failed", { searchTerm, replaceTerm, error });
-        showToast("Invalid search term pattern for replace.", "error");
+    } else {
+      let escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (wholeWord) {
+        escapedTerm = `\\b${escapedTerm}\\b`;
       }
-    }, "Search and Replace")
-  );
+      pattern = new RegExp(escapedTerm, caseSensitive ? 'g' : 'gi');
+    }
 
-  // --- Filter Lines ---
-  $("#keepLinesButton").click(
-    safeExecute(function () {
-      const term = $keepLinesInput.val();
-      if (!term) {
-        showToast("Please enter a term to filter by.", "warn");
-        log("WARN", "Term is empty for keep lines");
+    state.findMatches = [...text.matchAll(pattern)];
+    state.currentMatchIndex = state.findMatches.length > 0 ? 0 : -1;
+
+    $('#findResults').show();
+    $('.results-count').text(`${state.findMatches.length} matches found`);
+    updateMatchNavigation();
+    
+    if (state.findMatches.length > 0) {
+      highlightCurrentMatch();
+    }
+  }
+
+  function replaceAll() {
+    const searchTerm = $('#findInput').val();
+    const replaceTerm = $('#replaceInput').val();
+    
+    if (!searchTerm) {
+      showToast('Enter a search term', 'warning');
+      return;
+    }
+
+    findInText();
+    if (state.findMatches.length === 0) {
+      showToast('No matches to replace', 'info');
+      return;
+    }
+
+    const text = elements.notepad.val();
+    const caseSensitive = $('#caseSensitive').is(':checked');
+    const wholeWord = $('#wholeWord').is(':checked');
+    const useRegex = $('#useRegex').is(':checked');
+
+    let pattern;
+    if (useRegex) {
+      pattern = new RegExp(searchTerm, caseSensitive ? 'g' : 'gi');
+    } else {
+      let escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (wholeWord) {
+        escapedTerm = `\\b${escapedTerm}\\b`;
+      }
+      pattern = new RegExp(escapedTerm, caseSensitive ? 'g' : 'gi');
+    }
+
+    const newText = text.replace(pattern, replaceTerm);
+    elements.notepad.val(newText);
+    saveState('replace all');
+    updateStats();
+    updateLineNumbers();
+    showToast(`Replaced ${state.findMatches.length} occurrences`, 'success');
+    $('#findResults').hide();
+  }
+
+  function replaceNext() {
+    if (state.findMatches.length === 0 || state.currentMatchIndex === -1) {
+      findInText();
+      if (state.findMatches.length === 0) {
+        showToast('No matches to replace', 'info');
         return;
       }
-      applyTextTransform(
-        (text) =>
-          setLines(getLines(text).filter((line) => line.includes(term))), // Case-sensitive
-        // Case-insensitive: line.toLowerCase().includes(term.toLowerCase())
-        `Keep Lines Containing "${term}"`
-      );
-      $keepLinesInput.val(""); // Clear input
-    }, "Keep Lines Containing")
-  );
+    }
 
-  $("#removeLinesButton").click(
-    safeExecute(function () {
-      const term = $removeLinesInput.val();
-      if (!term) {
-        showToast("Please enter a term to filter by.", "warn");
-        log("WARN", "Term is empty for remove lines");
-        return;
-      }
-      applyTextTransform(
-        (text) =>
-          setLines(getLines(text).filter((line) => !line.includes(term))), // Case-sensitive
-        // Case-insensitive: !line.toLowerCase().includes(term.toLowerCase())
-        `Remove Lines Containing "${term}"`
-      );
-      $removeLinesInput.val(""); // Clear input
-    }, "Remove Lines Containing")
-  );
+    const match = state.findMatches[state.currentMatchIndex];
+    const replaceTerm = $('#replaceInput').val();
+    const text = elements.notepad.val();
+    
+    const newText = text.slice(0, match.index) + 
+                   replaceTerm + 
+                   text.slice(match.index + match[0].length);
+    
+    elements.notepad.val(newText);
+    saveState('replace next');
+    updateStats();
+    updateLineNumbers();
+    
+    // Re-find to update matches
+    findInText();
+    showToast('Replaced 1 occurrence', 'success');
+  }
 
-  // --- Download Logs ---
-  $("#downloadLogsButton").click(
-    safeExecute(function () {
-      if (logs.length === 0) {
-        showToast("No logs to download.", "info");
-        return;
-      }
-      try {
-        const logContent = logs
-          .map((logEntry) => {
-            const dataString =
-              Object.keys(logEntry.data).length > 0
-                ? JSON.stringify(logEntry.data)
-                : "";
-            return `[${logEntry.timestamp}] [${logEntry.type}] ${logEntry.message} ${dataString}`;
-          })
-          .join("\n");
+  function navigateMatches(direction) {
+    if (state.findMatches.length === 0) return;
+    
+    state.currentMatchIndex += direction;
+    if (state.currentMatchIndex < 0) {
+      state.currentMatchIndex = state.findMatches.length - 1;
+    } else if (state.currentMatchIndex >= state.findMatches.length) {
+      state.currentMatchIndex = 0;
+    }
+    
+    updateMatchNavigation();
+    highlightCurrentMatch();
+  }
 
-        const blob = new Blob([logContent], {
-          type: "text/plain;charset=utf-8",
-        });
-        const url = URL.createObjectURL(blob);
-        const $tempLink = $("<a>"); // Use jQuery to create link
-        $tempLink
-          .attr("href", url)
-          .attr("download", "textMan_logs.txt")
-          .css("display", "none"); // Hide link
+  function updateMatchNavigation() {
+    const total = state.findMatches.length;
+    const current = total > 0 ? state.currentMatchIndex + 1 : 0;
+    $('.current-match').text(`${current}/${total}`);
+    $('#prevMatch, #nextMatch').prop('disabled', total === 0);
+  }
 
-        $("body").append($tempLink); // Add to body
-        $tempLink[0].click(); // Trigger download (need native click)
-        $tempLink.remove(); // Clean up link
-        URL.revokeObjectURL(url); // Release object URL
+  function highlightCurrentMatch() {
+    if (state.currentMatchIndex === -1) return;
+    
+    const match = state.findMatches[state.currentMatchIndex];
+    const textarea = elements.notepad[0];
+    textarea.setSelectionRange(match.index, match.index + match[0].length);
+    textarea.focus();
+    
+    // Scroll to match
+    const textBeforeMatch = textarea.value.substring(0, match.index);
+    const lineNumber = textBeforeMatch.split('\n').length;
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+    textarea.scrollTop = (lineNumber - 5) * lineHeight;
+  }
 
-        showToast("Logs downloaded.", "success");
-        log("INFO", "Downloaded logs");
-      } catch (error) {
-        log("ERROR", "Failed to prepare or download logs", { error });
-        showToast("Could not download logs.", "error");
-      }
-    }, "Download Logs")
-  );
-
-  // --- Keyboard Shortcuts ---
-  $notepad.on(
-    "keydown",
-    safeExecute(function (event) {
-      // Use event.key for modern browsers
-      const key = event.key.toLowerCase();
-      // Check for Ctrl key (Windows/Linux) or Command key (Mac)
-      if (event.ctrlKey || event.metaKey) {
-        let shortcutUsed = false;
-        if (key === "z") {
-          event.preventDefault(); // Prevent native undo
-          $undoButton.click(); // Trigger custom undo
-          shortcutUsed = true;
-        } else if (key === "y") {
-          event.preventDefault(); // Prevent native redo
-          $redoButton.click(); // Trigger custom redo
-          shortcutUsed = true;
-        }
-        // Add more shortcuts here if needed (e.g., Ctrl+S for save - though not applicable here)
-
-        if (shortcutUsed) {
-          log("ACTION", `Keyboard shortcut used: ${event.key}`);
-        }
-      }
-    }, "Keyboard Shortcut Listener")
-  );
-
-  // --- Global Error Handler ---
-  window.onerror = function (message, source, lineno, colno, error) {
-    log("ERROR", "Unhandled global error", {
-      message,
-      source,
-      lineno,
-      colno,
-      errorObject: error ? error.stack : "N/A",
+  // ===== Advanced Tools =====
+  function showWordFrequency() {
+    const text = elements.notepad.val();
+    const words = text.toLowerCase().match(/\b[\w']+\b/g) || [];
+    const frequency = {};
+    
+    words.forEach(word => {
+      frequency[word] = (frequency[word] || 0) + 1;
     });
-    // Avoid showing generic toast for every minor error, rely on specific handlers
-    // showToast(`An unexpected error occurred. See console/logs.`, 'error');
-    return false; // Prevent default browser error handling (optional)
-  };
-  window.onunhandledrejection = function (event) {
-    log("ERROR", "Unhandled promise rejection", {
-      reason: event.reason ? event.reason.stack || event.reason : "N/A",
-    });
-    // showToast(`An unexpected promise error occurred.`, 'error');
-  };
+    
+    const sorted = Object.entries(frequency)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+    
+    const result = 'Word Frequency Analysis:\n\n' +
+      sorted.map(([word, count]) => `${word}: ${count}`).join('\n');
+    
+    transformText(() => result, 'Word Frequency Analysis');
+  }
 
-  // --- Initial Setup on Load ---
-  log("INFO", "Document ready. Initializing TextMan v1.2.");
-  updateStatsDisplay(); // Calculate initial stats
-  updateUndoRedoButtons(); // Set initial button states
-  showToast("TextMan v1.2 Ready!", "success", 1500); // Welcome message
-  // Note: Initial state is already pushed to undoStack at declaration
+  function csvToTable() {
+    const text = elements.notepad.val();
+    const lines = getLines(text);
+    if (lines.length === 0) {
+      showToast('No CSV data found', 'warning');
+      return;
+    }
+    
+    const separator = text.includes('\t') ? '\t' : ',';
+    const rows = lines.map(line => line.split(separator));
+    
+    // Create markdown table
+    let table = '| ' + rows[0].join(' | ') + ' |\n';
+    table += '| ' + rows[0].map(() => '---').join(' | ') + ' |\n';
+    
+    for (let i = 1; i < rows.length; i++) {
+      table += '| ' + rows[i].join(' | ') + ' |\n';
+    }
+    
+    transformText(() => table, 'CSV to Table');
+  }
+
+  function showMarkdownPreview() {
+    const markdown = elements.notepad.val();
+    // Simple markdown to HTML conversion (can be enhanced with a library)
+    let html = markdown
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+      .replace(/\n/g, '<br>');
+    
+    const preview = window.open('', 'Markdown Preview', 'width=800,height=600');
+    preview.document.write(`
+      <html>
+        <head>
+          <title>Markdown Preview</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1, h2, h3 { color: #333; }
+            a { color: #0066cc; }
+          </style>
+        </head>
+        <body>${html}</body>
+      </html>
+    `);
+    preview.document.close();
+  }
+
+  function showTextDiff() {
+    const currentText = elements.notepad.val();
+    const diffContainer = $(`
+      <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                  background: white; border: 1px solid #ccc; padding: 20px; 
+                  box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; 
+                  max-width: 80%; max-height: 80%; overflow: auto;">
+        <h3>Text Diff Tool</h3>
+        <p>Paste text to compare:</p>
+        <textarea id="compareText" rows="10" cols="50" style="width: 100%;"></textarea>
+        <div style="margin-top: 10px;">
+          <button id="performDiff">Compare</button>
+          <button id="closeDiff">Close</button>
+        </div>
+        <div id="diffResult" style="margin-top: 20px;"></div>
+      </div>
+    `);
+    
+    $('body').append(diffContainer);
+    
+    $('#performDiff').click(() => {
+      const compareText = $('#compareText').val();
+      const diff = findDifferences(currentText, compareText);
+      $('#diffResult').html(diff);
+    });
+    
+    $('#closeDiff').click(() => diffContainer.remove());
+  }
+
+  function findDifferences(text1, text2) {
+    const lines1 = getLines(text1);
+    const lines2 = getLines(text2);
+    let result = '<pre style="font-family: monospace;">';
+    
+    const maxLines = Math.max(lines1.length, lines2.length);
+    
+    for (let i = 0; i < maxLines; i++) {
+      const line1 = lines1[i] || '';
+      const line2 = lines2[i] || '';
+      
+      if (line1 === line2) {
+        result += `  ${line1}\n`;
+      } else {
+        if (line1) result += `<span style="color: red;">- ${line1}</span>\n`;
+        if (line2) result += `<span style="color: green;">+ ${line2}</span>\n`;
+      }
+    }
+    
+    result += '</pre>';
+    return result;
+  }
+
+  // ===== Context Menu =====
+  function showContextMenu(x, y) {
+    elements.contextMenu.css({
+      display: 'block',
+      left: x + 'px',
+      top: y + 'px'
+    });
+  }
+
+  function handleContextAction(action) {
+    switch(action) {
+      case 'cut':
+        cutText();
+        break;
+      case 'copy':
+        copyToClipboard();
+        break;
+      case 'paste':
+        pasteFromClipboard();
+        break;
+      case 'selectAll':
+        elements.notepad.select();
+        break;
+      case 'transform':
+        showTransformMenu();
+        break;
+    }
+  }
+
+  function showTransformMenu() {
+    // Scroll to transform section
+    $('.tool-section').eq(1).find('.section-toggle').click();
+    $('html, body').animate({
+      scrollTop: $('.tool-section').eq(1).offset().top - 20
+    }, 500);
+  }
+
+  // ===== Keyboard Shortcuts =====
+  function initializeKeyboardShortcuts() {
+    $(document).on('keydown', function(e) {
+      // Check if a text input is focused (except notepad)
+      if ($(e.target).is('input:not(#notepad), select') || 
+          ($(e.target).is('textarea') && !$(e.target).is('#notepad'))) {
+        return;
+      }
+
+      const ctrl = e.ctrlKey || e.metaKey;
+      const shift = e.shiftKey;
+      const alt = e.altKey;
+      const key = e.key.toLowerCase();
+
+      // Ctrl shortcuts
+      if (ctrl && !shift && !alt) {
+        switch(key) {
+          case 'z':
+            e.preventDefault();
+            undo();
+            break;
+          case 'y':
+            e.preventDefault();
+            redo();
+            break;
+          case 's':
+            e.preventDefault();
+            saveToFile();
+            break;
+          case 'o':
+            e.preventDefault();
+            elements.fileInput.click();
+            break;
+          case 'f':
+            e.preventDefault();
+            $('#findInput').focus();
+            break;
+          case 'h':
+            e.preventDefault();
+            $('#replaceInput').focus();
+            break;
+          case 'l':
+            e.preventDefault();
+            transformText(caseTransformations.lowercase, 'Lowercase');
+            break;
+          case 'u':
+            e.preventDefault();
+            transformText(caseTransformations.uppercase, 'Uppercase');
+            break;
+          case 't':
+            e.preventDefault();
+            transformText(caseTransformations.titlecase, 'Title Case');
+            break;
+          case 'd':
+            e.preventDefault();
+            duplicateCurrentLine();
+            break;
+        }
+      }
+
+      // Alt + Arrow shortcuts for moving lines
+      if (alt && (key === 'arrowup' || key === 'arrowdown')) {
+        e.preventDefault();
+        moveCurrentLine(key === 'arrowup' ? -1 : 1);
+      }
+    });
+  }
+
+  function duplicateCurrentLine() {
+    const textarea = elements.notepad[0];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const lines = getLines(text);
+    
+    // Find current line
+    let charCount = 0;
+    let currentLineIndex = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= cursorPos) {
+        currentLineIndex = i;
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for newline
+    }
+    
+    // Duplicate the line
+    lines.splice(currentLineIndex + 1, 0, lines[currentLineIndex]);
+    elements.notepad.val(setLines(lines));
+    
+    // Move cursor to duplicated line
+    let newCursorPos = charCount;
+    for (let i = 0; i <= currentLineIndex + 1; i++) {
+      if (i === currentLineIndex + 1) {
+        newCursorPos += cursorPos - charCount;
+      } else {
+        newCursorPos += lines[i].length + 1;
+      }
+    }
+    
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+    saveState('duplicate line');
+    updateStats();
+    updateLineNumbers();
+  }
+
+  function moveCurrentLine(direction) {
+    const textarea = elements.notepad[0];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const lines = getLines(text);
+    
+    // Find current line
+    let charCount = 0;
+    let currentLineIndex = 0;
+    let posInLine = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= cursorPos) {
+        currentLineIndex = i;
+        posInLine = cursorPos - charCount;
+        break;
+      }
+      charCount += lines[i].length + 1;
+    }
+    
+    // Check bounds
+    const newIndex = currentLineIndex + direction;
+    if (newIndex < 0 || newIndex >= lines.length) return;
+    
+    // Swap lines
+    [lines[currentLineIndex], lines[newIndex]] = [lines[newIndex], lines[currentLineIndex]];
+    elements.notepad.val(setLines(lines));
+    
+    // Calculate new cursor position
+    let newCursorPos = 0;
+    for (let i = 0; i < newIndex; i++) {
+      newCursorPos += lines[i].length + 1;
+    }
+    newCursorPos += Math.min(posInLine, lines[newIndex].length);
+    
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+    saveState('move line');
+    updateStats();
+    updateLineNumbers();
+  }
+
+  // ===== Collapsible Sections =====
+  function initializeCollapsibles() {
+    $('.collapsible .section-toggle').click(function() {
+      $(this).parent().toggleClass('collapsed');
+    });
+  }
+
+  // ===== Auto Save =====
+  function setupAutoSave() {
+    state.autoSaveInterval = setInterval(() => {
+      const text = elements.notepad.val();
+      if (text) {
+        localStorage.setItem('textman-autosave', text);
+        localStorage.setItem('textman-autosave-time', new Date().toISOString());
+      }
+    }, AUTOSAVE_DELAY);
+  }
+
+  function restoreLastSession() {
+    const savedText = localStorage.getItem('textman-autosave');
+    const savedTime = localStorage.getItem('textman-autosave-time');
+    
+    if (savedText && savedTime) {
+      const timeDiff = Date.now() - new Date(savedTime).getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+      
+      if (hoursDiff < 24) {
+        elements.notepad.val(savedText);
+        saveState('restore session');
+        updateStats();
+        updateLineNumbers();
+        showToast('Previous session restored', 'info');
+      }
+    }
+  }
+
+  // ===== Utility Functions =====
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  function showWelcomeMessage() {
+    const lastVisit = localStorage.getItem('textman-last-visit');
+    const now = new Date().toDateString();
+    
+    if (lastVisit !== now) {
+      showToast('Welcome to textMan v2.0! 🎉', 'success', 5000);
+      localStorage.setItem('textman-last-visit', now);
+    }
+  }
+
+  // ===== Drag & Drop =====
+  elements.notepad.on('dragover', function(e) {
+    e.preventDefault();
+    $(this).addClass('drag-over');
+  });
+
+  elements.notepad.on('dragleave', function() {
+    $(this).removeClass('drag-over');
+  });
+
+  elements.notepad.on('drop', function(e) {
+    e.preventDefault();
+    $(this).removeClass('drag-over');
+    
+    const files = e.originalEvent.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|json|csv|html|css|js)$/i)) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          elements.notepad.val(e.target.result);
+          saveState('drop file');
+          updateStats();
+          updateLineNumbers();
+          showToast(`Loaded ${file.name}`, 'success');
+        };
+        reader.readAsText(file);
+      } else {
+        showToast('Please drop a text file', 'warning');
+      }
+    }
+  });
+
+  // ===== Initialize Everything =====
+  init();
 });
+
+// Add drag-over styles
+const style = document.createElement('style');
+style.textContent = `
+  #notepad.drag-over {
+    background-color: rgba(107, 187, 140, 0.1);
+    border-color: #6bbb8c;
+  }
+`;
+document.head.appendChild(style);
