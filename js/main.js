@@ -46,6 +46,7 @@ $(document).ready(function () {
     initializeEventListeners();
     initializeKeyboardShortcuts();
     initializeCollapsibles();
+    initializeHelpSystem();
     setupAutoSave();
     restoreLastSession();
     showWelcomeMessage();
@@ -1143,16 +1144,130 @@ $(document).ready(function () {
     }
   });
 
+  // ===== Help System =====
+  function initializeHelpSystem() {
+    const $helpToggle = $('#helpToggle');
+    const $helpSidebar = $('#helpSidebar');
+    const $closeSidebar = $('#closeSidebar');
+    const $helpContainer = $('.help-container.enhanced');
+    
+    // Sidebar toggle
+    $helpToggle.click(function() {
+      $helpSidebar.addClass('active');
+      $('body').css('overflow', 'hidden'); // Prevent scrolling when sidebar is open
+    });
+    
+    // Close sidebar
+    $closeSidebar.click(function() {
+      $helpSidebar.removeClass('active');
+      $('body').css('overflow', '');
+    });
+    
+    // Close sidebar when clicking outside (on mobile)
+    $helpSidebar.click(function(e) {
+      if ($(e.target).is('.help-sidebar::before')) {
+        $helpSidebar.removeClass('active');
+        $('body').css('overflow', '');
+      }
+    });
+    
+    // ESC key to close sidebar
+    $(document).on('keydown', function(e) {
+      if (e.key === 'Escape' && $helpSidebar.hasClass('active')) {
+        $helpSidebar.removeClass('active');
+        $('body').css('overflow', '');
+      }
+    });
+    
+    // Enhanced help container animations
+    $helpContainer.on('toggle', function() {
+      if (this.open) {
+        $(this).find('.click-hint').fadeOut(200);
+      } else {
+        $(this).find('.click-hint').fadeIn(200);
+      }
+    });
+    
+    // Smooth scroll to help sections from sidebar
+    $('.help-section-sidebar h4').css('cursor', 'pointer').click(function() {
+      const targetSection = $(this).text().toLowerCase();
+      
+      // Close sidebar
+      $helpSidebar.removeClass('active');
+      $('body').css('overflow', '');
+      
+      // Find and scroll to the corresponding tool section
+      $('.tool-section h3').each(function() {
+        if ($(this).text().toLowerCase().includes(targetSection)) {
+          $('html, body').animate({
+            scrollTop: $(this).parent().offset().top - 100
+          }, 500);
+          
+          // Flash the section
+          const $section = $(this).parent();
+          $section.addClass('highlight-flash');
+          setTimeout(() => $section.removeClass('highlight-flash'), 1000);
+          
+          return false; // Break the loop
+        }
+      });
+    });
+    
+    // Animate help icon on page load
+    setTimeout(() => {
+      $helpToggle.addClass('attention-bounce');
+      setTimeout(() => $helpToggle.removeClass('attention-bounce'), 3000);
+    }, 2000);
+  }
+
   // ===== Initialize Everything =====
   init();
 });
 
-// Add drag-over styles
+// Add necessary styles for animations
 const style = document.createElement('style');
 style.textContent = `
   #notepad.drag-over {
     background-color: rgba(107, 187, 140, 0.1);
     border-color: #6bbb8c;
+  }
+  
+  .highlight-flash {
+    animation: flash 1s ease-out;
+  }
+  
+  @keyframes flash {
+    0%, 100% { background-color: inherit; }
+    50% { background-color: rgba(107, 187, 140, 0.1); }
+  }
+  
+  .attention-bounce {
+    animation: attentionBounce 0.5s ease-out 3;
+  }
+  
+  @keyframes attentionBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+  
+  /* Overlay for sidebar on mobile */
+  @media (max-width: 768px) {
+    .help-sidebar.active::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+      animation: fadeIn 0.3s ease-out;
+    }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 `;
 document.head.appendChild(style);
