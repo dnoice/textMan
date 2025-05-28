@@ -651,6 +651,14 @@ $(document).ready(function () {
     });
   }
 
+  // Editor mode buttons
+    $('.mode-btn').click(function() {
+      $('.mode-btn').removeClass('active');
+      $(this).addClass('active');
+      const newMode = $(this).data('mode');
+      switchEditorMode(newMode);
+    });
+
   // ===== Quick Actions =====
   function handleQuickAction(action) {
     switch(action) {
