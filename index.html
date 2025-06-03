@@ -1,629 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
-  <meta charset="UTF-8" />
-  <title>textMan - Advanced Text Manipulation Suite</title>
-  <!-- Meta Tags for Responsive Design and SEO -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description"
-    content="textMan is your ultimate text manipulation suite. Easily edit, transform, analyze, and manage your text with advanced tools and beautiful design." />
-  <meta name="keywords"
-    content="text manipulation, text editor, online notepad, text tools, textMan, text analysis, regex, markdown" />
-  <meta name="author" content="textMan" />
-  <meta name="theme-color" content="#6bbb8c" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Include Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet" />
+    <!-- seo meta tags -->
+    <meta name="description"
+        content="An enhanced, robust, and accessible single-page application for advanced text manipulation, with polished styles, improved UI/UX, read time estimation, and Firestore integration.">
+    <meta name="keywords"
+        content="text manipulation, text editor, single-page application, Firestore, read time estimation, UI/UX, accessibility">
+    <meta name="author" content="Your Name">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="your-google-site-verification-code">
+    <meta name="msapplication-TileColor" content="#1a202c">
+    <meta name="msapplication-TileImage" content="mstile-150x150.png">
+    <meta name="apple-mobile-web-app-title" content="textMan">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- Link to your Favicon -->
-  <link rel="icon" href="favicon.ico" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="mask-icon" href="safari-pinned-tab.svg" color="#1a202c">
 
-  <!-- CSS Components -->
-  <link rel="stylesheet" href="css/variables.css" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/typography.css" />
-  <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/header.css" />
-  <link rel="stylesheet" href="css/sidebar.css" />
-  <link rel="stylesheet" href="css/editor.css" />
-  <link rel="stylesheet" href="css/buttons.css" />
-  <link rel="stylesheet" href="css/forms.css" />
-  <link rel="stylesheet" href="css/modals.css" />
-  <link rel="stylesheet" href="css/ui-components.css" />
-  <link rel="stylesheet" href="css/animations.css" />
-  <link rel="stylesheet" href="css/responsive.css" />
-  <link rel="stylesheet" href="css/print.css" />
+    <title>textMan</title>
+
+    <!-- third party stylsheets via cdn -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- custom stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+
 </head>
 
-<body class="app-body">
-  <!-- App Container -->
-  <div class="app-container">
-    <!-- Header Bar -->
-    <header class="header-bar">
-      <div class="header-left">
-        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar"
-          data-tooltip="Toggle Tools (Ctrl+B)">
-          <i class="fas fa-bars"></i>
-        </button>
-        <div class="logo-container">
-          <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="24" height="24">
-            <path
-              d="m18.858 0.087595c-0.068533 0.080388-0.09085 0.19042-0.059081 0.29118-0.14604 0.11305-0.2958 0.21943-0.44882 0.31982-2.7005 1.5776-6.341 1.7177-9.4146 1.2188-0.088204-0.014314-0.19748 0.035231-0.24406 0.11154-1.7923 2.9363-3.4305 5.9718-5.1226 8.9685-0.047453 0.08404-0.14253 0.09763-0.21229 0.0304l-1.0931-1.0538c-0.069801-0.067202-0.17989-0.064333-0.24598 0.00658-0.23531 0.25231-0.47053 0.5047-0.70595 0.75691-0.066127 0.07084-0.063028 0.1826 0.00692 0.24964 0.1655 0.15857 0.33092 0.31723 0.49641 0.47582 0.069973 0.06703 0.063138 0.16761-0.015209 0.22461l-1.7383 1.2646a0.14992 0.15001 0 0 0-0.0179 0.22735l6.7659 6.7761a0.1511 0.15119 0 0 0 0.2283-0.01685l1.2798-1.7294c0.057647-0.0779 0.15869-0.08431 0.22571-0.01432 0.15848 0.1656 0.31705 0.33111 0.47555 0.49669 0.066989 0.07001 0.17869 0.07309 0.24948 7e-3 0.25204-0.23558 0.50426-0.47095 0.75646-0.70637 0.0708-0.06614 0.07376-0.1763 0.0066-0.2461l-1.0532-1.0939c-0.06721-0.06981-0.054722-0.16741 0.028112-0.21766 2.9399-1.7834 6.0876-3.238 8.9688-5.1164 0.07462-0.04864 0.12447-0.16013 0.11208-0.24869-0.44224-3.1611-0.43973-6.6048 1.2144-9.4194 0.10034-0.15311 0.20644-0.30308 0.31964-0.44908 0.10071 0.031787 0.21068 0.00946 0.29102-0.059117 0.13824-0.1403 0.11286-0.40525-0.07696-0.47005-0.01756-0.005983-0.04255 0.002647-0.05506 0.016694-1.7485 1.964-3.5702 3.8426-5.4854 5.6395-0.0652 0.061164-0.08469 0.17504-0.04962 0.25727 0.21094 0.49455 0.32039 1.1954-0.03807 1.5311-0.43682 0.40498-1.3051 0.37868-1.9979-0.32159-0.68594-0.67621-0.73588-1.5515-0.32141-1.9991 0.3357-0.35894 1.0365-0.24888 1.5303-0.038056 0.08214 0.035075 0.1944 0.014165 0.25389-0.05256 1.7483-1.9609 3.724-3.6958 5.6417-5.4867 0.01281-0.011962 0.02041-0.036746 0.01432-0.054527-0.06503-0.18964-0.32962-0.21472-0.46967-0.076567z"
-              fill="currentColor" stroke-width=".56009" />
-          </svg>
-          <h1>textMan</h1>
-        </div>
-      </div>
+<body class="bg-primary text-primary">
+    <div class="app-container">
 
-      <div class="header-center">
-        <div class="editor-modes">
-          <button class="mode-btn active" data-mode="plain" aria-label="Plain text mode">
-            <i class="fas fa-file-alt"></i> Plain
-          </button>
-          <button class="mode-btn" data-mode="markdown" aria-label="Markdown mode">
-            <i class="fab fa-markdown"></i> Markdown
-          </button>
-          <button class="mode-btn" data-mode="code" aria-label="Code mode">
-            <i class="fas fa-code"></i> Code
-          </button>
-        </div>
-      </div>
-
-      <div class="header-right">
-        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-          <i class="fas fa-moon"></i>
-        </button>
-        <button id="helpToggle" class="help-toggle" aria-label="Help" data-tooltip="Help & Tips">
-          <i class="fas fa-question-circle"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <div class="main-content">
-      <!-- Tools Sidebar -->
-      <aside id="toolsSidebar" class="tools-sidebar">
-        <div class="sidebar-header">
-          <h2><i class="fas fa-toolbox"></i> Tools</h2>
-          <div class="sidebar-controls">
-            <button id="pinSidebar" class="pin-btn" aria-label="Pin sidebar" data-tooltip="Pin sidebar">
-              <i class="fas fa-thumbtack"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="sidebar-search">
-          <input type="text" id="toolSearch" placeholder="Search tools..." class="tool-search">
-          <i class="fas fa-search search-icon"></i>
-        </div>
-
-        <div class="sidebar-content">
-          <!-- Quick Actions -->
-          <div class="tool-section quick-actions">
-            <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
-            <div class="quick-action-grid">
-              <button class="quick-btn" data-action="lowercase" data-tooltip="Convert to lowercase">
-                <i class="fas fa-font"></i>
-                <span>lowercase</span>
-              </button>
-              <button class="quick-btn" data-action="uppercase" data-tooltip="Convert to UPPERCASE">
-                <i class="fas fa-font"></i>
-                <span>UPPERCASE</span>
-              </button>
-              <button class="quick-btn" data-action="titlecase" data-tooltip="Convert to Title Case">
-                <i class="fas fa-heading"></i>
-                <span>Title Case</span>
-              </button>
-              <button class="quick-btn" data-action="removeSpaces" data-tooltip="Remove extra spaces">
-                <i class="fas fa-compress"></i>
-                <span>Trim</span>
-              </button>
-              <button class="quick-btn" data-action="removeDuplicates" data-tooltip="Remove duplicate lines">
-                <i class="fas fa-clone"></i>
-                <span>Unique</span>
-              </button>
-              <button class="quick-btn" data-action="reverse" data-tooltip="Reverse text">
-                <i class="fas fa-exchange-alt"></i>
-                <span>Reverse</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Transform Section -->
-          <div class="tool-section collapsible">
-            <h3 class="section-toggle">
-              <i class="fas fa-exchange-alt"></i> Transform
-              <i class="fas fa-chevron-down toggle-icon"></i>
-            </h3>
-            <div class="tool-content">
-              <div class="tool-button-grid">
-                <button class="tool-btn" id="toLowerCaseButton" title="Convert to lowercase">
-                  <i class="fas fa-font"></i> lowercase
-                </button>
-                <button class="tool-btn" id="toUpperCaseButton" title="Convert to UPPERCASE">
-                  <i class="fas fa-font"></i> UPPERCASE
-                </button>
-                <button class="tool-btn" id="capitalizeWordsButton" title="Title Case">
-                  <i class="fas fa-heading"></i> Title Case
-                </button>
-                <button class="tool-btn" id="sentenceCaseButton" title="Sentence case">
-                  <i class="fas fa-paragraph"></i> Sentence
-                </button>
-                <button class="tool-btn" id="camelCaseButton" title="camelCase">
-                  <i class="fas fa-code"></i> camelCase
-                </button>
-                <button class="tool-btn" id="snakeCaseButton" title="snake_case">
-                  <i class="fas fa-underline"></i> snake_case
-                </button>
-                <button class="tool-btn" id="kebabCaseButton" title="kebab-case">
-                  <i class="fas fa-minus"></i> kebab-case
-                </button>
-                <button class="tool-btn" id="alternatingCaseButton" title="aLtErNaTiNg">
-                  <i class="fas fa-random"></i> aLtErNaTe
-                </button>
-                <button class="tool-btn" id="invertCaseButton" title="iNVERT cASE">
-                  <i class="fas fa-sync"></i> iNVERT
-                </button>
-              </div>
-
-              <div class="tool-button-row">
-                <button class="tool-btn primary" id="base64EncodeButton">
-                  <i class="fas fa-lock"></i> Base64 Encode
-                </button>
-                <button class="tool-btn primary" id="base64DecodeButton">
-                  <i class="fas fa-unlock"></i> Base64 Decode
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sort & Order Section -->
-          <div class="tool-section collapsible">
-            <h3 class="section-toggle">
-              <i class="fas fa-sort"></i> Sort & Order
-              <i class="fas fa-chevron-down toggle-icon"></i>
-            </h3>
-            <div class="tool-content">
-              <div class="tool-button-grid">
-                <button class="tool-btn" id="sortLinesAZButton" title="Sort A to Z">
-                  <i class="fas fa-sort-alpha-down"></i> A → Z
-                </button>
-                <button class="tool-btn" id="sortLinesZAButton" title="Sort Z to A">
-                  <i class="fas fa-sort-alpha-up"></i> Z → A
-                </button>
-                <button class="tool-btn" id="sortLinesShortestButton" title="Sort by length ascending">
-                  <i class="fas fa-sort-amount-down"></i> Short → Long
-                </button>
-                <button class="tool-btn" id="sortLinesLongestButton" title="Sort by length descending">
-                  <i class="fas fa-sort-amount-up"></i> Long → Short
-                </button>
-                <button class="tool-btn" id="sortNumericalButton" title="Sort numerically">
-                  <i class="fas fa-sort-numeric-down"></i> Numerical
-                </button>
-                <button class="tool-btn" id="shuffleLinesButton" title="Randomize order">
-                  <i class="fas fa-random"></i> Shuffle
-                </button>
-                <button class="tool-btn" id="reverseTextButton" title="Reverse entire text">
-                  <i class="fas fa-backward"></i> Reverse Text
-                </button>
-                <button class="tool-btn" id="reverseLinesButton" title="Reverse line order">
-                  <i class="fas fa-sort"></i> Reverse Lines
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Find & Replace Section -->
-          <div class="tool-section collapsible">
-            <h3 class="section-toggle">
-              <i class="fas fa-search"></i> Find & Replace
-              <i class="fas fa-chevron-down toggle-icon"></i>
-            </h3>
-            <div class="tool-content">
-              <div class="input-group">
-                <input type="text" id="findInput" placeholder="Find..." class="tool-input">
-                <button class="tool-btn primary" id="findButton">
-                  <i class="fas fa-search"></i> Find All
-                </button>
-              </div>
-
-              <div class="checkbox-group">
-                <label>
-                  <input type="checkbox" id="caseSensitive">
-                  <span>Case sensitive</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="wholeWord">
-                  <span>Whole word</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="useRegex">
-                  <span>Regex</span>
-                </label>
-              </div>
-
-              <div class="input-group">
-                <input type="text" id="replaceInput" placeholder="Replace with..." class="tool-input">
-                <button class="tool-btn" id="replaceButton">
-                  <i class="fas fa-exchange-alt"></i> Replace All
-                </button>
-                <button class="tool-btn" id="replaceOneButton">
-                  <i class="fas fa-step-forward"></i> Replace Next
-                </button>
-              </div>
-
-              <div class="find-results" id="findResults" style="display: none;">
-                <span class="results-count">0 matches found</span>
-                <div class="results-nav">
-                  <button class="nav-btn" id="prevMatch" disabled>
-                    <i class="fas fa-chevron-up"></i>
-                  </button>
-                  <span class="current-match">0/0</span>
-                  <button class="nav-btn" id="nextMatch" disabled>
-                    <i class="fas fa-chevron-down"></i>
-                  </button>
+        <header class="app-header">
+            <div class="flex items-center justify-between w-full gap-4">
+                <div class="flex items-center gap-3">
+                    <svg class="app-logo text-green-500 h-8 w-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <title>textMan Application Logo</title>
+                        <path
+                            d="m18.858 0.087595c-0.068533 0.080388-0.09085 0.19042-0.059081 0.29118-0.14604 0.11305-0.2958 0.21943-0.44882 0.31982-2.7005 1.5776-6.341 1.7177-9.4146 1.2188-0.088204-0.014314-0.19748 0.035231-0.24406 0.11154-1.7923 2.9363-3.4305 5.9718-5.1226 8.9685-0.047453 0.08404-0.14253 0.09763-0.21229 0.0304l-1.0931-1.0538c-0.069801-0.067202-0.17989-0.064333-0.24598 0.00658-0.23531 0.25231-0.47053 0.5047-0.70595 0.75691-0.066127 0.07084-0.063028 0.1826 0.00692 0.24964 0.1655 0.15857 0.33092 0.31723 0.49641 0.47582 0.069973 0.06703 0.063138 0.16761-0.015209 0.22461l-1.7383 1.2646a0.14992 0.15001 0 0 0-0.0179 0.22735l6.7659 6.7761a0.1511 0.15119 0 0 0 0.2283-0.01685l1.2798-1.7294c0.057647-0.0779 0.15869-0.08431 0.22571-0.01432 0.15848 0.1656 0.31705 0.33111 0.47555 0.49669 0.066989 0.07001 0.17869 0.07309 0.24948 7e-3 0.25204-0.23558 0.50426-0.47095 0.75646-0.70637 0.0708-0.06614 0.07376-0.1763 0.0066-0.2461l-1.0532-1.0939c-0.06721-0.06981-0.054722-0.16741 0.028112-0.21766 2.9399-1.7834 6.0876-3.238 8.9688-5.1164 0.07462-0.04864 0.12447-0.16013 0.11208-0.24869-0.44224-3.1611-0.43973-6.6048 1.2144-9.4194 0.10034-0.15311 0.20644-0.30308 0.31964-0.44908 0.10071 0.031787 0.21068 0.00946 0.29102-0.059117 0.13824-0.1403 0.11286-0.40525-0.07696-0.47005-0.01756-0.005983-0.04255 0.002647-0.05506 0.016694-1.7485 1.964-3.5702 3.8426-5.4854 5.6395-0.0652 0.061164-0.08469 0.17504-0.04962 0.25727 0.21094 0.49455 0.32039 1.1954-0.03807 1.5311-0.43682 0.40498-1.3051 0.37868-1.9979-0.32159-0.68594-0.67621-0.73588-1.5515-0.32141-1.9991 0.3357-0.35894 1.0365-0.24888 1.5303-0.038056 0.08214 0.035075 0.1944 0.014165 0.25389-0.05256 1.7483-1.9609 3.724-3.6958 5.6417-5.4867 0.01281-0.011962 0.02041-0.036746 0.01432-0.054527-0.06503-0.18964-0.32962-0.21472-0.46967-0.076567z" />
+                    </svg>
+                    <h1 class="text-xl font-semibold hidden sm:block">textMan</h1>
                 </div>
-              </div>
+
+                <nav aria-label="Quick Actions" class="flex-1 max-w-lg">
+                    <div id="quickActions" class="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+                    </div>
+                </nav>
+
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-ghost hover:text-green-500 px-1.5 py-1 text-sm" id="btnShortcuts" 
+                            title="Keyboard Shortcuts">
+                        <i class="fas fa-keyboard fa-fw"></i>
+                        <span class="hidden lg:inline ml-1">Shortcuts</span>
+                    </button>
+                    <button class="btn btn-ghost hover:text-green-500 px-1.5 py-1 text-sm" id="btnHelp" 
+                            title="Help & Documentation">
+                        <i class="fas fa-question-circle fa-fw"></i>
+                        <span class="hidden lg:inline ml-1">Help</span>
+                    </button>
+                    <button class="btn btn-ghost hover:text-green-500 px-1.5 py-1 text-sm" id="btnSettings" 
+                            title="Application Settings">
+                        <i class="fas fa-cog fa-fw"></i>
+                        <span class="hidden lg:inline ml-1">Settings</span>
+                    </button>
+                    <button class="btn btn-ghost hover:text-green-500 px-1.5 py-1 text-sm theme-toggle" id="themeToggle"
+                            title="Toggle Dark/Light Theme">
+                        <i class="fas fa-moon fa-fw theme-icon"></i>
+                        <span class="hidden lg:inline ml-1">Theme</span>
+                    </button>
+                </div>
             </div>
-          </div>
+        </header>
 
-          <!-- Add/Remove Section -->
-          <div class="tool-section collapsible">
-            <h3 class="section-toggle">
-              <i class="fas fa-plus-minus"></i> Add/Remove
-              <i class="fas fa-chevron-down toggle-icon"></i>
-            </h3>
-            <div class="tool-content">
-              <div class="input-group">
-                <input type="text" id="prefixInput" placeholder="Prefix..." class="tool-input">
-                <button class="tool-btn primary" id="addPrefixButton">
-                  <i class="fas fa-plus"></i> Add Prefix
-                </button>
-              </div>
+        <main class="app-main">
 
-              <div class="input-group">
-                <input type="text" id="suffixInput" placeholder="Suffix..." class="tool-input">
-                <button class="tool-btn primary" id="addSuffixButton">
-                  <i class="fas fa-plus"></i> Add Suffix
-                </button>
-              </div>
+            <aside class="sidebar sidebar-left" id="leftSidebar" aria-label="Workspace Sidebar">
+                <div class="sidebar-header">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
+                        <i class="fas fa-briefcase fa-fw text-green-500"></i> Workspace
+                    </h2>
+                    <button class="sidebar-collapse-btn" 
+                            aria-label="Hide workspace panel"
+                            data-action="collapse-sidebar" 
+                            data-sidebar-target="leftSidebar"
+                            title="Hide workspace panel (Alt+1)">
+                        <i class="fas fa-chevron-left fa-fw"></i>
+                        <span class="collapse-hint">Hide</span>
+                    </button>
+                </div>
+                <div class="sidebar-content" id="leftSidebarContent"></div>
+            </aside>
 
-              <div class="input-group">
-                <input type="text" id="wrapInput" placeholder="Wrap with..." class="tool-input">
-                <button class="tool-btn primary" id="wrapLinesButton">
-                  <i class="fas fa-quote-right"></i> Wrap Lines
-                </button>
-              </div>
+            <div class="editor-container">
+                <div class="editor-actions">
+                    <div class="action-group">
+                        <button type="button" id="btnUndo" title="Undo (Ctrl+Z)"
+                            class="btn btn-secondary action-btn"><i class="fas fa-undo fa-fw"></i></button>
+                        <button type="button" id="btnRedo" title="Redo (Ctrl+Y)"
+                            class="btn btn-secondary action-btn"><i class="fas fa-redo fa-fw"></i></button>
+                    </div>
+                    <div class="action-group">
+                        <button type="button" id="btnCopy" title="Copy All Text" 
+                            class="btn btn-secondary action-btn"><i class="fas fa-copy fa-fw"></i></button>
+                        <button type="button" id="btnClear" title="Clear All Text" 
+                            class="btn btn-secondary action-btn"><i class="fas fa-trash fa-fw"></i></button>
+                    </div>
+                </div>
 
-              <h4><i class="fas fa-eraser"></i> Remove Options</h4>
-              <div class="tool-button-grid">
-                <button class="tool-btn" id="removeDuplicatesButton" title="Remove duplicate lines">
-                  <i class="fas fa-clone"></i> Duplicates
-                </button>
-                <button class="tool-btn" id="removeEmptyLinesButton" title="Remove empty lines">
-                  <i class="fas fa-eraser"></i> Empty Lines
-                </button>
-                <button class="tool-btn" id="removeExtraSpacesButton" title="Remove extra spaces">
-                  <i class="fas fa-compress"></i> Extra Spaces
-                </button>
-                <button class="tool-btn" id="removeAllSpacesButton" title="Remove all spaces">
-                  <i class="fas fa-times"></i> All Spaces
-                </button>
-                <button class="tool-btn" id="removeNumbersButton" title="Remove numbers">
-                  <i class="fas fa-hashtag"></i> Numbers
-                </button>
-                <button class="tool-btn" id="removePunctuationButton" title="Remove punctuation">
-                  <i class="fas fa-exclamation"></i> Punctuation
-                </button>
-                <button class="tool-btn" id="removeLineBreaksButton" title="Remove line breaks">
-                  <i class="fas fa-align-justify"></i> Line Breaks
-                </button>
-                <button class="tool-btn" id="removeAccentsButton" title="Remove accents">
-                  <i class="fas fa-language"></i> Accents
-                </button>
-              </div>
+                <div class="editor-wrapper flex-1 relative">
+                    <textarea id="mainTextArea" class="text-editor"
+                        placeholder="Start typing or paste your text here..." spellcheck="true"
+                        aria-label="Main text editor"></textarea>
+                </div>
+
+                <div class="editor-status">
+                    <div class="status-info">
+                        <span id="charCount" class="stat-item"><i class="fas fa-text-width fa-fw"></i> 0 Chars</span>
+                        <span id="wordCount" class="stat-item"><i class="fas fa-font fa-fw"></i> 0 Words</span>
+                        <span id="lineCount" class="stat-item"><i class="fas fa-list fa-fw"></i> 0 Lines</span>
+                        <span id="readTimeStat" class="stat-item"><i class="fas fa-clock fa-fw"></i> 0 min read</span>
+                    </div>
+                    <span id="statusMessage" aria-live="polite" class="status-message">Ready</span>
+                </div>
             </div>
-          </div>
 
-          <!-- Filter Lines Section -->
-          <div class="tool-section collapsible">
-            <h3 class="section-toggle">
-              <i class="fas fa-filter"></i> Filter Lines
-              <i class="fas fa-chevron-down toggle-icon"></i>
-            </h3>
-            <div class="tool-content">
-              <div class="input-group">
-                <input type="text" id="keepLinesInput" placeholder="Keep lines containing..." class="tool-input">
-                <button class="tool-btn primary" id="keepLinesButton">
-                  <i class="fas fa-filter"></i> Keep Lines
-                </button>
-              </div>
+            <aside class="sidebar sidebar-right" id="rightSidebar" aria-label="Text Tools Sidebar">
+                <div class="sidebar-header">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
+                        <i class="fas fa-toolbox fa-fw text-green-500"></i> Text Tools
+                    </h2>
+                    <button class="sidebar-collapse-btn" 
+                            aria-label="Hide tools panel"
+                            data-action="collapse-sidebar" 
+                            data-sidebar-target="rightSidebar"
+                            title="Hide tools panel (Alt+2)">
+                        <i class="fas fa-chevron-right fa-fw"></i>
+                        <span class="collapse-hint">Hide</span>
+                    </button>
+                </div>
+                <div class="sidebar-content" id="rightSidebarContent"></div>
+            </aside>
 
-              <div class="input-group">
-                <input type="text" id="removeLinesInput" placeholder="Remove lines containing..." class="tool-input">
-                <button class="tool-btn primary" id="removeLinesButton">
-                  <i class="fas fa-filter"></i> Remove Lines
-                </button>
-              </div>
+        </main>
 
-              <h4><i class="fas fa-search-plus"></i> Extract Options</h4>
-              <div class="tool-button-row">
-                <button class="tool-btn" id="extractUrlsButton">
-                  <i class="fas fa-link"></i> Extract URLs
-                </button>
-                <button class="tool-btn" id="extractEmailsButton">
-                  <i class="fas fa-envelope"></i> Extract Emails
-                </button>
-                <button class="tool-btn" id="extractNumbersButton">
-                  <i class="fas fa-hashtag"></i> Extract Numbers
-                </button>
-              </div>
+        <footer class="app-footer">
+            <div class="footer-content flex items-center justify-between text-xs" style="color:var(--text-secondary)">
+                <div class="flex items-center gap-4">
+                    <span>© 2025 textMan</span>
+                    <span id="autoSaveStatus" class="flex items-center gap-1">
+                        <i class="fas fa-save fa-fw"></i> Auto-save: On
+                    </span>
+                    <span id="userIdDisplay" class="hidden sm:inline-flex items-center gap-1">
+                        <i class="fas fa-user fa-fw"></i> 
+                        <span id="userIdValue"></span>
+                    </span>
+                </div>
             </div>
-          </div>
+        </footer>
 
-          <!-- Advanced Tools Section -->
-          <div class="tool-section collapsible">
-            <h3 class="section-toggle">
-              <i class="fas fa-tools"></i> Advanced Tools
-              <i class="fas fa-chevron-down toggle-icon"></i>
-            </h3>
-            <div class="tool-content">
-              <div class="tool-button-grid">
-                <button class="tool-btn" id="jsonFormatButton" title="Format JSON">
-                  <i class="fas fa-code"></i> Format JSON
-                </button>
-                <button class="tool-btn" id="jsonMinifyButton" title="Minify JSON">
-                  <i class="fas fa-compress"></i> Minify JSON
-                </button>
-                <button class="tool-btn" id="csvToTableButton" title="Convert CSV to table">
-                  <i class="fas fa-table"></i> CSV → Table
-                </button>
-                <button class="tool-btn" id="markdownPreviewButton" title="Preview markdown">
-                  <i class="fab fa-markdown"></i> MD Preview
-                </button>
-                <button class="tool-btn" id="generateLoremButton" title="Generate lorem ipsum">
-                  <i class="fas fa-paragraph"></i> Lorem Ipsum
-                </button>
-                <button class="tool-btn" id="wordFrequencyButton" title="Analyze word frequency">
-                  <i class="fas fa-chart-bar"></i> Word Freq
-                </button>
-                <button class="tool-btn" id="textDiffButton" title="Compare texts">
-                  <i class="fas fa-code-branch"></i> Text Diff
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Editor Area -->
-      <main class="editor-area">
-        <!-- Toolbar -->
-        <div class="editor-toolbar">
-          <div class="toolbar-group">
-            <button id="undoButton" disabled aria-label="Undo" data-tooltip="Undo (Ctrl+Z)">
-              <i class="fas fa-undo"></i>
-            </button>
-            <button id="redoButton" disabled aria-label="Redo" data-tooltip="Redo (Ctrl+Y)">
-              <i class="fas fa-redo"></i>
-            </button>
-          </div>
-
-          <div class="toolbar-separator"></div>
-
-          <div class="toolbar-group">
-            <button id="copyButton" aria-label="Copy" data-tooltip="Copy (Ctrl+C)">
-              <i class="fas fa-copy"></i>
-            </button>
-            <button id="cutButton" aria-label="Cut" data-tooltip="Cut (Ctrl+X)">
-              <i class="fas fa-cut"></i>
-            </button>
-            <button id="pasteButton" aria-label="Paste" data-tooltip="Paste (Ctrl+V)">
-              <i class="fas fa-paste"></i>
-            </button>
-          </div>
-
-          <div class="toolbar-separator"></div>
-
-          <div class="toolbar-group">
-            <button id="selectAllButton" aria-label="Select All" data-tooltip="Select All (Ctrl+A)">
-              <i class="fas fa-check-square"></i>
-            </button>
-            <button id="clearButton" aria-label="Clear" data-tooltip="Clear All">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-
-          <div class="toolbar-separator"></div>
-
-          <div class="toolbar-group">
-            <button id="saveButton" aria-label="Save" data-tooltip="Save to File">
-              <i class="fas fa-save"></i>
-            </button>
-            <button id="loadButton" aria-label="Load" data-tooltip="Load from File">
-              <i class="fas fa-folder-open"></i>
-            </button>
-            <input type="file" id="fileInput" accept=".txt,.md,.js,.html,.css,.json" style="display: none;">
-          </div>
-
-          <div class="toolbar-right">
-            <button id="quickActionsToggle" class="quick-actions-toggle" aria-label="Quick Actions"
-              data-tooltip="Quick Actions">
-              <i class="fas fa-bolt"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Quick Actions Bar (collapsible) -->
-        <div id="quickActionsBar" class="quick-actions-bar" style="display: none;">
-          <button class="quick-action-btn" data-action="lowercase">
-            <i class="fas fa-font"></i> lowercase
-          </button>
-          <button class="quick-action-btn" data-action="uppercase">
-            <i class="fas fa-font"></i> UPPERCASE
-          </button>
-          <button class="quick-action-btn" data-action="titlecase">
-            <i class="fas fa-heading"></i> Title Case
-          </button>
-          <button class="quick-action-btn" data-action="removeSpaces">
-            <i class="fas fa-compress"></i> Trim Spaces
-          </button>
-          <button class="quick-action-btn" data-action="removeDuplicates">
-            <i class="fas fa-clone"></i> Remove Duplicates
-          </button>
-          <button class="quick-action-btn" data-action="reverse">
-            <i class="fas fa-exchange-alt"></i> Reverse
-          </button>
-        </div>
-
-        <!-- Editor Container -->
-        <div class="editor-container">
-          <div class="line-numbers" id="lineNumbers" aria-hidden="true"></div>
-          <textarea id="notepad" placeholder="Start typing or paste your text here..." aria-label="Text editor"
-            spellcheck="false"></textarea>
-        </div>
-
-        <!-- Status Bar -->
-        <div class="status-bar">
-          <div class="status-left">
-            <div class="stat-item">
-              <i class="fas fa-font"></i>
-              <span id="wordCount">0 words</span>
-            </div>
-            <div class="stat-item">
-              <i class="fas fa-text-width"></i>
-              <span id="charCount">0 characters</span>
-            </div>
-            <div class="stat-item">
-              <i class="fas fa-paragraph"></i>
-              <span id="lineCount">0 lines</span>
-            </div>
-            <div class="stat-item">
-              <i class="fas fa-align-left"></i>
-              <span id="paragraphCount">0 paragraphs</span>
-            </div>
-          </div>
-          <div class="status-right">
-            <div class="stat-item">
-              <i class="fas fa-clock"></i>
-              <span id="readingTime">0 min read</span>
-            </div>
-            <div class="stat-item">
-              <i class="fas fa-language"></i>
-              <span id="languageDetect">English</span>
-            </div>
-          </div>
-        </div>
-      </main>
     </div>
-  </div>
 
-  <!-- Help Modal -->
-  <div id="helpModal" class="help-modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2><i class="fas fa-question-circle"></i> Help & Keyboard Shortcuts</h2>
-        <button id="closeHelp" class="close-modal">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="help-grid">
-          <div class="help-column">
-            <h4><i class="fas fa-keyboard"></i> Editor Shortcuts</h4>
-            <ul class="shortcuts-list">
-              <li><span><kbd>Ctrl</kbd> + <kbd>Z</kbd></span> Undo</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>Y</kbd></span> Redo</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>A</kbd></span> Select All</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>S</kbd></span> Save to File</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>O</kbd></span> Open File</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>F</kbd></span> Find</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>H</kbd></span> Replace</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>B</kbd></span> Toggle Sidebar</li>
-            </ul>
-          </div>
-          <div class="help-column">
-            <h4><i class="fas fa-exchange-alt"></i> Transform Shortcuts</h4>
-            <ul class="shortcuts-list">
-              <li><span><kbd>Ctrl</kbd> + <kbd>L</kbd></span> Lowercase</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>U</kbd></span> Uppercase</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>T</kbd></span> Title Case</li>
-              <li><span><kbd>Ctrl</kbd> + <kbd>D</kbd></span> Duplicate Line</li>
-              <li><span><kbd>Alt</kbd> + <kbd>↑/↓</kbd></span> Move Line</li>
-            </ul>
-          </div>
-          <div class="help-column">
-            <h4><i class="fas fa-lightbulb"></i> Pro Tips</h4>
-            <ul class="tips-list">
-              <li><i class="fas fa-mouse"></i> Double-click any word to select it</li>
-              <li><i class="fas fa-mouse"></i> Triple-click to select a line</li>
-              <li><i class="fas fa-hand-pointer"></i> Hold <kbd>Shift</kbd> while clicking to select range</li>
-              <li><i class="fas fa-file-import"></i> Drag & drop files into the editor</li>
-              <li><i class="fas fa-code"></i> Use regex for advanced find/replace</li>
-              <li><i class="fas fa-pin"></i> Pin the sidebar to keep it open</li>
-              <li><i class="fas fa-search"></i> Search tools with the sidebar search</li>
-            </ul>
-          </div>
+    <div id="modalContainer" class="modal-overlay" hidden>
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="flex justify-between items-start mb-4">
+                <h2 id="modalTitle" class="modal-title">Modal Title</h2>
+                <button id="modalClose" class="btn btn-ghost p-1.5 -mr-2 -mt-2" aria-label="Close dialog">
+                    <i class="fas fa-times fa-fw text-lg"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="modal-content"></div>
+            <div id="modalActions" class="modal-actions"></div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Toast Notification Container -->
-  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <!-- Tooltip container -->
+    <div id="tooltip" class="tooltip hidden">
+        <div class="tooltip-content"></div>
+        <div class="tooltip-arrow"></div>
+    </div>
 
-  <!-- Progress Bar -->
-  <div class="progress-bar" id="progressBar" style="display: none;">
-    <div class="progress-fill"></div>
-  </div>
+    <!-- Firebase Configuration for textMan -->
+    <script>
+        var __firebase_config = JSON.stringify({
+            apiKey: "AIzaSyB9rwhP4vMMP9JFD91VxFy2wD7nNwYapxw",
+            authDomain: "textman-app.firebaseapp.com",
+            projectId: "textman-app",
+            storageBucket: "textman-app.firebasestorage.app",
+            messagingSenderId: "338578997771",
+            appId: "1:338578997771:web:8eeaf07043eaf598b53d0e"
+        });
+        
+        var __app_id = 'textman-v1';
+    </script>
 
-  <!-- Context Menu -->
-  <div class="context-menu" id="contextMenu" style="display: none;">
-    <button class="context-item" data-action="cut">
-      <i class="fas fa-cut"></i> Cut
-    </button>
-    <button class="context-item" data-action="copy">
-      <i class="fas fa-copy"></i> Copy
-    </button>
-    <button class="context-item" data-action="paste">
-      <i class="fas fa-paste"></i> Paste
-    </button>
-    <div class="context-separator"></div>
-    <button class="context-item" data-action="selectAll">
-      <i class="fas fa-check-square"></i> Select All
-    </button>
-    <button class="context-item" data-action="transform">
-      <i class="fas fa-exchange-alt"></i> Transform...
-    </button>
-  </div>
+    <!-- Your main application script -->
+    <script type="module" src="js/scripts.js" defer></script>
 
-  <!-- Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-  <!-- JavaScript Modules -->
-  <script src="js/config.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/theme.js"></script>
-  <script src="js/sidebar.js"></script>
-  <script src="js/editor.js"></script>
-  <script src="js/statistics.js"></script>
-  <script src="js/transformations.js"></script>
-  <script src="js/file-operations.js"></script>
-  <script src="js/find-replace.js"></script>
-  <script src="js/clipboard.js"></script>
-  <script src="js/ui-components.js"></script>
-  <script src="js/keyboard-shortcuts.js"></script>
-  <script src="js/drag-drop.js"></script>
-  <script src="js/advanced-tools.js"></script>
-  <script src="js/app.js"></script>
 </body>
 
 </html>
