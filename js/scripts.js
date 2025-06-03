@@ -62,7 +62,6 @@ function cacheDOMElements() {
         modalClose: document.getElementById('modalClose'),
         userIdDisplay: document.getElementById('userIdDisplay'),
         userIdValue: document.getElementById('userIdValue'),
-        tooltip: document.getElementById('tooltip'),
     });
 }
 
@@ -892,7 +891,7 @@ function renderSidebarSections() {
     const leftSidebarSections = [
         { id: 'history', title: 'History', icon: 'fa-history', content: '<div id="historyList" class="max-h-80 overflow-y-auto"></div>' },
         { id: 'templates', title: 'Templates', icon: 'fa-file-alt', content: getTemplatesHTML() },
-        { id: 'saved', title: 'Saved Texts', icon: 'fa-bookmark', content: '<div id="savedList" class="max-h-80 overflow-y-auto"></div><button id="saveCurrentTextBtn" class="btn btn-primary w-full mt-3"><i class="fas fa-save fa-fw"></i> Save Current Text</button>' }
+        { id: 'saved', title: 'Saved Texts', icon: 'fa-bookmark', content: '<div id="savedList" class="max-h-80 overflow-y-auto"></div><button id="saveCurrentTextBtn" class="btn btn-primary w-full mt-3 compact-btn"><i class="fas fa-save fa-fw"></i> Save Current Text</button>' }
     ];
     
     const rightSidebarSections = [
@@ -2229,7 +2228,7 @@ function getTemplatesHTML() {
 
 function getQuickAnalysisHTML() {
     return `<div class="space-y-3">
-        <button class="btn btn-primary w-full" onclick="generateReport()">
+        <button class="btn btn-primary w-full compact-btn" onclick="generateReport()">
             <i class="fas fa-chart-line fa-fw"></i> Generate Full Report
         </button>
         <div class="text-xs text-center" style="color: var(--text-muted)">
@@ -2301,11 +2300,11 @@ function getFindReplaceHTML() {
             </label>
         </div>
         <div class="grid grid-cols-2 gap-2">
-            <button class="btn btn-primary text-sm py-2" data-find-replace title="Replace first occurrence">
+            <button class="btn btn-primary compact-btn" data-find-replace title="Replace first occurrence">
                 <i class="fas fa-search fa-fw"></i> Replace
             </button>
-            <button class="btn btn-primary text-sm py-2" data-find-replace-all title="Replace all occurrences">
-                <i class="fas fa-search-plus fa-fw"></i> Replace All
+            <button class="btn btn-primary compact-btn" data-find-replace-all title="Replace all occurrences">
+                <i class="fas fa-search-plus fa-fw"></i> All
             </button>
         </div>
         <div class="text-xs text-center" style="color: var(--text-muted)">
@@ -2373,7 +2372,7 @@ function getImportExportHTML() {
     return `<div class="space-y-4">
         <div>
             <input type="file" id="fileInput" hidden accept=".txt,.csv,.json,.md,.html">
-            <button id="fileInputBtn" class="btn btn-secondary w-full">
+            <button id="fileInputBtn" class="btn btn-secondary w-full compact-btn">
                 <i class="fas fa-upload fa-fw"></i> Import Text File
             </button>
             <div class="text-xs mt-1 text-center" style="color: var(--text-muted)">
@@ -2385,8 +2384,8 @@ function getImportExportHTML() {
             <h4 class="text-sm font-semibold mb-2" style="color: var(--text-secondary)">Export As:</h4>
             <div class="grid grid-cols-2 gap-2">
                 ${exportFormats.map(fmt => `
-                    <button class="tool-btn btn flex flex-col items-center justify-center h-16 text-center" data-export="${fmt.id}" title="Export as ${fmt.name}">
-                        <i class="fas ${fmt.icon} fa-fw text-xl mb-1 text-green-500"></i>
+                    <button class="export-btn" data-export="${fmt.id}" title="Export as ${fmt.name}">
+                        <i class="fas ${fmt.icon} fa-fw text-lg text-green-500"></i>
                         <span class="text-xs">${fmt.name}</span>
                     </button>
                 `).join('')}
@@ -2405,106 +2404,147 @@ function applyTemplate(templateName) {
 }
 
 /**
- * Enhanced tooltip system with better behavior
+ * Simple, reliable tooltip system
  */
 function initializeTooltips() {
-    const tooltip = elements.tooltip;
-    const tooltipContent = tooltip.querySelector('.tooltip-content');
-    let currentTooltipTarget = null;
+    // Remove any existing tooltip elements
+    document.querySelectorAll('.simple-tooltip').forEach(el => el.remove());
+    
+    // Create a single tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.className = 'simple-tooltip';
+    tooltip.style.cssText = `
+        position: fixed;
+        z-index: 9999;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid var(--border-secondary);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        backdrop-filter: blur(8px);
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        max-width: 200px;
+        word-wrap: break-word;
+        white-space: normal;
+        text-align: center;
+    `;
+    document.body.appendChild(tooltip);
+    
+    let activeElement = null;
     let showTimeout = null;
     let hideTimeout = null;
     
-    // Add tooltips to elements with title attributes
-    document.querySelectorAll('[title]').forEach(element => {
-        const originalTitle = element.getAttribute('title');
-        element.removeAttribute('title'); // Prevent default tooltip
-        element.dataset.originalTitle = originalTitle;
-        
-        element.addEventListener('mouseenter', (e) => {
-            handleTooltipShow(e.target, originalTitle);
+    // Find all elements with title attributes and set up tooltips
+    function setupTooltips() {
+        document.querySelectorAll('[title]').forEach(element => {
+            const title = element.getAttribute('title');
+            if (!title || !title.trim()) return;
+            
+            // Store original title and remove it
+            element.setAttribute('data-tooltip', title);
+            element.removeAttribute('title');
+            
+            // Mouse events
+            element.addEventListener('mouseenter', () => showTooltip(element, title));
+            element.addEventListener('mouseleave', hideTooltip);
+            
+            // Focus events for keyboard navigation
+            element.addEventListener('focus', () => showTooltip(element, title));
+            element.addEventListener('blur', hideTooltip);
         });
-        
-        element.addEventListener('mouseleave', () => {
-            handleTooltipHide();
-        });
-        
-        element.addEventListener('focus', (e) => {
-            handleTooltipShow(e.target, originalTitle);
-        });
-        
-        element.addEventListener('blur', () => {
-            handleTooltipHide();
-        });
-    });
+    }
     
-    function handleTooltipShow(target, text) {
+    function showTooltip(element, text) {
         clearTimeout(hideTimeout);
-        currentTooltipTarget = target;
+        activeElement = element;
         
-        // Delay showing tooltip for better UX
         showTimeout = setTimeout(() => {
-            if (currentTooltipTarget === target) {
-                showTooltip(target, text);
-            }
-        }, 300);
-    }
-    
-    function handleTooltipHide() {
-        clearTimeout(showTimeout);
-        currentTooltipTarget = null;
-        
-        // Delay hiding tooltip slightly
-        hideTimeout = setTimeout(() => {
-            hideTooltip();
-        }, 100);
-    }
-    
-    function showTooltip(target, text) {
-        if (!text || !text.trim()) return;
-        
-        tooltipContent.textContent = text;
-        tooltip.classList.remove('hidden');
-        tooltip.classList.add('visible');
-        
-        // Position tooltip
-        requestAnimationFrame(() => {
-            const rect = target.getBoundingClientRect();
+            if (activeElement !== element) return;
+            
+            tooltip.textContent = text;
+            tooltip.style.opacity = '1';
+            tooltip.style.transform = 'translateY(0)';
+            
+            // Position tooltip
+            const rect = element.getBoundingClientRect();
             const tooltipRect = tooltip.getBoundingClientRect();
             
-            // Calculate position
             let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-            let top = rect.top - tooltipRect.height - 12;
+            let top = rect.top - tooltipRect.height - 8;
             
-            // Keep tooltip within viewport
-            const padding = 8;
-            if (left < padding) {
-                left = padding;
-            } else if (left + tooltipRect.width > window.innerWidth - padding) {
-                left = window.innerWidth - tooltipRect.width - padding;
+            // Keep within viewport
+            const margin = 8;
+            if (left < margin) left = margin;
+            if (left + tooltipRect.width > window.innerWidth - margin) {
+                left = window.innerWidth - tooltipRect.width - margin;
             }
             
-            // If tooltip would be above viewport, show below
-            if (top < padding) {
-                top = rect.bottom + 12;
-                tooltip.classList.add('bottom');
-            } else {
-                tooltip.classList.remove('bottom');
+            // If would be above viewport, show below
+            if (top < margin) {
+                top = rect.bottom + 8;
             }
             
             tooltip.style.left = left + 'px';
             tooltip.style.top = top + 'px';
-        });
+        }, 500); // 500ms delay for less sporadic behavior
     }
     
     function hideTooltip() {
-        tooltip.classList.remove('visible');
-        tooltip.classList.add('hidden');
+        clearTimeout(showTimeout);
+        activeElement = null;
+        
+        hideTimeout = setTimeout(() => {
+            tooltip.style.opacity = '0';
+            tooltip.style.transform = 'translateY(4px)';
+        }, 100);
     }
     
-    // Hide tooltip when scrolling or clicking
-    document.addEventListener('scroll', handleTooltipHide, { passive: true });
-    document.addEventListener('click', handleTooltipHide);
-    window.addEventListener('resize', handleTooltipHide);
+    // Hide on scroll, resize, or click
+    document.addEventListener('scroll', hideTooltip, { passive: true });
+    window.addEventListener('resize', hideTooltip);
+    document.addEventListener('click', hideTooltip);
+    
+    // Initial setup
+    setupTooltips();
+    
+    // Re-setup when DOM changes (for dynamically added elements)
+    const observer = new MutationObserver((mutations) => {
+        let shouldResetup = false;
+        mutations.forEach(mutation => {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) { // Element node
+                        if (node.hasAttribute('title') || node.querySelector('[title]')) {
+                            shouldResetup = true;
+                        }
+                    }
+                });
+            }
+        });
+        if (shouldResetup) {
+            setTimeout(setupTooltips, 100); // Small delay to ensure DOM is stable
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // Cleanup function
+    window.cleanupTooltips = () => {
+        observer.disconnect();
+        clearTimeout(showTimeout);
+        clearTimeout(hideTimeout);
+        tooltip.remove();
+    };
 }
 
 // Start the application
