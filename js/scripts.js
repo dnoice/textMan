@@ -21,6 +21,8 @@ const appState = {
     isAuthReady: false,
     listeners: [],
     tooltips: new Map(),
+    analyticsCache: null,
+    analyticsCacheTimestamp: 0,
 };
 
 const elements = {}; // DOM element cache
@@ -321,6 +323,7 @@ function handleSidebarClicks(e) {
     const deleteSavedBtn = target.closest('.btn-delete-saved');
     const templateBtn = target.closest('[data-template]');
     const collapseSidebarBtn = target.closest('[data-action="collapse-sidebar"]');
+    const quickInsightsBtn = target.closest('#quickInsightsBtn');
     
     if (sectionHeader) toggleSection(sectionHeader.parentElement);
     if (toolBtn) handleToolClick(toolBtn);
@@ -329,6 +332,7 @@ function handleSidebarClicks(e) {
     if (restoreBtn) restoreFromHistory(restoreBtn.dataset.id);
     if (loadBtn) loadSavedText(loadBtn.dataset.id);
     if (templateBtn) applyTemplate(templateBtn.dataset.template);
+    if (quickInsightsBtn) showQuickInsights();
     if (collapseSidebarBtn) {
         const sidebarId = collapseSidebarBtn.dataset.sidebarTarget;
         toggleSidebar(sidebarId.includes('left') ? 'left' : 'right');
@@ -363,6 +367,9 @@ function handleTextInput() {
         if (appState.undoStack.length > 50) appState.undoStack.shift();
         appState.redoStack = [];
         appState.currentText = newText;
+        
+        // Invalidate analytics cache when text changes
+        appState.analyticsCache = null;
     }
     updateAllStats();
     saveCurrentTextToFirestore();
@@ -544,107 +551,683 @@ function updateAllStats() {
 }
 
 /**
- * Enhanced text analysis and reporting
+ * Get comprehensive text analytics
  */
-function generateReport() {
+function getTextAnalytics() {
+    // Use cache if available and recent (within 5 seconds)
+    if (appState.analyticsCache && (Date.now() - appState.analyticsCacheTimestamp < 5000)) {
+        return appState.analyticsCache;
+    }
+
     const text = elements.textArea.value;
     if (!text.trim()) {
-        showStatus('No text to analyze', 2000, 'warning');
-        return;
+        return null;
     }
     
+    // Basic metrics
     const chars = text.length;
     const charsNoSpaces = text.replace(/\s/g, '').length;
     const words = text.trim().split(/\s+/).filter(Boolean);
     const wordCount = words.length;
-    const sentences = (text.match(/[.!?…]+(\s|$)/g) || []).length;
+    const sentences = text.split(/[.!?…]+/).filter(s => s.trim()).length;
     const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim()).length;
     const lines = text.split('\n').length;
     
-    // Advanced analytics
-    const avgWordsPerSentence = sentences > 0 ? (wordCount / sentences).toFixed(1) : 0;
-    const avgCharsPerWord = wordCount > 0 ? (charsNoSpaces / wordCount).toFixed(1) : 0;
-    const avgSentencesPerParagraph = paragraphs > 0 ? (sentences / paragraphs).toFixed(1) : 0;
+    // Advanced metrics
+    const avgWordsPerSentence = sentences > 0 ? wordCount / sentences : 0;
+    const avgCharsPerWord = wordCount > 0 ? charsNoSpaces / wordCount : 0;
+    const avgSentencesPerParagraph = paragraphs > 0 ? sentences / paragraphs : 0;
     
     // Reading time estimates
-    const readingTime200 = Math.max(1, Math.ceil(wordCount / 200)); // Average reader
-    const readingTime250 = Math.max(1, Math.ceil(wordCount / 250)); // Fast reader
-    const readingTime150 = Math.max(1, Math.ceil(wordCount / 150)); // Slow reader
+    const readingTime200 = Math.max(1, Math.ceil(wordCount / 200));
+    const readingTime250 = Math.max(1, Math.ceil(wordCount / 250));
+    const readingTime150 = Math.max(1, Math.ceil(wordCount / 150));
     
-    // Word frequency analysis (top 5 words)
+    // Word frequency analysis
     const wordFreq = {};
+    const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'it', 'that', 'this', 'these', 'those']);
+    
     words.forEach(word => {
         const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
-        if (cleanWord.length > 3) { // Only count words longer than 3 characters
+        if (cleanWord.length > 2 && !stopWords.has(cleanWord)) {
             wordFreq[cleanWord] = (wordFreq[cleanWord] || 0) + 1;
         }
     });
     
     const topWords = Object.entries(wordFreq)
         .sort(([,a], [,b]) => b - a)
-        .slice(0, 5)
-        .map(([word, count]) => `${word} (${count})`)
-        .join(', ') || 'None found';
+        .slice(0, 10);
+    
+    // Calculate readability scores
+    const readabilityScores = calculateReadabilityScores(text, wordCount, sentences, words);
+    
+    // Basic sentiment analysis
+    const sentiment = analyzeSentiment(text);
+    
+    // Lexical diversity
+    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
+    const lexicalDiversity = wordCount > 0 ? (uniqueWords.size / wordCount) : 0;
+    
+    // Longest and shortest sentence
+    const sentencesList = text.split(/[.!?…]+/).filter(s => s.trim());
+    let longestSentence = '';
+    let shortestSentence = sentencesList[0] || '';
+    
+    sentencesList.forEach(sentence => {
+        const trimmed = sentence.trim();
+        if (trimmed.split(/\s+/).length > longestSentence.split(/\s+/).length) {
+            longestSentence = trimmed;
+        }
+        if (trimmed && trimmed.split(/\s+/).length < shortestSentence.split(/\s+/).length) {
+            shortestSentence = trimmed;
+        }
+    });
+    
+    const analytics = {
+        basicMetrics: {
+            chars,
+            charsNoSpaces,
+            wordCount,
+            sentences,
+            paragraphs,
+            lines,
+            uniqueWords: uniqueWords.size,
+            lexicalDiversity: (lexicalDiversity * 100).toFixed(1)
+        },
+        averages: {
+            avgWordsPerSentence: avgWordsPerSentence.toFixed(1),
+            avgCharsPerWord: avgCharsPerWord.toFixed(1),
+            avgSentencesPerParagraph: avgSentencesPerParagraph.toFixed(1)
+        },
+        readingTimes: {
+            slow: readingTime150,
+            average: readingTime200,
+            fast: readingTime250
+        },
+        wordFrequency: topWords,
+        readability: readabilityScores,
+        sentiment,
+        extremes: {
+            longestSentence,
+            shortestSentence,
+            longestWord: words.reduce((a, b) => a.length > b.length ? a : b, ''),
+            shortestWord: words.reduce((a, b) => (a.length < b.length && b.length > 0) ? a : b, words[0] || '')
+        }
+    };
+    
+    // Cache the results
+    appState.analyticsCache = analytics;
+    appState.analyticsCacheTimestamp = Date.now();
+    
+    return analytics;
+}
 
-    // Readability metrics (simplified)
-    const avgSentenceLength = wordCount / Math.max(sentences, 1);
-    let readabilityLevel = 'Graduate';
-    if (avgSentenceLength < 15) readabilityLevel = 'Easy';
-    else if (avgSentenceLength < 20) readabilityLevel = 'Medium';
-    else if (avgSentenceLength < 25) readabilityLevel = 'Hard';
+/**
+ * Calculate readability scores
+ */
+function calculateReadabilityScores(text, wordCount, sentences, words) {
+    if (!text.trim() || wordCount === 0 || sentences === 0) {
+        return {
+            fleschReadingEase: { score: 0, level: 'N/A', description: 'No text to analyze' },
+            fleschKincaid: { score: 0, level: 'N/A' },
+            gunningFog: { score: 0, level: 'N/A' },
+            smog: { score: 0, level: 'N/A' },
+            automatedReadability: { score: 0, level: 'N/A' }
+        };
+    }
+    
+    // Count syllables (simplified method)
+    const countSyllables = (word) => {
+        word = word.toLowerCase();
+        let count = 0;
+        let previousWasVowel = false;
+        const vowels = 'aeiouy';
+        
+        for (let i = 0; i < word.length; i++) {
+            const isVowel = vowels.includes(word[i]);
+            if (isVowel && !previousWasVowel) {
+                count++;
+            }
+            previousWasVowel = isVowel;
+        }
+        
+        // Adjust for silent e
+        if (word.endsWith('e')) {
+            count--;
+        }
+        
+        // Ensure at least one syllable
+        if (count === 0) {
+            count = 1;
+        }
+        
+        return count;
+    };
+    
+    const totalSyllables = words.reduce((total, word) => total + countSyllables(word), 0);
+    const avgSyllablesPerWord = totalSyllables / wordCount;
+    const avgWordsPerSentence = wordCount / sentences;
+    
+    // Count complex words (3+ syllables)
+    const complexWords = words.filter(word => countSyllables(word) >= 3).length;
+    const percentageComplexWords = (complexWords / wordCount) * 100;
+    
+    // Flesch Reading Ease
+    const fleschScore = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllablesPerWord;
+    let fleschLevel = '';
+    let fleschDescription = '';
+    
+    if (fleschScore >= 90) {
+        fleschLevel = 'Very Easy';
+        fleschDescription = '5th grade';
+    } else if (fleschScore >= 80) {
+        fleschLevel = 'Easy';
+        fleschDescription = '6th grade';
+    } else if (fleschScore >= 70) {
+        fleschLevel = 'Fairly Easy';
+        fleschDescription = '7th grade';
+    } else if (fleschScore >= 60) {
+        fleschLevel = 'Standard';
+        fleschDescription = '8th-9th grade';
+    } else if (fleschScore >= 50) {
+        fleschLevel = 'Fairly Difficult';
+        fleschDescription = '10th-12th grade';
+    } else if (fleschScore >= 30) {
+        fleschLevel = 'Difficult';
+        fleschDescription = 'College';
+    } else {
+        fleschLevel = 'Very Difficult';
+        fleschDescription = 'Graduate';
+    }
+    
+    // Flesch-Kincaid Grade Level
+    const fkGrade = 0.39 * avgWordsPerSentence + 11.8 * avgSyllablesPerWord - 15.59;
+    
+    // Gunning Fog Index
+    const gunningFog = 0.4 * (avgWordsPerSentence + percentageComplexWords);
+    
+    // SMOG Index (simplified)
+    const smog = Math.sqrt(complexWords * (30 / sentences)) + 3;
+    
+    // Automated Readability Index
+    const ari = 4.71 * (charsNoSpaces / wordCount) + 0.5 * avgWordsPerSentence - 21.43;
+    
+    return {
+        fleschReadingEase: {
+            score: Math.max(0, Math.min(100, fleschScore)).toFixed(1),
+            level: fleschLevel,
+            description: fleschDescription
+        },
+        fleschKincaid: {
+            score: Math.max(0, fkGrade).toFixed(1),
+            level: `Grade ${Math.round(Math.max(0, fkGrade))}`
+        },
+        gunningFog: {
+            score: Math.max(0, gunningFog).toFixed(1),
+            level: `Grade ${Math.round(Math.max(0, gunningFog))}`
+        },
+        smog: {
+            score: Math.max(0, smog).toFixed(1),
+            level: `Grade ${Math.round(Math.max(0, smog))}`
+        },
+        automatedReadability: {
+            score: Math.max(0, ari).toFixed(1),
+            level: `Grade ${Math.round(Math.max(0, ari))}`
+        },
+        complexity: {
+            avgSyllablesPerWord: avgSyllablesPerWord.toFixed(2),
+            complexWords,
+            percentageComplexWords: percentageComplexWords.toFixed(1)
+        }
+    };
+}
 
+/**
+ * Basic sentiment analysis
+ */
+function analyzeSentiment(text) {
+    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love', 'happy', 'joy', 'beautiful', 'awesome', 'brilliant', 'superb', 'positive', 'perfect', 'best', 'win', 'success', 'accomplish', 'achieve'];
+    const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'hate', 'sad', 'angry', 'fear', 'ugly', 'worst', 'fail', 'lose', 'wrong', 'mistake', 'error', 'problem', 'issue', 'difficult', 'hard', 'negative'];
+    
+    const words = text.toLowerCase().split(/\s+/);
+    let positiveCount = 0;
+    let negativeCount = 0;
+    
+    words.forEach(word => {
+        const cleanWord = word.replace(/[^\w]/g, '');
+        if (positiveWords.includes(cleanWord)) positiveCount++;
+        if (negativeWords.includes(cleanWord)) negativeCount++;
+    });
+    
+    const totalSentimentWords = positiveCount + negativeCount;
+    let sentiment = 'Neutral';
+    let confidence = 0;
+    
+    if (totalSentimentWords > 0) {
+        const positiveRatio = positiveCount / totalSentimentWords;
+        confidence = Math.abs(positiveCount - negativeCount) / totalSentimentWords * 100;
+        
+        if (positiveRatio > 0.6) {
+            sentiment = 'Positive';
+        } else if (positiveRatio < 0.4) {
+            sentiment = 'Negative';
+        }
+    }
+    
+    return {
+        sentiment,
+        confidence: confidence.toFixed(0),
+        positiveWords: positiveCount,
+        negativeWords: negativeCount,
+        score: totalSentimentWords > 0 ? ((positiveCount - negativeCount) / totalSentimentWords * 100).toFixed(0) : 0
+    };
+}
+
+/**
+ * Enhanced text analysis and reporting
+ */
+function generateReport() {
+    const analytics = getTextAnalytics();
+    
+    if (!analytics) {
+        showStatus('No text to analyze', 2000, 'warning');
+        return;
+    }
+    
     const content = `
-        <div class="space-y-6">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-3">
-                    <h4 class="font-semibold text-green-500 border-b border-green-500/30 pb-1">Basic Counts</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span>Characters:</span><strong>${chars.toLocaleString()}</strong></div>
-                        <div class="flex justify-between"><span>Characters (no spaces):</span><strong>${charsNoSpaces.toLocaleString()}</strong></div>
-                        <div class="flex justify-between"><span>Words:</span><strong>${wordCount.toLocaleString()}</strong></div>
-                        <div class="flex justify-between"><span>Sentences:</span><strong>${sentences.toLocaleString()}</strong></div>
-                        <div class="flex justify-between"><span>Paragraphs:</span><strong>${paragraphs.toLocaleString()}</strong></div>
-                        <div class="flex justify-between"><span>Lines:</span><strong>${lines.toLocaleString()}</strong></div>
+        <div class="analytics-dashboard">
+            <div class="dashboard-nav">
+                <button class="nav-tab active" data-tab="overview">Overview</button>
+                <button class="nav-tab" data-tab="readability">Readability</button>
+                <button class="nav-tab" data-tab="wordAnalysis">Word Analysis</button>
+                <button class="nav-tab" data-tab="sentiment">Sentiment</button>
+            </div>
+            
+            <div class="tab-content active" id="tab-overview">
+                <div class="metrics-grid">
+                    <div class="metric-card primary">
+                        <div class="metric-header">
+                            <h4>Text Statistics</h4>
+                            <i class="fas fa-chart-bar text-green-500"></i>
+                        </div>
+                        <div class="metric-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">${analytics.basicMetrics.wordCount.toLocaleString()}</span>
+                                <span class="stat-label">Words</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${analytics.basicMetrics.sentences.toLocaleString()}</span>
+                                <span class="stat-label">Sentences</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${analytics.basicMetrics.paragraphs.toLocaleString()}</span>
+                                <span class="stat-label">Paragraphs</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h4>Reading Time</h4>
+                            <i class="fas fa-clock text-blue-500"></i>
+                        </div>
+                        <div class="reading-time-chart">
+                            <div class="time-bar ${analytics.readingTimes.slow >= analytics.readingTimes.average ? 'primary' : ''}">
+                                <span>Slow (150 WPM)</span>
+                                <span>${analytics.readingTimes.slow} min</span>
+                            </div>
+                            <div class="time-bar primary">
+                                <span>Average (200 WPM)</span>
+                                <span>${analytics.readingTimes.average} min</span>
+                            </div>
+                            <div class="time-bar ${analytics.readingTimes.fast <= analytics.readingTimes.average ? 'primary' : ''}">
+                                <span>Fast (250 WPM)</span>
+                                <span>${analytics.readingTimes.fast} min</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h4>Readability</h4>
+                            <i class="fas fa-book-open text-purple-500"></i>
+                        </div>
+                        <div class="readability-summary">
+                            <div class="grade-circle">
+                                <span class="grade-number">${Math.round(analytics.readability.fleschKincaid.score)}</span>
+                                <span class="grade-suffix">Grade</span>
+                            </div>
+                            <div class="grade-info">
+                                <div class="grade-level">${analytics.readability.fleschReadingEase.level}</div>
+                                <div class="grade-description">${analytics.readability.fleschReadingEase.description}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h4>Sentiment</h4>
+                            <i class="fas fa-smile text-orange-500"></i>
+                        </div>
+                        <div class="sentiment-display">
+                            <div class="sentiment-icon ${analytics.sentiment.sentiment.toLowerCase()}">
+                                <i class="fas fa-${analytics.sentiment.sentiment === 'Positive' ? 'smile' : analytics.sentiment.sentiment === 'Negative' ? 'frown' : 'meh'}"></i>
+                            </div>
+                            <div class="sentiment-info">
+                                <div class="sentiment-label">${analytics.sentiment.sentiment}</div>
+                                <div class="sentiment-confidence">${analytics.sentiment.confidence}% confidence</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="space-y-3">
-                    <h4 class="font-semibold text-blue-500 border-b border-blue-500/30 pb-1">Reading Time</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span>Slow (150 WPM):</span><strong>${readingTime150} min</strong></div>
-                        <div class="flex justify-between"><span>Average (200 WPM):</span><strong>${readingTime200} min</strong></div>
-                        <div class="flex justify-between"><span>Fast (250 WPM):</span><strong>${readingTime250} min</strong></div>
+                <div class="quick-recommendations">
+                    <h4><i class="fas fa-lightbulb"></i> Quick Recommendations</h4>
+                    <div class="recommendations-list">
+                        ${getRecommendations(analytics)}
                     </div>
                 </div>
             </div>
             
-            <div class="space-y-3">
-                <h4 class="font-semibold text-purple-500 border-b border-purple-500/30 pb-1">Advanced Metrics</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="flex justify-between"><span>Avg. words per sentence:</span><strong>${avgWordsPerSentence}</strong></div>
-                    <div class="flex justify-between"><span>Avg. chars per word:</span><strong>${avgCharsPerWord}</strong></div>
-                    <div class="flex justify-between"><span>Avg. sentences per paragraph:</span><strong>${avgSentencesPerParagraph}</strong></div>
-                    <div class="flex justify-between"><span>Readability level:</span><strong>${readabilityLevel}</strong></div>
-                </div>
-            </div>
-            
-            <div class="space-y-3">
-                <h4 class="font-semibold text-orange-500 border-b border-orange-500/30 pb-1">Word Analysis</h4>
-                <div class="text-sm">
-                    <div class="flex flex-col gap-1">
-                        <span class="font-medium">Most frequent words (4+ chars):</span>
-                        <span class="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded">${topWords}</span>
+            <div class="tab-content" id="tab-readability">
+                <div class="readability-detailed">
+                    <div class="readability-scores">
+                        <h4>Readability Scores</h4>
+                        <div class="score-grid">
+                            ${Object.entries(analytics.readability).filter(([key]) => key !== 'complexity').map(([name, data]) => `
+                                <div class="score-card">
+                                    <span class="score-name">${formatReadabilityName(name)}</span>
+                                    <span class="score-value">${data.score}</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${Math.min(100, data.score)}%"></div>
+                                    </div>
+                                    <span class="score-level">${data.level}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="readability-breakdown">
+                        <h4>Complexity Factors</h4>
+                        <div class="complexity-factors">
+                            <div class="factor">
+                                <span class="factor-label">Avg Words/Sentence</span>
+                                <span class="factor-value">${analytics.averages.avgWordsPerSentence}</span>
+                            </div>
+                            <div class="factor">
+                                <span class="factor-label">Avg Syllables/Word</span>
+                                <span class="factor-value">${analytics.readability.complexity.avgSyllablesPerWord}</span>
+                            </div>
+                            <div class="factor">
+                                <span class="factor-label">Complex Words</span>
+                                <span class="factor-value">${analytics.readability.complexity.complexWords} (${analytics.readability.complexity.percentageComplexWords}%)</span>
+                            </div>
+                            <div class="factor">
+                                <span class="factor-label">Lexical Diversity</span>
+                                <span class="factor-value">${analytics.basicMetrics.lexicalDiversity}%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="text-xs text-center pt-4 border-t border-gray-200 dark:border-gray-700" style="color: var(--text-muted)">
-                <i class="fas fa-info-circle"></i> Analysis generated on ${new Date().toLocaleString()}
+            <div class="tab-content" id="tab-wordAnalysis">
+                <div class="word-analysis">
+                    <h4>Most Frequent Words</h4>
+                    <div class="word-frequency-chart">
+                        ${analytics.wordFrequency.map(([word, count], index) => `
+                            <div class="word-bar" style="margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-weight: 600;">${index + 1}. ${word}</span>
+                                    <span style="color: var(--text-muted);">${count} times</span>
+                                </div>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${(count / analytics.wordFrequency[0][1]) * 100}%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 24px;">
+                        <h4>Text Extremes</h4>
+                        <div class="complexity-factors">
+                            <div class="factor">
+                                <span class="factor-label">Longest Word</span>
+                                <span class="factor-value">"${analytics.extremes.longestWord}" (${analytics.extremes.longestWord.length} chars)</span>
+                            </div>
+                            <div class="factor">
+                                <span class="factor-label">Shortest Word</span>
+                                <span class="factor-value">"${analytics.extremes.shortestWord}" (${analytics.extremes.shortestWord.length} char)</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 8px;"><strong>Longest Sentence:</strong></p>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
+                                "${analytics.extremes.longestSentence.substring(0, 150)}${analytics.extremes.longestSentence.length > 150 ? '...' : ''}"
+                                <span style="display: block; margin-top: 4px; font-style: normal;">
+                                    (${analytics.extremes.longestSentence.split(/\s+/).length} words)
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="tab-sentiment">
+                <div class="sentiment-analysis">
+                    <div class="sentiment-overview" style="text-align: center; padding: 24px;">
+                        <div class="sentiment-icon ${analytics.sentiment.sentiment.toLowerCase()}" style="font-size: 4rem; width: 100px; height: 100px; margin: 0 auto 16px;">
+                            <i class="fas fa-${analytics.sentiment.sentiment === 'Positive' ? 'smile' : analytics.sentiment.sentiment === 'Negative' ? 'frown' : 'meh'}"></i>
+                        </div>
+                        <h3 style="font-size: 1.5rem; margin-bottom: 8px;">${analytics.sentiment.sentiment} Sentiment</h3>
+                        <p style="color: var(--text-muted);">Confidence: ${analytics.sentiment.confidence}%</p>
+                    </div>
+                    
+                    <div class="sentiment-details">
+                        <div class="metrics-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <h4>Positive Words</h4>
+                                    <i class="fas fa-plus-circle text-green-500"></i>
+                                </div>
+                                <div style="text-align: center; padding: 16px;">
+                                    <span class="stat-value" style="color: var(--success);">${analytics.sentiment.positiveWords}</span>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <h4>Negative Words</h4>
+                                    <i class="fas fa-minus-circle text-red-500"></i>
+                                </div>
+                                <div style="text-align: center; padding: 16px;">
+                                    <span class="stat-value" style="color: var(--danger);">${analytics.sentiment.negativeWords}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 8px;">
+                            <h4 style="margin-bottom: 12px;">Sentiment Score</h4>
+                            <div class="score-bar" style="height: 20px; position: relative;">
+                                <div class="score-fill" style="width: ${Math.abs(analytics.sentiment.score)}%; background: ${analytics.sentiment.score > 0 ? 'var(--success)' : 'var(--danger)'};"></div>
+                                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; color: var(--text-primary);">
+                                    ${analytics.sentiment.score > 0 ? '+' : ''}${analytics.sentiment.score}
+                                </span>
+                            </div>
+                            <p style="text-align: center; margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
+                                Scale: -100 (Very Negative) to +100 (Very Positive)
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>`;
     
     showModal('📊 Comprehensive Text Analysis', content, 
-        [{ text: 'Close', class: 'btn-primary', callback: hideModal }]);
+        [{ text: 'Close', class: 'btn-primary', callback: hideModal }],
+        () => {
+            // Set up tab switching
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs and contents
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    const tabId = 'tab-' + tab.dataset.tab;
+                    document.getElementById(tabId)?.classList.add('active');
+                });
+            });
+        }
+    );
+}
+
+/**
+ * Get recommendations based on analytics
+ */
+function getRecommendations(analytics) {
+    const recommendations = [];
+    
+    // Readability recommendations
+    const readingLevel = parseFloat(analytics.readability.fleschKincaid.score);
+    if (readingLevel > 12) {
+        recommendations.push({
+            priority: 'high',
+            text: 'Consider simplifying sentences to improve readability'
+        });
+    }
+    
+    if (analytics.averages.avgWordsPerSentence > 20) {
+        recommendations.push({
+            priority: 'medium',
+            text: 'Break up long sentences for better clarity'
+        });
+    }
+    
+    if (analytics.readability.complexity.percentageComplexWords > 20) {
+        recommendations.push({
+            priority: 'medium',
+            text: 'Replace complex words with simpler alternatives'
+        });
+    }
+    
+    // Sentiment recommendations
+    if (analytics.sentiment.sentiment === 'Negative' && analytics.sentiment.confidence > 50) {
+        recommendations.push({
+            priority: 'low',
+            text: 'Consider adding more positive language'
+        });
+    }
+    
+    // Structure recommendations
+    if (analytics.basicMetrics.paragraphs === 1 && analytics.basicMetrics.wordCount > 200) {
+        recommendations.push({
+            priority: 'medium',
+            text: 'Add paragraph breaks to improve structure'
+        });
+    }
+    
+    if (recommendations.length === 0) {
+        recommendations.push({
+            priority: 'low',
+            text: 'Your text is well-balanced!'
+        });
+    }
+    
+    return recommendations.map(rec => `
+        <div class="recommendation-item ${rec.priority}">
+            <i class="fas fa-${rec.priority === 'high' ? 'exclamation-circle' : rec.priority === 'medium' ? 'info-circle' : 'check-circle'}"></i>
+            <span>${rec.text}</span>
+        </div>
+    `).join('');
+}
+
+/**
+ * Format readability metric names
+ */
+function formatReadabilityName(name) {
+    const names = {
+        fleschReadingEase: 'Flesch Reading Ease',
+        fleschKincaid: 'Flesch-Kincaid Grade',
+        gunningFog: 'Gunning Fog Index',
+        smog: 'SMOG Index',
+        automatedReadability: 'Automated Readability'
+    };
+    return names[name] || name;
+}
+
+/**
+ * Show quick insights popup
+ */
+function showQuickInsights() {
+    const analytics = getTextAnalytics();
+    
+    if (!analytics) {
+        showStatus('No text to analyze', 2000, 'warning');
+        return;
+    }
+    
+    const content = `
+        <div class="quick-insights-popup">
+            <div class="insights-header">
+                <i class="fas fa-bolt text-yellow-500"></i>
+                <h4>Quick Insights</h4>
+            </div>
+            
+            <div class="insight-cards">
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="insight-content">
+                        <div class="insight-title">Reading Level</div>
+                        <div class="insight-value">${analytics.readability.fleschReadingEase.level}</div>
+                        <div class="insight-detail">Grade ${Math.round(analytics.readability.fleschKincaid.score)}</div>
+                    </div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="insight-content">
+                        <div class="insight-title">Read Time</div>
+                        <div class="insight-value">${analytics.readingTimes.average} min</div>
+                        <div class="insight-detail">at 200 WPM</div>
+                    </div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-${analytics.sentiment.sentiment === 'Positive' ? 'smile' : analytics.sentiment.sentiment === 'Negative' ? 'frown' : 'meh'}"></i>
+                    </div>
+                    <div class="insight-content">
+                        <div class="insight-title">Sentiment</div>
+                        <div class="insight-value">${analytics.sentiment.sentiment}</div>
+                        <div class="insight-detail">${analytics.sentiment.confidence}% sure</div>
+                    </div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-font"></i>
+                    </div>
+                    <div class="insight-content">
+                        <div class="insight-title">Top Word</div>
+                        <div class="insight-value">${analytics.wordFrequency[0] ? analytics.wordFrequency[0][0] : 'N/A'}</div>
+                        <div class="insight-detail">${analytics.wordFrequency[0] ? analytics.wordFrequency[0][1] + ' times' : ''}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="insights-footer">
+                <button class="btn btn-primary btn-sm" onclick="generateReport()">
+                    <i class="fas fa-chart-line"></i> View Full Report
+                </button>
+            </div>
+        </div>`;
+    
+    showModal('⚡ Quick Insights', content, [{ text: 'Close', class: 'btn-secondary', callback: hideModal }]);
 }
 
 // History management
@@ -2214,338 +2797,3 @@ npm run lint
 - 💬 Discord: [discord-link]
 - 🐛 Issues: [github-issues-link]
 - 📖 Wiki: [wiki-link]`
-    }
-};
-
-// --- HTML Content Generators ---
-function getTemplatesHTML() { 
-    return `<div class="space-y-2">${Object.keys(templates).map(k => 
-        `<button class="tool-btn btn w-full text-left" data-template="${k}">
-            <i class="fas ${templates[k].icon} fa-fw text-blue-500"></i>
-            <span class="ml-2 font-medium">${k}</span>
-        </button>`).join('')}</div>`; 
-}
-
-function getQuickAnalysisHTML() {
-    return `<div class="space-y-3">
-        <button class="btn btn-primary w-full compact-btn" onclick="generateReport()">
-            <i class="fas fa-chart-line fa-fw"></i> Generate Full Report
-        </button>
-        <div class="text-xs text-center" style="color: var(--text-muted)">
-            <i class="fas fa-info-circle"></i> 
-            Get comprehensive text analysis including readability scores, word frequency, and reading time estimates
-        </div>
-    </div>`;
-}
-
-function getCaseToolsHTML() { 
-    const textCases = [
-        { id: 'uppercase', name: 'UPPERCASE', icon: 'fa-text-width' },
-        { id: 'lowercase', name: 'lowercase', icon: 'fa-text-height' },
-        { id: 'title', name: 'Title Case', icon: 'fa-heading' },
-        { id: 'sentence', name: 'Sentence case', icon: 'fa-paragraph' }
-    ];
-    
-    const progCases = [
-        { id: 'camel', name: 'camelCase', icon: 'fa-code' },
-        { id: 'pascal', name: 'PascalCase', icon: 'fa-code' },
-        { id: 'snake', name: 'snake_case', icon: 'fa-code' },
-        { id: 'kebab', name: 'kebab-case', icon: 'fa-code' }
-    ];
-    
-    return `<div class="space-y-4">
-        <div>
-            <h4 class="text-sm font-semibold mb-2 text-green-500">Text Cases</h4>
-            <div class="grid grid-cols-2 gap-2">
-                ${textCases.map(t => `
-                    <button class="tool-btn btn text-xs p-2" data-transform="${t.id}" title="Convert to ${t.name}">
-                        <i class="fas ${t.icon} fa-fw"></i>
-                        <span class="ml-1">${t.name}</span>
-                    </button>
-                `).join('')}
-            </div>
-        </div>
-        <div>
-            <h4 class="text-sm font-semibold mb-2 text-blue-500">Programming Cases</h4>
-            <div class="grid grid-cols-2 gap-2">
-                ${progCases.map(t => `
-                    <button class="tool-btn btn text-xs p-2" data-transform="${t.id}" title="Convert to ${t.name}">
-                        <i class="fas ${t.icon} fa-fw"></i>
-                        <span class="ml-1">${t.name}</span>
-                    </button>
-                `).join('')}
-            </div>
-        </div>
-    </div>`; 
-}
-
-function getFindReplaceHTML() { 
-    return `<div class="space-y-4">
-        <div>
-            <label for="findInput" class="block text-sm font-medium mb-1" style="color:var(--text-secondary)">Find:</label>
-            <input type="text" id="findInput" class="form-input text-sm" placeholder="Enter text to find...">
-        </div>
-        <div>
-            <label for="replaceInput" class="block text-sm font-medium mb-1" style="color:var(--text-secondary)">Replace with:</label>
-            <input type="text" id="replaceInput" class="form-input text-sm" placeholder="Enter replacement text...">
-        </div>
-        <div class="space-y-2">
-            <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded">
-                <input type="checkbox" id="caseSensitive" class="form-checkbox">
-                <span>Case Sensitive</span>
-            </label>
-            <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded">
-                <input type="checkbox" id="useRegex" class="form-checkbox">
-                <span>Use Regular Expressions</span>
-            </label>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-            <button class="btn btn-primary compact-btn" data-find-replace title="Replace first occurrence">
-                <i class="fas fa-search fa-fw"></i> Replace
-            </button>
-            <button class="btn btn-primary compact-btn" data-find-replace-all title="Replace all occurrences">
-                <i class="fas fa-search-plus fa-fw"></i> All
-            </button>
-        </div>
-        <div class="text-xs text-center" style="color: var(--text-muted)">
-            <i class="fas fa-info-circle"></i> 
-            Use Ctrl+F to quickly focus the find field
-        </div>
-    </div>`; 
-}
-
-function getOpsToolsHTML() { 
-    const operations = [
-        { id: 'trim', name: 'Trim Whitespace', icon: 'fa-cut' },
-        { id: 'remove-extra-spaces', name: 'Remove Extra Spaces', icon: 'fa-compress-arrows-alt' },
-        { id: 'remove-line-breaks', name: 'Remove Line Breaks', icon: 'fa-align-left' },
-        { id: 'remove-empty-lines', name: 'Remove Empty Lines', icon: 'fa-filter' },
-        { id: 'add-line-numbers', name: 'Add Line Numbers', icon: 'fa-list-ol' },
-        { id: 'sort-lines', name: 'Sort Lines A-Z', icon: 'fa-sort-alpha-down' },
-        { id: 'reverse-lines', name: 'Reverse Line Order', icon: 'fa-exchange-alt' },
-        { id: 'shuffle-lines', name: 'Shuffle Lines', icon: 'fa-random' },
-        { id: 'remove-duplicates', name: 'Remove Duplicate Lines', icon: 'fa-clone' }
-    ];
-    
-    return `<div class="space-y-2">
-        ${operations.map(op => `
-            <button class="tool-btn btn w-full text-left" data-format="${op.id}" title="${op.name}">
-                <i class="fas ${op.icon} fa-fw text-purple-500"></i>
-                <span class="ml-2">${op.name}</span>
-            </button>
-        `).join('')}
-    </div>`; 
-}
-
-function getEncodeToolsHTML() { 
-    const encoders = [
-        { id: 'reverse', name: 'Reverse Text', icon: 'fa-undo' },
-        { id: 'rot13', name: 'ROT13 Cipher', icon: 'fa-user-secret' },
-        { id: 'base64-encode', name: 'Base64 Encode', icon: 'fa-lock' },
-        { id: 'base64-decode', name: 'Base64 Decode', icon: 'fa-unlock' },
-        { id: 'url-encode', name: 'URL Encode', icon: 'fa-link' },
-        { id: 'url-decode', name: 'URL Decode', icon: 'fa-unlink' },
-        { id: 'html-encode', name: 'HTML Encode', icon: 'fa-code' },
-        { id: 'html-decode', name: 'HTML Decode', icon: 'fa-file-code' },
-        { id: 'extract-emails', name: 'Extract Email Addresses', icon: 'fa-at' },
-        { id: 'extract-urls', name: 'Extract URLs', icon: 'fa-globe' }
-    ];
-    
-    return `<div class="space-y-2">
-        ${encoders.map(enc => `
-            <button class="tool-btn btn w-full text-left" data-manipulate="${enc.id}" title="${enc.name}">
-                <i class="fas ${enc.icon} fa-fw text-orange-500"></i>
-                <span class="ml-2">${enc.name}</span>
-            </button>
-        `).join('')}
-    </div>`; 
-}
-
-function getImportExportHTML() { 
-    const exportFormats = [
-        { id: 'txt', name: 'Plain Text', icon: 'fa-file-alt' },
-        { id: 'json', name: 'JSON', icon: 'fa-file-code' },
-        { id: 'csv', name: 'CSV', icon: 'fa-file-csv' },
-        { id: 'pdf', name: 'PDF', icon: 'fa-file-pdf' }
-    ];
-    
-    return `<div class="space-y-4">
-        <div>
-            <input type="file" id="fileInput" hidden accept=".txt,.csv,.json,.md,.html">
-            <button id="fileInputBtn" class="btn btn-secondary w-full compact-btn">
-                <i class="fas fa-upload fa-fw"></i> Import Text File
-            </button>
-            <div class="text-xs mt-1 text-center" style="color: var(--text-muted)">
-                Supports: .txt, .csv, .json, .md, .html (max 5MB)
-            </div>
-        </div>
-        
-        <div>
-            <h4 class="text-sm font-semibold mb-2" style="color: var(--text-secondary)">Export As:</h4>
-            <div class="grid grid-cols-2 gap-2">
-                ${exportFormats.map(fmt => `
-                    <button class="export-btn" data-export="${fmt.id}" title="Export as ${fmt.name}">
-                        <i class="fas ${fmt.icon} fa-fw text-lg text-green-500"></i>
-                        <span class="text-xs">${fmt.name}</span>
-                    </button>
-                `).join('')}
-            </div>
-        </div>
-    </div>`; 
-}
-
-function applyTemplate(templateName) { 
-    if (templates[templateName]) { 
-        addTextToHistory('Apply Template', elements.textArea.value); 
-        elements.textArea.value = templates[templateName].content; 
-        handleTextInput(); 
-        showStatus(`Applied ${templateName} template`, 2000, 'success'); 
-    } 
-}
-
-/**
- * Simple, reliable tooltip system
- */
-function initializeTooltips() {
-    // Remove any existing tooltip elements
-    document.querySelectorAll('.simple-tooltip').forEach(el => el.remove());
-    
-    // Create a single tooltip element
-    const tooltip = document.createElement('div');
-    tooltip.className = 'simple-tooltip';
-    tooltip.style.cssText = `
-        position: fixed;
-        z-index: 9999;
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 500;
-        border: 1px solid var(--border-secondary);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        backdrop-filter: blur(8px);
-        white-space: nowrap;
-        pointer-events: none;
-        opacity: 0;
-        transform: translateY(4px);
-        transition: opacity 0.2s ease, transform 0.2s ease;
-        max-width: 200px;
-        word-wrap: break-word;
-        white-space: normal;
-        text-align: center;
-    `;
-    document.body.appendChild(tooltip);
-    
-    let activeElement = null;
-    let showTimeout = null;
-    let hideTimeout = null;
-    
-    // Find all elements with title attributes and set up tooltips
-    function setupTooltips() {
-        document.querySelectorAll('[title]').forEach(element => {
-            const title = element.getAttribute('title');
-            if (!title || !title.trim()) return;
-            
-            // Store original title and remove it
-            element.setAttribute('data-tooltip', title);
-            element.removeAttribute('title');
-            
-            // Mouse events
-            element.addEventListener('mouseenter', () => showTooltip(element, title));
-            element.addEventListener('mouseleave', hideTooltip);
-            
-            // Focus events for keyboard navigation
-            element.addEventListener('focus', () => showTooltip(element, title));
-            element.addEventListener('blur', hideTooltip);
-        });
-    }
-    
-    function showTooltip(element, text) {
-        clearTimeout(hideTimeout);
-        activeElement = element;
-        
-        showTimeout = setTimeout(() => {
-            if (activeElement !== element) return;
-            
-            tooltip.textContent = text;
-            tooltip.style.opacity = '1';
-            tooltip.style.transform = 'translateY(0)';
-            
-            // Position tooltip
-            const rect = element.getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
-            
-            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-            let top = rect.top - tooltipRect.height - 8;
-            
-            // Keep within viewport
-            const margin = 8;
-            if (left < margin) left = margin;
-            if (left + tooltipRect.width > window.innerWidth - margin) {
-                left = window.innerWidth - tooltipRect.width - margin;
-            }
-            
-            // If would be above viewport, show below
-            if (top < margin) {
-                top = rect.bottom + 8;
-            }
-            
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-        }, 500); // 500ms delay for less sporadic behavior
-    }
-    
-    function hideTooltip() {
-        clearTimeout(showTimeout);
-        activeElement = null;
-        
-        hideTimeout = setTimeout(() => {
-            tooltip.style.opacity = '0';
-            tooltip.style.transform = 'translateY(4px)';
-        }, 100);
-    }
-    
-    // Hide on scroll, resize, or click
-    document.addEventListener('scroll', hideTooltip, { passive: true });
-    window.addEventListener('resize', hideTooltip);
-    document.addEventListener('click', hideTooltip);
-    
-    // Initial setup
-    setupTooltips();
-    
-    // Re-setup when DOM changes (for dynamically added elements)
-    const observer = new MutationObserver((mutations) => {
-        let shouldResetup = false;
-        mutations.forEach(mutation => {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1) { // Element node
-                        if (node.hasAttribute('title') || node.querySelector('[title]')) {
-                            shouldResetup = true;
-                        }
-                    }
-                });
-            }
-        });
-        if (shouldResetup) {
-            setTimeout(setupTooltips, 100); // Small delay to ensure DOM is stable
-        }
-    });
-    
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-    
-    // Cleanup function
-    window.cleanupTooltips = () => {
-        observer.disconnect();
-        clearTimeout(showTimeout);
-        clearTimeout(hideTimeout);
-        tooltip.remove();
-    };
-}
-
-// Start the application
-document.addEventListener('DOMContentLoaded', init);
