@@ -71,65 +71,78 @@ function cacheDOMElements() {
  * Initializes the application
  */
 async function init() {
-    cacheDOMElements();
-    setLogLevel('error');
-
-    if (!appState.firebaseConfig) {
-        console.error("Firebase configuration is missing!");
-        showStatus("Error: Firebase not configured. Data will not be saved.", 10000, 'error');
-        setupEventListeners();
-        renderSidebarSections();
-        loadQuickActionOrderFromDefaults();
-        updateAllStats();
-        initializeTooltips();
-        return;
-    }
-
     try {
-        const firebaseApp = initializeApp(appState.firebaseConfig);
-        appState.auth = getAuth(firebaseApp);
-        appState.db = getFirestore(firebaseApp);
+        cacheDOMElements();
+        setLogLevel('error');
 
-        onAuthStateChanged(appState.auth, async (user) => {
-            if (user) {
-                appState.userId = user.uid;
-                appState.isAuthReady = true;
-                console.log("User authenticated:", appState.userId);
-                elements.userIdValue.textContent = appState.userId.substring(0, 8) + '...';
-                elements.userIdDisplay.classList.remove('hidden');
-                await loadDataFromFirestore();
-            } else {
-                console.log("No user signed in, attempting sign-in...");
-                if (appState.initialAuthToken) {
-                    try {
-                        await signInWithCustomToken(appState.auth, appState.initialAuthToken);
-                        console.log("Signed in with custom token.");
-                    } catch (error) {
-                        console.error("Error signing in with custom token, trying anonymous:", error);
-                        await signInAnonymously(appState.auth);
-                        console.log("Signed in anonymously after custom token failure.");
-                    }
-                } else {
-                    await signInAnonymously(appState.auth);
-                    console.log("Signed in anonymously.");
-                }
-            }
-            
+        if (!appState.firebaseConfig) {
+            console.error("Firebase configuration is missing!");
+            showStatus("Error: Firebase not configured. Data will not be saved.", 10000, 'error');
             setupEventListeners();
             renderSidebarSections();
+            loadQuickActionOrderFromDefaults();
             updateAllStats();
             initializeTooltips();
-            showStatus('Ready', 2000, 'success');
-        });
+            return;
+        }
 
-    } catch (e) {
-        console.error('Error initializing Firebase:', e);
-        showStatus('Error: Firebase initialization failed. Data will not be saved.', 10000, 'error');
-        setupEventListeners();
-        renderSidebarSections();
-        loadQuickActionOrderFromDefaults();
-        updateAllStats();
-        initializeTooltips();
+        try {
+            const firebaseApp = initializeApp(appState.firebaseConfig);
+            appState.auth = getAuth(firebaseApp);
+            appState.db = getFirestore(firebaseApp);
+
+            onAuthStateChanged(appState.auth, async (user) => {
+                if (user) {
+                    appState.userId = user.uid;
+                    appState.isAuthReady = true;
+                    console.log("User authenticated:", appState.userId);
+                    elements.userIdValue.textContent = appState.userId.substring(0, 8) + '...';
+                    elements.userIdDisplay.classList.remove('hidden');
+                    await loadDataFromFirestore();
+                } else {
+                    console.log("No user signed in, attempting sign-in...");
+                    if (appState.initialAuthToken) {
+                        try {
+                            await signInWithCustomToken(appState.auth, appState.initialAuthToken);
+                            console.log("Signed in with custom token.");
+                        } catch (error) {
+                            console.error("Error signing in with custom token, trying anonymous:", error);
+                            await signInAnonymously(appState.auth);
+                            console.log("Signed in anonymously after custom token failure.");
+                        }
+                    } else {
+                        await signInAnonymously(appState.auth);
+                        console.log("Signed in anonymously.");
+                    }
+                }
+                
+                setupEventListeners();
+                renderSidebarSections();
+                updateAllStats();
+                initializeTooltips();
+                showStatus('Ready', 2000, 'success');
+            });
+
+        } catch (e) {
+            console.error('Error initializing Firebase:', e);
+            showStatus('Error: Firebase initialization failed. Data will not be saved.', 10000, 'error');
+            setupEventListeners();
+            renderSidebarSections();
+            loadQuickActionOrderFromDefaults();
+            updateAllStats();
+            initializeTooltips();
+        }
+    } catch (globalError) {
+        console.error('Critical initialization error:', globalError);
+        // Try to at least set up basic functionality
+        try {
+            setupEventListeners();
+            renderSidebarSections();
+            loadQuickActionOrderFromDefaults();
+            updateAllStats();
+        } catch (e) {
+            console.error('Failed to initialize basic functionality:', e);
+        }
     }
 }
 
@@ -324,15 +337,17 @@ function handleSidebarClicks(e) {
     const templateBtn = target.closest('[data-template]');
     const collapseSidebarBtn = target.closest('[data-action="collapse-sidebar"]');
     const quickInsightsBtn = target.closest('#quickInsightsBtn');
+    const generateReportBtn = target.closest('[onclick*="generateReport"]');
     
     if (sectionHeader) toggleSection(sectionHeader.parentElement);
-    if (toolBtn) handleToolClick(toolBtn);
+    if (toolBtn && !generateReportBtn && !quickInsightsBtn) handleToolClick(toolBtn);
     if (fileInputBtn) document.getElementById('fileInput').click();
     if (saveBtn) saveCurrentTextAsSnippet();
     if (restoreBtn) restoreFromHistory(restoreBtn.dataset.id);
     if (loadBtn) loadSavedText(loadBtn.dataset.id);
     if (templateBtn) applyTemplate(templateBtn.dataset.template);
     if (quickInsightsBtn) showQuickInsights();
+    if (generateReportBtn) generateReport();
     if (collapseSidebarBtn) {
         const sidebarId = collapseSidebarBtn.dataset.sidebarTarget;
         toggleSidebar(sidebarId.includes('left') ? 'left' : 'right');
@@ -350,11 +365,16 @@ function handleSidebarClicks(e) {
  * Handles tool button clicks
  */
 function handleToolClick(button) {
-    const type = button.dataset.transform || button.dataset.format || button.dataset.manipulate || button.dataset.export;
-    if (button.dataset.transform) applyTransformation(type);
-    if (button.dataset.format) applyFormatting(type);
-    if (button.dataset.manipulate) applyManipulation(type);
-    if (button.dataset.export) exportText(type);
+    try {
+        const type = button.dataset.transform || button.dataset.format || button.dataset.manipulate || button.dataset.export;
+        if (button.dataset.transform) applyTransformation(type);
+        if (button.dataset.format) applyFormatting(type);
+        if (button.dataset.manipulate) applyManipulation(type);
+        if (button.dataset.export) exportText(type);
+    } catch (e) {
+        console.error('Error handling tool click:', e);
+        showStatus('Error processing tool action', 3000, 'error');
+    }
 }
 
 /**
@@ -672,7 +692,8 @@ function calculateReadabilityScores(text, wordCount, sentences, words) {
             fleschKincaid: { score: 0, level: 'N/A' },
             gunningFog: { score: 0, level: 'N/A' },
             smog: { score: 0, level: 'N/A' },
-            automatedReadability: { score: 0, level: 'N/A' }
+            automatedReadability: { score: 0, level: 'N/A' },
+            complexity: { avgSyllablesPerWord: 0, complexWords: 0, percentageComplexWords: 0 }
         };
     }
     
@@ -711,6 +732,9 @@ function calculateReadabilityScores(text, wordCount, sentences, words) {
     // Count complex words (3+ syllables)
     const complexWords = words.filter(word => countSyllables(word) >= 3).length;
     const percentageComplexWords = (complexWords / wordCount) * 100;
+    
+    // Get charsNoSpaces from text
+    const charsNoSpaces = text.replace(/\s/g, '').length;
     
     // Flesch Reading Ease
     const fleschScore = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllablesPerWord;
@@ -1471,39 +1495,54 @@ function hideModal() {
 // --- Enhanced UI State Management ---
 
 function renderSidebarSections() {
-    const leftSidebarSections = [
-        { id: 'history', title: 'History', icon: 'fa-history', content: '<div id="historyList" class="max-h-80 overflow-y-auto"></div>' },
-        { id: 'templates', title: 'Templates', icon: 'fa-file-alt', content: getTemplatesHTML() },
-        { id: 'saved', title: 'Saved Texts', icon: 'fa-bookmark', content: '<div id="savedList" class="max-h-80 overflow-y-auto"></div><button id="saveCurrentTextBtn" class="btn btn-primary w-full mt-3 compact-btn"><i class="fas fa-save fa-fw"></i> Save Current Text</button>' }
-    ];
-    
-    const rightSidebarSections = [
-        { id: 'quickAnalysis', title: 'Quick Analysis', icon: 'fa-chart-bar', content: getQuickAnalysisHTML() },
-        { id: 'case', title: 'Case Transform', icon: 'fa-font', content: getCaseToolsHTML() },
-        { id: 'findReplace', title: 'Find & Replace', icon: 'fa-search', content: getFindReplaceHTML() },
-        { id: 'ops', title: 'Text Operations', icon: 'fa-edit', content: getOpsToolsHTML() },
-        { id: 'encode', title: 'Encode/Decode', icon: 'fa-shield-alt', content: getEncodeToolsHTML() },
-        { id: 'importExport', title: 'Import / Export', icon: 'fa-file-import', content: getImportExportHTML() }
-    ];
-    
-    const defaultSectionStates = {};
-    [...leftSidebarSections, ...rightSidebarSections].forEach(s => defaultSectionStates[s.id] = true);
+    try {
+        const leftSidebarSections = [
+            { id: 'history', title: 'History', icon: 'fa-history', content: '<div id="historyList" class="max-h-80 overflow-y-auto"></div>' },
+            { id: 'templates', title: 'Templates', icon: 'fa-file-alt', content: getTemplatesHTML() },
+            { id: 'saved', title: 'Saved Texts', icon: 'fa-bookmark', content: '<div id="savedList" class="max-h-80 overflow-y-auto"></div><button id="saveCurrentTextBtn" class="btn btn-primary w-full mt-3 compact-btn"><i class="fas fa-save fa-fw"></i> Save Current Text</button>' }
+        ];
+        
+        const rightSidebarSections = [
+            { id: 'quickAnalysis', title: 'Quick Analysis', icon: 'fa-chart-bar', content: getQuickAnalysisHTML() },
+            { id: 'case', title: 'Case Transform', icon: 'fa-font', content: getCaseToolsHTML() },
+            { id: 'findReplace', title: 'Find & Replace', icon: 'fa-search', content: getFindReplaceHTML() },
+            { id: 'ops', title: 'Text Operations', icon: 'fa-edit', content: getOpsToolsHTML() },
+            { id: 'encode', title: 'Encode/Decode', icon: 'fa-shield-alt', content: getEncodeToolsHTML() },
+            { id: 'importExport', title: 'Import / Export', icon: 'fa-file-import', content: getImportExportHTML() }
+        ];
+        
+        const defaultSectionStates = {};
+        [...leftSidebarSections, ...rightSidebarSections].forEach(s => defaultSectionStates[s.id] = true);
 
-    const currentSectionStates = window.uiStateSnapshot?.sections || defaultSectionStates;
+        const currentSectionStates = window.uiStateSnapshot?.sections || defaultSectionStates;
 
-    elements.leftSidebarContent.innerHTML = leftSidebarSections.map(s => 
-        createSectionHTML(s, currentSectionStates[s.id] !== false)).join('');
-    elements.rightSidebarContent.innerHTML = rightSidebarSections.map(s => 
-        createSectionHTML(s, currentSectionStates[s.id] !== false)).join('');
-    
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) fileInput.addEventListener('change', handleFileImport);
+        elements.leftSidebarContent.innerHTML = leftSidebarSections.map(s => 
+            createSectionHTML(s, currentSectionStates[s.id] !== false)).join('');
+        elements.rightSidebarContent.innerHTML = rightSidebarSections.map(s => 
+            createSectionHTML(s, currentSectionStates[s.id] !== false)).join('');
+        
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.addEventListener('change', handleFileImport);
 
-    const findReplaceBtn = document.querySelector('[data-find-replace]');
-    if (findReplaceBtn) findReplaceBtn.addEventListener('click', () => findAndReplace(false));
-    
-    const findReplaceAllBtn = document.querySelector('[data-find-replace-all]');
-    if (findReplaceAllBtn) findReplaceAllBtn.addEventListener('click', () => findAndReplace(true));
+        const findReplaceBtn = document.querySelector('[data-find-replace]');
+        if (findReplaceBtn) findReplaceBtn.addEventListener('click', () => findAndReplace(false));
+        
+        const findReplaceAllBtn = document.querySelector('[data-find-replace-all]');
+        if (findReplaceAllBtn) findReplaceAllBtn.addEventListener('click', () => findAndReplace(true));
+        
+        // Initial mini analytics update
+        setTimeout(() => {
+            try {
+                updateMiniAnalytics();
+            } catch (e) {
+                console.error('Error updating mini analytics on init:', e);
+            }
+        }, 100);
+        
+    } catch (e) {
+        console.error('Error rendering sidebar sections:', e);
+        showStatus('Error loading sidebar tools', 3000, 'error');
+    }
 }
 
 function createSectionHTML({id, title, icon, content}, isExpanded) {
