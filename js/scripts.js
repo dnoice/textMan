@@ -72,9 +72,31 @@ function init() {
         // Show ready status
         showStatus('Ready', 2000, 'success');
         
+        // Set up periodic auto-save (every 30 seconds)
+        setInterval(() => {
+            if (appState.autoSaveEnabled && elements.textArea.value !== appState.currentText) {
+                saveToLocalStorage();
+            }
+        }, 30000);
+        
+        // Set up beforeunload handler to warn about unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (elements.textArea.value !== appState.currentText && elements.textArea.value.trim()) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            }
+        });
+        
+        console.log('textMan initialized successfully');
+        
     } catch (error) {
         console.error('Initialization error:', error);
         showStatus('Error during initialization', 5000, 'error');
+        
+        // Try to still show basic functionality
+        if (elements.textArea) {
+            elements.textArea.addEventListener('input', updateAllStats);
+        }
     }
 }
 
@@ -84,23 +106,23 @@ function init() {
 function loadFromLocalStorage() {
     try {
         // Load current text
-        const savedText = localStorage.getItem('textman_currentText');
+        const savedText = safeLocalStorageOperation('get', 'textman_currentText');
         if (savedText !== null) {
             elements.textArea.value = savedText;
             appState.currentText = savedText;
         }
         
         // Load auto-save preference
-        const autoSave = localStorage.getItem('textman_autoSave');
+        const autoSave = safeLocalStorageOperation('get', 'textman_autoSave');
         appState.autoSaveEnabled = autoSave !== 'false';
         elements.autoSaveStatus.innerHTML = `<i class="fas fa-save fa-fw"></i> Auto-save: ${appState.autoSaveEnabled ? 'On' : 'Off'}`;
         
         // Load theme
-        const theme = localStorage.getItem('textman_theme') || 'dark';
+        const theme = safeLocalStorageOperation('get', 'textman_theme') || 'dark';
         loadTheme(theme);
         
         // Load UI state
-        const uiState = localStorage.getItem('textman_uiState');
+        const uiState = safeLocalStorageOperation('get', 'textman_uiState');
         if (uiState) {
             try {
                 const parsed = JSON.parse(uiState);
@@ -122,12 +144,12 @@ const saveToLocalStorage = debounce(function() {
     if (!appState.autoSaveEnabled) return;
     
     try {
-        localStorage.setItem('textman_currentText', elements.textArea.value);
-        
-        // Also save to history
-        const history = getHistory();
-        if (history.length === 0 || history[0].text !== elements.textArea.value) {
-            addToHistory('Auto-save', elements.textArea.value);
+        if (safeLocalStorageOperation('set', 'textman_currentText', elements.textArea.value)) {
+            // Also save to history
+            const history = getHistory();
+            if (history.length === 0 || history[0].text !== elements.textArea.value) {
+                addToHistory('Auto-save', elements.textArea.value);
+            }
         }
     } catch (e) {
         console.error('Error saving to localStorage:', e);
@@ -140,7 +162,7 @@ const saveToLocalStorage = debounce(function() {
  */
 function getHistory() {
     try {
-        const history = localStorage.getItem('textman_history');
+        const history = safeLocalStorageOperation('get', 'textman_history');
         return history ? JSON.parse(history) : [];
     } catch (e) {
         console.error('Error getting history:', e);
@@ -173,7 +195,7 @@ function addToHistory(action, text) {
             history.splice(20);
         }
         
-        localStorage.setItem('textman_history', JSON.stringify(history));
+        safeLocalStorageOperation('set', 'textman_history', JSON.stringify(history));
         updateHistoryUI();
     } catch (e) {
         console.error('Error adding to history:', e);
@@ -185,7 +207,7 @@ function addToHistory(action, text) {
  */
 function getSavedTexts() {
     try {
-        const saved = localStorage.getItem('textman_savedTexts');
+        const saved = safeLocalStorageOperation('get', 'textman_savedTexts');
         return saved ? JSON.parse(saved) : [];
     } catch (e) {
         console.error('Error getting saved texts:', e);
@@ -214,9 +236,9 @@ function saveUIState() {
             uiStateData.sections[sectionId] = !section.classList.contains('collapsed');
         });
         
-        localStorage.setItem('textman_uiState', JSON.stringify(uiStateData));
-        localStorage.setItem('textman_theme', uiStateData.theme);
-        localStorage.setItem('textman_autoSave', appState.autoSaveEnabled.toString());
+        safeLocalStorageOperation('set', 'textman_uiState', JSON.stringify(uiStateData));
+        safeLocalStorageOperation('set', 'textman_theme', uiStateData.theme);
+        safeLocalStorageOperation('set', 'textman_autoSave', appState.autoSaveEnabled.toString());
     } catch (e) {
         console.error('Error saving UI state:', e);
     }
@@ -340,6 +362,7 @@ function handleTextInput() {
         appState.analyticsCache = null;
     }
     updateAllStats();
+    updateMiniAnalytics();
     saveToLocalStorage();
 }
 
@@ -376,6 +399,7 @@ function undo() {
         elements.textArea.value = appState.undoStack.pop();
         appState.currentText = elements.textArea.value;
         updateAllStats(); 
+        updateMiniAnalytics();
         saveToLocalStorage();
         showStatus('Undo applied', 1500, 'success');
     } else {
@@ -389,6 +413,7 @@ function redo() {
         elements.textArea.value = appState.redoStack.pop();
         appState.currentText = elements.textArea.value;
         updateAllStats();
+        updateMiniAnalytics();
         saveToLocalStorage();
         showStatus('Redo applied', 1500, 'success');
     } else {
@@ -472,7 +497,7 @@ function saveCurrentTextAsSnippet() {
                             savedTexts.splice(50);
                         }
                         
-                        localStorage.setItem('textman_savedTexts', JSON.stringify(savedTexts));
+                        safeLocalStorageOperation('set', 'textman_savedTexts', JSON.stringify(savedTexts));
                         updateSavedTextsUI();
                         showStatus(`Snippet "${title}" saved successfully!`, 3000, 'success'); 
                         hideModal();
@@ -523,6 +548,28 @@ function updateAllStats() {
     elements.btnRedo.disabled = appState.redoStack.length === 0;
     elements.btnCopy.disabled = chars === 0;
     elements.btnClear.disabled = chars === 0;
+}
+
+/**
+ * Update mini analytics in sidebar
+ */
+function updateMiniAnalytics() {
+    try {
+        const text = elements.textArea.value;
+        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+        const chars = text.length;
+        const readTime = Math.max(1, Math.ceil(words / 200));
+
+        const miniWords = document.getElementById('miniWords');
+        const miniChars = document.getElementById('miniChars');
+        const miniTime = document.getElementById('miniTime');
+
+        if (miniWords) miniWords.textContent = words.toLocaleString();
+        if (miniChars) miniChars.textContent = chars.toLocaleString();
+        if (miniTime) miniTime.textContent = `${readTime}m`;
+    } catch (e) {
+        console.error('Error updating mini analytics:', e);
+    }
 }
 
 /**
@@ -1320,7 +1367,7 @@ function deleteSavedTextSnippet(savedTextId) {
         
         if (index !== -1) {
             savedTexts.splice(index, 1);
-            localStorage.setItem('textman_savedTexts', JSON.stringify(savedTexts));
+            safeLocalStorageOperation('set', 'textman_savedTexts', JSON.stringify(savedTexts));
             updateSavedTextsUI();
             showStatus('Deleted saved text snippet', 2000, 'success');
         }
@@ -1694,7 +1741,7 @@ function setupDragAndDropForQuickActions() {
 
 function loadQuickActionOrder() {
     try {
-        const uiState = localStorage.getItem('textman_uiState');
+        const uiState = safeLocalStorageOperation('get', 'textman_uiState');
         if (uiState) {
             const parsed = JSON.parse(uiState);
             if (parsed.quickActionOrder && Array.isArray(parsed.quickActionOrder)) {
@@ -2781,7 +2828,300 @@ npm run lint
 };
 
 // --- HTML Content Generators ---
+
 function getTemplatesHTML() { 
     return `<div class="space-y-2">${Object.keys(templates).map(k => 
-        `<button class="tool-btn btn w-full text-left" data-template="${k}">
-            <i class="fas
+        `<button class="tool-btn w-full text-left" data-template="${k}">
+            <i class="fas ${templates[k].icon} fa-fw"></i> ${k}
+        </button>`).join('')}</div>`;
+}
+
+function getQuickAnalysisHTML() {
+    return `
+        <div class="mini-analytics" id="miniAnalytics">
+            <div class="mini-stat">
+                <span class="mini-value" id="miniWords">0</span>
+                <span class="mini-label">Words</span>
+            </div>
+            <div class="mini-stat">
+                <span class="mini-value" id="miniChars">0</span>
+                <span class="mini-label">Chars</span>
+            </div>
+            <div class="mini-stat">
+                <span class="mini-value" id="miniTime">0m</span>
+                <span class="mini-label">Read</span>
+            </div>
+        </div>
+        <div class="space-y-2 mt-4">
+            <button class="tool-btn w-full" id="quickInsightsBtn">
+                <i class="fas fa-bolt fa-fw"></i> Quick Insights
+            </button>
+            <button class="tool-btn w-full" onclick="generateReport()">
+                <i class="fas fa-chart-line fa-fw"></i> Full Report
+            </button>
+        </div>`;
+}
+
+function getCaseToolsHTML() {
+    return `
+        <div class="tool-btn-grid">
+            <button class="tool-btn" data-transform="uppercase" title="Convert to UPPERCASE">
+                <i class="fas fa-font fa-fw"></i> UPPER
+            </button>
+            <button class="tool-btn" data-transform="lowercase" title="Convert to lowercase">
+                <i class="fas fa-text-height fa-fw"></i> lower
+            </button>
+            <button class="tool-btn" data-transform="title" title="Title Case">
+                <i class="fas fa-heading fa-fw"></i> Title
+            </button>
+            <button class="tool-btn" data-transform="sentence" title="Sentence case">
+                <i class="fas fa-paragraph fa-fw"></i> Sentence
+            </button>
+            <button class="tool-btn" data-transform="camel" title="camelCase">
+                <i class="fas fa-code fa-fw"></i> camel
+            </button>
+            <button class="tool-btn" data-transform="pascal" title="PascalCase">
+                <i class="fas fa-code fa-fw"></i> Pascal
+            </button>
+            <button class="tool-btn" data-transform="snake" title="snake_case">
+                <i class="fas fa-code fa-fw"></i> snake
+            </button>
+            <button class="tool-btn" data-transform="kebab" title="kebab-case">
+                <i class="fas fa-code fa-fw"></i> kebab
+            </button>
+        </div>`;
+}
+
+function getFindReplaceHTML() {
+    return `
+        <div class="space-y-3">
+            <div>
+                <label for="findInput" class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Find:</label>
+                <input type="text" id="findInput" class="form-input" placeholder="Text to find...">
+            </div>
+            <div>
+                <label for="replaceInput" class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Replace with:</label>
+                <input type="text" id="replaceInput" class="form-input" placeholder="Replacement text...">
+            </div>
+            <div class="flex gap-2 text-sm">
+                <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" id="caseSensitive" class="form-checkbox">
+                    <span>Case sensitive</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" id="useRegex" class="form-checkbox">
+                    <span>Regex</span>
+                </label>
+            </div>
+            <div class="flex gap-1">
+                <button class="btn btn-secondary flex-1 compact-btn" data-find-replace>
+                    <i class="fas fa-search fa-fw"></i> Replace
+                </button>
+                <button class="btn btn-primary flex-1 compact-btn" data-find-replace-all>
+                    <i class="fas fa-search-plus fa-fw"></i> Replace All
+                </button>
+            </div>
+        </div>`;
+}
+
+function getOpsToolsHTML() {
+    return `
+        <div class="space-y-2">
+            <h5 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-muted)">Format</h5>
+            <div class="tool-btn-grid">
+                <button class="tool-btn" data-format="trim" title="Remove leading/trailing spaces">
+                    <i class="fas fa-cut fa-fw"></i> Trim
+                </button>
+                <button class="tool-btn" data-format="remove-extra-spaces" title="Remove extra spaces">
+                    <i class="fas fa-compress fa-fw"></i> Spaces
+                </button>
+                <button class="tool-btn" data-format="remove-line-breaks" title="Remove line breaks">
+                    <i class="fas fa-minus fa-fw"></i> Breaks
+                </button>
+                <button class="tool-btn" data-format="add-line-numbers" title="Add line numbers">
+                    <i class="fas fa-list-ol fa-fw"></i> Numbers
+                </button>
+            </div>
+            
+            <h5 class="text-xs font-semibold uppercase tracking-wide mt-4" style="color: var(--text-muted)">Lines</h5>
+            <div class="tool-btn-grid">
+                <button class="tool-btn" data-format="remove-empty-lines" title="Remove empty lines">
+                    <i class="fas fa-eraser fa-fw"></i> Empty
+                </button>
+                <button class="tool-btn" data-format="sort-lines" title="Sort lines alphabetically">
+                    <i class="fas fa-sort-alpha-down fa-fw"></i> Sort
+                </button>
+                <button class="tool-btn" data-format="reverse-lines" title="Reverse line order">
+                    <i class="fas fa-sort-amount-up fa-fw"></i> Reverse
+                </button>
+                <button class="tool-btn" data-format="shuffle-lines" title="Shuffle lines randomly">
+                    <i class="fas fa-random fa-fw"></i> Shuffle
+                </button>
+                <button class="tool-btn" data-format="remove-duplicates" title="Remove duplicate lines">
+                    <i class="fas fa-filter fa-fw"></i> Unique
+                </button>
+            </div>
+        </div>`;
+}
+
+function getEncodeToolsHTML() {
+    return `
+        <div class="space-y-2">
+            <h5 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-muted)">Encoding</h5>
+            <div class="tool-btn-grid">
+                <button class="tool-btn" data-manipulate="base64-encode" title="Encode to Base64">
+                    <i class="fas fa-lock fa-fw"></i> B64 ↑
+                </button>
+                <button class="tool-btn" data-manipulate="base64-decode" title="Decode from Base64">
+                    <i class="fas fa-unlock fa-fw"></i> B64 ↓
+                </button>
+                <button class="tool-btn" data-manipulate="url-encode" title="URL encode">
+                    <i class="fas fa-link fa-fw"></i> URL ↑
+                </button>
+                <button class="tool-btn" data-manipulate="url-decode" title="URL decode">
+                    <i class="fas fa-unlink fa-fw"></i> URL ↓
+                </button>
+                <button class="tool-btn" data-manipulate="html-encode" title="HTML encode">
+                    <i class="fas fa-code fa-fw"></i> HTML ↑
+                </button>
+                <button class="tool-btn" data-manipulate="html-decode" title="HTML decode">
+                    <i class="fas fa-code fa-fw"></i> HTML ↓
+                </button>
+            </div>
+            
+            <h5 class="text-xs font-semibold uppercase tracking-wide mt-4" style="color: var(--text-muted)">Transform</h5>
+            <div class="tool-btn-grid">
+                <button class="tool-btn" data-manipulate="reverse" title="Reverse text">
+                    <i class="fas fa-exchange-alt fa-fw"></i> Reverse
+                </button>
+                <button class="tool-btn" data-manipulate="rot13" title="ROT13 cipher">
+                    <i class="fas fa-sync fa-fw"></i> ROT13
+                </button>
+            </div>
+            
+            <h5 class="text-xs font-semibold uppercase tracking-wide mt-4" style="color: var(--text-muted)">Extract</h5>
+            <div class="tool-btn-grid">
+                <button class="tool-btn" data-manipulate="extract-emails" title="Extract email addresses">
+                    <i class="fas fa-at fa-fw"></i> Emails
+                </button>
+                <button class="tool-btn" data-manipulate="extract-urls" title="Extract URLs">
+                    <i class="fas fa-globe fa-fw"></i> URLs
+                </button>
+            </div>
+        </div>`;
+}
+
+function getImportExportHTML() {
+    return `
+        <div class="space-y-3">
+            <div>
+                <h5 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted)">Import</h5>
+                <input type="file" id="fileInput" accept=".txt,.json,.csv,.md" style="display: none;">
+                <button class="btn btn-secondary w-full compact-btn" id="fileInputBtn">
+                    <i class="fas fa-upload fa-fw"></i> Import File
+                </button>
+                <p class="text-xs mt-1" style="color: var(--text-muted)">Supports: TXT, JSON, CSV, MD (max 5MB)</p>
+            </div>
+            
+            <div>
+                <h5 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted)">Export</h5>
+                <div class="space-y-1">
+                    <button class="export-btn" data-export="txt">
+                        <i class="fas fa-file-alt fa-fw"></i>
+                        <span>Plain Text (.txt)</span>
+                    </button>
+                    <button class="export-btn" data-export="json">
+                        <i class="fas fa-file-code fa-fw"></i>
+                        <span>JSON (.json)</span>
+                    </button>
+                    <button class="export-btn" data-export="csv">
+                        <i class="fas fa-file-csv fa-fw"></i>
+                        <span>CSV (.csv)</span>
+                    </button>
+                    <button class="export-btn" data-export="pdf">
+                        <i class="fas fa-file-pdf fa-fw"></i>
+                        <span>PDF (Print)</span>
+                    </button>
+                </div>
+            </div>
+        </div>`;
+}
+
+/**
+ * Apply template to text area
+ */
+function applyTemplate(templateName) {
+    const template = templates[templateName];
+    if (!template) {
+        showStatus('Template not found', 3000, 'error');
+        return;
+    }
+    
+    if (elements.textArea.value.trim()) {
+        showModal('Apply Template', 
+            `This will replace your current text with the "${templateName}" template. Continue?`,
+            [
+                { text: 'Cancel', class: 'btn-secondary', callback: hideModal },
+                { text: 'Apply Template', class: 'btn-primary', callback: () => {
+                    addToHistory(`Apply Template: ${templateName}`, elements.textArea.value);
+                    elements.textArea.value = template.content;
+                    handleTextInput();
+                    showStatus(`Applied ${templateName} template`, 2000, 'success');
+                    hideModal();
+                }}
+            ]
+        );
+    } else {
+        addToHistory(`Apply Template: ${templateName}`, elements.textArea.value);
+        elements.textArea.value = template.content;
+        handleTextInput();
+        showStatus(`Applied ${templateName} template`, 2000, 'success');
+    }
+}
+
+/**
+ * Initialize tooltips
+ */
+function initializeTooltips() {
+    // Simple tooltip implementation using title attributes
+    // The CSS already handles most of the tooltip styling via [data-tooltip]
+    document.querySelectorAll('[title]').forEach(element => {
+        // Enhance existing title tooltips with better positioning if needed
+        element.addEventListener('mouseenter', function() {
+            // Tooltip functionality is handled by CSS :hover states
+            // This is just for any additional tooltip logic if needed
+        });
+    });
+}
+
+/**
+ * Safe localStorage operations with error handling
+ */
+function safeLocalStorageOperation(operation, key, value = null) {
+    try {
+        switch (operation) {
+            case 'get':
+                return localStorage.getItem(key);
+            case 'set':
+                localStorage.setItem(key, value);
+                return true;
+            case 'remove':
+                localStorage.removeItem(key);
+                return true;
+            default:
+                return null;
+        }
+    } catch (e) {
+        console.error(`localStorage ${operation} failed:`, e);
+        if (operation === 'get') return null;
+        showStatus('Storage operation failed', 2000, 'warning');
+        return false;
+    }
+}
+
+// Start the application when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
