@@ -1,10 +1,4 @@
-// Firebase SDK imports
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, addDoc, getDocs, serverTimestamp, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-
-// --- ENHANCED TEXTMAN APPLICATION ---
+// --- ENHANCED TEXTMAN APPLICATION (CLIENT-SIDE ONLY) ---
 
 // Global state object
 const appState = {
@@ -12,13 +6,6 @@ const appState = {
     undoStack: [],
     redoStack: [],
     autoSaveEnabled: true,
-    userId: null,
-    db: null,
-    auth: null,
-    appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
-    firebaseConfig: typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null,
-    initialAuthToken: typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null,
-    isAuthReady: false,
     listeners: [],
     tooltips: new Map(),
     analyticsCache: null,
@@ -26,13 +13,6 @@ const appState = {
 };
 
 const elements = {}; // DOM element cache
-
-// --- Firestore Path Helpers ---
-const FIRESTORE_PATHS = {
-    userData: (userId) => `artifacts/${appState.appId}/users/${userId}/appData/userData`,
-    savedTexts: (userId) => `artifacts/${appState.appId}/users/${userId}/savedTexts`,
-    history: (userId) => `artifacts/${appState.appId}/users/${userId}/history`,
-};
 
 /**
  * Caches frequently accessed DOM elements
@@ -70,207 +50,175 @@ function cacheDOMElements() {
 /**
  * Initializes the application
  */
-async function init() {
+function init() {
     try {
         cacheDOMElements();
-        setLogLevel('error');
-
-        if (!appState.firebaseConfig) {
-            console.error("Firebase configuration is missing!");
-            showStatus("Error: Firebase not configured. Data will not be saved.", 10000, 'error');
-            setupEventListeners();
-            renderSidebarSections();
-            loadQuickActionOrderFromDefaults();
-            updateAllStats();
-            initializeTooltips();
-            return;
+        
+        // Hide user ID display since we're not using Firebase
+        if (elements.userIdDisplay) {
+            elements.userIdDisplay.style.display = 'none';
         }
-
-        try {
-            const firebaseApp = initializeApp(appState.firebaseConfig);
-            appState.auth = getAuth(firebaseApp);
-            appState.db = getFirestore(firebaseApp);
-
-            onAuthStateChanged(appState.auth, async (user) => {
-                if (user) {
-                    appState.userId = user.uid;
-                    appState.isAuthReady = true;
-                    console.log("User authenticated:", appState.userId);
-                    elements.userIdValue.textContent = appState.userId.substring(0, 8) + '...';
-                    elements.userIdDisplay.classList.remove('hidden');
-                    await loadDataFromFirestore();
-                } else {
-                    console.log("No user signed in, attempting sign-in...");
-                    if (appState.initialAuthToken) {
-                        try {
-                            await signInWithCustomToken(appState.auth, appState.initialAuthToken);
-                            console.log("Signed in with custom token.");
-                        } catch (error) {
-                            console.error("Error signing in with custom token, trying anonymous:", error);
-                            await signInAnonymously(appState.auth);
-                            console.log("Signed in anonymously after custom token failure.");
-                        }
-                    } else {
-                        await signInAnonymously(appState.auth);
-                        console.log("Signed in anonymously.");
-                    }
-                }
-                
-                setupEventListeners();
-                renderSidebarSections();
-                updateAllStats();
-                initializeTooltips();
-                showStatus('Ready', 2000, 'success');
-            });
-
-        } catch (e) {
-            console.error('Error initializing Firebase:', e);
-            showStatus('Error: Firebase initialization failed. Data will not be saved.', 10000, 'error');
-            setupEventListeners();
-            renderSidebarSections();
-            loadQuickActionOrderFromDefaults();
-            updateAllStats();
-            initializeTooltips();
-        }
-    } catch (globalError) {
-        console.error('Critical initialization error:', globalError);
-        // Try to at least set up basic functionality
-        try {
-            setupEventListeners();
-            renderSidebarSections();
-            loadQuickActionOrderFromDefaults();
-            updateAllStats();
-        } catch (e) {
-            console.error('Failed to initialize basic functionality:', e);
-        }
+        
+        // Load saved data from localStorage
+        loadFromLocalStorage();
+        
+        // Set up all the UI components
+        setupEventListeners();
+        renderSidebarSections();
+        loadQuickActionOrder();
+        updateAllStats();
+        initializeTooltips();
+        
+        // Show ready status
+        showStatus('Ready', 2000, 'success');
+        
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showStatus('Error during initialization', 5000, 'error');
     }
 }
 
 /**
- * Loads user data from Firestore
+ * Load data from localStorage
  */
-async function loadDataFromFirestore() {
-    if (!appState.userId || !appState.db) return;
-    console.log("Loading data from Firestore for user:", appState.userId);
-
-    appState.listeners.forEach(unsubscribe => unsubscribe());
-    appState.listeners = [];
-
-    const userDocRef = doc(appState.db, FIRESTORE_PATHS.userData(appState.userId));
-
-    const unsubUserData = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            console.log("User data loaded/updated:", data);
-            elements.textArea.value = data.currentText || '';
-            appState.currentText = elements.textArea.value;
-            
-            appState.autoSaveEnabled = typeof data.autoSaveEnabled === 'boolean' ? data.autoSaveEnabled : true;
-            elements.autoSaveStatus.innerHTML = `<i class="fas fa-save fa-fw"></i> Auto-save: ${appState.autoSaveEnabled ? 'On' : 'Off'}`;
-            
-            loadTheme(data.theme || 'dark');
-            loadUIStateFromData(data);
-            loadQuickActionOrder(data.quickActionOrder || defaultQuickActions.map(qa => qa.action));
-
-        } else {
-            console.log("No user data document found, initializing with defaults.");
-            elements.textArea.value = '';
-            appState.currentText = '';
-            loadTheme('dark');
-            loadUIStateFromData({});
-            loadQuickActionOrderFromDefaults();
-            saveCurrentTextToFirestore(true);
-            saveUIStateToFirestore();
+function loadFromLocalStorage() {
+    try {
+        // Load current text
+        const savedText = localStorage.getItem('textman_currentText');
+        if (savedText !== null) {
+            elements.textArea.value = savedText;
+            appState.currentText = savedText;
         }
-        updateAllStats();
-    }, (error) => {
-        console.error("Error listening to user data:", error);
-        showStatus("Error loading user data.", 5000, 'error');
-    });
-    appState.listeners.push(unsubUserData);
-
-    const savedTextsQuery = query(collection(appState.db, FIRESTORE_PATHS.savedTexts(appState.userId)), orderBy("createdAt", "desc"), limit(50));
-    const unsubSavedTexts = onSnapshot(savedTextsQuery, (querySnapshot) => {
-        const savedTexts = [];
-        querySnapshot.forEach((doc) => {
-            savedTexts.push({ id: doc.id, ...doc.data() });
-        });
-        console.log("Saved texts loaded/updated:", savedTexts.length);
-        updateSavedTextsUI(savedTexts);
-    }, (error) => {
-        console.error("Error listening to saved texts:", error);
-        showStatus("Error loading saved texts.", 5000, 'error');
-    });
-    appState.listeners.push(unsubSavedTexts);
-
-    const historyQuery = query(collection(appState.db, FIRESTORE_PATHS.history(appState.userId)), orderBy("createdAt", "desc"), limit(20));
-    const unsubHistory = onSnapshot(historyQuery, (querySnapshot) => {
-        const historyItems = [];
-        querySnapshot.forEach((doc) => {
-            historyItems.push({ id: doc.id, ...doc.data() });
-        });
-        console.log("History loaded/updated:", historyItems.length);
-        updateHistoryUI(historyItems);
-    }, (error) => {
-        console.error("Error listening to history:", error);
-        showStatus("Error loading history.", 5000, 'error');
-    });
-    appState.listeners.push(unsubHistory);
+        
+        // Load auto-save preference
+        const autoSave = localStorage.getItem('textman_autoSave');
+        appState.autoSaveEnabled = autoSave !== 'false';
+        elements.autoSaveStatus.innerHTML = `<i class="fas fa-save fa-fw"></i> Auto-save: ${appState.autoSaveEnabled ? 'On' : 'Off'}`;
+        
+        // Load theme
+        const theme = localStorage.getItem('textman_theme') || 'dark';
+        loadTheme(theme);
+        
+        // Load UI state
+        const uiState = localStorage.getItem('textman_uiState');
+        if (uiState) {
+            try {
+                const parsed = JSON.parse(uiState);
+                loadUIStateFromData(parsed);
+            } catch (e) {
+                console.error('Error parsing UI state:', e);
+            }
+        }
+        
+    } catch (e) {
+        console.error('Error loading from localStorage:', e);
+    }
 }
 
 /**
- * Saves current text to Firestore with debouncing
+ * Save current text to localStorage
  */
-const saveCurrentTextToFirestore = debounce(async function(forceSave = false) {
-    if (!appState.userId || !appState.db || (!appState.autoSaveEnabled && !forceSave)) return;
+const saveToLocalStorage = debounce(function() {
+    if (!appState.autoSaveEnabled) return;
     
-    console.log("Attempting to save current text to Firestore.");
     try {
-        const userDocRef = doc(appState.db, FIRESTORE_PATHS.userData(appState.userId));
-        await setDoc(userDocRef, { 
-            currentText: elements.textArea.value,
-            lastUpdated: serverTimestamp() 
-        }, { merge: true });
-        console.log("Current text saved to Firestore.");
+        localStorage.setItem('textman_currentText', elements.textArea.value);
+        
+        // Also save to history
+        const history = getHistory();
+        if (history.length === 0 || history[0].text !== elements.textArea.value) {
+            addToHistory('Auto-save', elements.textArea.value);
+        }
     } catch (e) {
-        console.error('Error saving current text to Firestore:', e);
-        showStatus('Error: Could not save text.', 5000, 'error');
+        console.error('Error saving to localStorage:', e);
+        showStatus('Error: Could not save text locally', 3000, 'error');
     }
 }, 1000);
 
 /**
- * Saves UI state to Firestore
+ * Get history from localStorage
  */
-async function saveUIStateToFirestore() {
-    if (!appState.userId || !appState.db) return;
-    console.log("Saving UI state to Firestore.");
+function getHistory() {
+    try {
+        const history = localStorage.getItem('textman_history');
+        return history ? JSON.parse(history) : [];
+    } catch (e) {
+        console.error('Error getting history:', e);
+        return [];
+    }
+}
 
-    const currentQuickActionOrder = [...elements.quickActionsContainer.children].map(item => item.dataset.action);
+/**
+ * Add to history
+ */
+function addToHistory(action, text) {
+    if (!text.trim()) return;
+    
+    try {
+        const history = getHistory();
+        const newEntry = {
+            id: Date.now().toString(),
+            action,
+            text: text.substring(0, 5000),
+            timestamp: new Date().toISOString(),
+            dateString: new Date().toLocaleString(),
+            wordCount: text.trim().split(/\s+/).filter(Boolean).length,
+            charCount: text.length
+        };
+        
+        history.unshift(newEntry);
+        
+        // Keep only last 20 entries
+        if (history.length > 20) {
+            history.splice(20);
+        }
+        
+        localStorage.setItem('textman_history', JSON.stringify(history));
+        updateHistoryUI();
+    } catch (e) {
+        console.error('Error adding to history:', e);
+    }
+}
 
-    const uiStateData = {
-        theme: document.documentElement.getAttribute('data-theme'),
-        autoSaveEnabled: appState.autoSaveEnabled,
-        uiState: {
+/**
+ * Get saved texts from localStorage
+ */
+function getSavedTexts() {
+    try {
+        const saved = localStorage.getItem('textman_savedTexts');
+        return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+        console.error('Error getting saved texts:', e);
+        return [];
+    }
+}
+
+/**
+ * Save UI state to localStorage
+ */
+function saveUIState() {
+    try {
+        const currentQuickActionOrder = [...elements.quickActionsContainer.children].map(item => item.dataset.action);
+        
+        const uiStateData = {
+            theme: document.documentElement.getAttribute('data-theme'),
+            autoSaveEnabled: appState.autoSaveEnabled,
             leftSidebarExpanded: !document.getElementById('leftSidebar').classList.contains('collapsed'),
             rightSidebarExpanded: !document.getElementById('rightSidebar').classList.contains('collapsed'),
             sections: {},
-        },
-        quickActionOrder: currentQuickActionOrder,
-        lastUpdated: serverTimestamp()
-    };
-
-    document.querySelectorAll('.sidebar-section').forEach(section => {
-        const sectionId = section.id.replace('section-', '');
-        uiStateData.uiState.sections[sectionId] = !section.classList.contains('collapsed');
-    });
-    
-    try {
-        const userDocRef = doc(appState.db, FIRESTORE_PATHS.userData(appState.userId));
-        await setDoc(userDocRef, uiStateData, { merge: true });
-        console.log("UI state saved to Firestore.");
+            quickActionOrder: currentQuickActionOrder
+        };
+        
+        document.querySelectorAll('.sidebar-section').forEach(section => {
+            const sectionId = section.id.replace('section-', '');
+            uiStateData.sections[sectionId] = !section.classList.contains('collapsed');
+        });
+        
+        localStorage.setItem('textman_uiState', JSON.stringify(uiStateData));
+        localStorage.setItem('textman_theme', uiStateData.theme);
+        localStorage.setItem('textman_autoSave', appState.autoSaveEnabled.toString());
     } catch (e) {
-        console.error('Error saving UI state to Firestore:', e);
-        showStatus('Error: Could not save UI settings.', 5000, 'error');
+        console.error('Error saving UI state:', e);
     }
 }
 
@@ -392,7 +340,7 @@ function handleTextInput() {
         appState.analyticsCache = null;
     }
     updateAllStats();
-    saveCurrentTextToFirestore();
+    saveToLocalStorage();
 }
 
 /**
@@ -428,7 +376,7 @@ function undo() {
         elements.textArea.value = appState.undoStack.pop();
         appState.currentText = elements.textArea.value;
         updateAllStats(); 
-        saveCurrentTextToFirestore();
+        saveToLocalStorage();
         showStatus('Undo applied', 1500, 'success');
     } else {
         showStatus('Nothing to undo', 2000, 'warning');
@@ -441,7 +389,7 @@ function redo() {
         elements.textArea.value = appState.redoStack.pop();
         appState.currentText = elements.textArea.value;
         updateAllStats();
-        saveCurrentTextToFirestore();
+        saveToLocalStorage();
         showStatus('Redo applied', 1500, 'success');
     } else {
         showStatus('Nothing to redo', 2000, 'warning');
@@ -474,20 +422,16 @@ function copyText() {
 
 function clearText() {
     if (elements.textArea.value === '') return;
-    addTextToHistory('Clear Text', elements.textArea.value);
+    addToHistory('Clear Text', elements.textArea.value);
     elements.textArea.value = ''; 
     handleTextInput();
     showStatus('Text cleared', 2000, 'success');
 }
 
 /**
- * Enhanced save text snippet function with better UX
+ * Save text snippet
  */
-async function saveCurrentTextAsSnippet() {
-    if (!appState.userId || !appState.db) {
-        showStatus('Cannot save: Not connected to database.', 3000, 'error');
-        return;
-    }
+function saveCurrentTextAsSnippet() {
     const text = elements.textArea.value.trim();
     if (!text) { 
         showStatus('No text to save', 2000, 'warning'); 
@@ -505,20 +449,31 @@ async function saveCurrentTextAsSnippet() {
         </div>`,
         [
             { text: 'Cancel', class: 'btn-secondary', callback: hideModal }, 
-            { text: 'Save Snippet', class: 'btn-primary', callback: async () => {
+            { text: 'Save Snippet', class: 'btn-primary', callback: () => {
                 const titleInput = document.getElementById('saveTitleInput');
                 const title = titleInput.value.trim();
                 if (title) {
                     try {
-                        const savedTextsColRef = collection(appState.db, FIRESTORE_PATHS.savedTexts(appState.userId));
-                        await addDoc(savedTextsColRef, { 
-                            title, 
-                            text, 
-                            createdAt: serverTimestamp(),
+                        const savedTexts = getSavedTexts();
+                        const newSaved = {
+                            id: Date.now().toString(),
+                            title,
+                            text,
+                            timestamp: new Date().toISOString(),
                             dateString: new Date().toLocaleString(),
                             wordCount: text.trim().split(/\s+/).filter(Boolean).length,
                             charCount: text.length
-                        });
+                        };
+                        
+                        savedTexts.unshift(newSaved);
+                        
+                        // Keep only last 50 saved texts
+                        if (savedTexts.length > 50) {
+                            savedTexts.splice(50);
+                        }
+                        
+                        localStorage.setItem('textman_savedTexts', JSON.stringify(savedTexts));
+                        updateSavedTextsUI();
                         showStatus(`Snippet "${title}" saved successfully!`, 3000, 'success'); 
                         hideModal();
                     } catch (e) {
@@ -1254,50 +1209,13 @@ function showQuickInsights() {
     showModal('⚡ Quick Insights', content, [{ text: 'Close', class: 'btn-secondary', callback: hideModal }]);
 }
 
-// History management
-async function addTextToHistory(action, textSnapshot) {
-    if (!appState.userId || !appState.db || !textSnapshot.trim()) return;
-    
-    try {
-        const historyColRef = collection(appState.db, FIRESTORE_PATHS.history(appState.userId));
-        await addDoc(historyColRef, {
-            action,
-            textSnapshot: textSnapshot.substring(0, 5000),
-            createdAt: serverTimestamp(),
-            dateString: new Date().toLocaleString(),
-            wordCount: textSnapshot.trim().split(/\s+/).filter(Boolean).length,
-            charCount: textSnapshot.length
-        });
-        pruneHistory(); 
-    } catch (e) {
-        console.error("Error adding to history:", e);
-    }
-}
-
-async function pruneHistory() {
-    if (!appState.userId || !appState.db) return;
-    const historyColRef = collection(appState.db, FIRESTORE_PATHS.history(appState.userId));
-    const q = query(historyColRef, orderBy("createdAt", "desc"));
-
-    try {
-        const snapshot = await getDocs(q);
-        if (snapshot.docs.length > 20) {
-            const batch = writeBatch(appState.db);
-            snapshot.docs.slice(20).forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            await batch.commit();
-            console.log("Old history items pruned.");
-        }
-    } catch (error) {
-        console.error("Error pruning history:", error);
-    }
-}
-
 // UI update functions
-function updateHistoryUI(historyItems = []) {
+function updateHistoryUI() {
     const container = document.getElementById('historyList');
     if (!container) return;
+    
+    const historyItems = getHistory();
+    
     container.innerHTML = historyItems.length === 0 
         ? `<div class="text-center p-6 text-sm" style="color:var(--text-muted)">
             <i class="fas fa-history text-3xl opacity-30 mb-3 block"></i>
@@ -1315,17 +1233,20 @@ function updateHistoryUI(historyItems = []) {
                 <div class="text-xs grid grid-cols-3 gap-2 mb-2" style="color:var(--text-muted)">
                     <span><i class="fas fa-font"></i> ${item.wordCount || 0} words</span>
                     <span><i class="fas fa-text-width"></i> ${item.charCount || 0} chars</span>
-                    <span><i class="fas fa-clock"></i> ${item.dateString || new Date(item.createdAt?.toDate()).toLocaleString()}</span>
+                    <span><i class="fas fa-clock"></i> ${item.dateString}</span>
                 </div>
                 <div class="text-xs p-2 rounded" style="background:var(--bg-hover); color:var(--text-muted); max-height: 40px; overflow: hidden;">
-                    ${(item.textSnapshot || '').substring(0, 100)}${(item.textSnapshot || '').length > 100 ? '...' : ''}
+                    ${(item.text || '').substring(0, 100)}${(item.text || '').length > 100 ? '...' : ''}
                 </div>
             </div>`).join('');
 }
 
-function updateSavedTextsUI(savedTexts = []) {
+function updateSavedTextsUI() {
     const container = document.getElementById('savedList');
     if (!container) return;
+    
+    const savedTexts = getSavedTexts();
+    
     container.innerHTML = savedTexts.length === 0 
         ? `<div class="text-center p-6 text-sm" style="color:var(--text-muted)">
             <i class="fas fa-bookmark text-3xl opacity-30 mb-3 block"></i>
@@ -1348,21 +1269,20 @@ function updateSavedTextsUI(savedTexts = []) {
                 <div class="text-xs grid grid-cols-3 gap-2" style="color:var(--text-muted)">
                     <span><i class="fas fa-font"></i> ${item.wordCount || 0} words</span>
                     <span><i class="fas fa-text-width"></i> ${item.charCount || 0} chars</span>
-                    <span><i class="fas fa-clock"></i> ${item.dateString || new Date(item.createdAt?.toDate()).toLocaleString()}</span>
+                    <span><i class="fas fa-clock"></i> ${item.dateString}</span>
                 </div>
             </div>`).join('');
 }
 
 // Restore and load functions
-async function restoreFromHistory(historyItemId) {
-    if (!appState.userId || !appState.db) return;
+function restoreFromHistory(historyItemId) {
     try {
-        const historyDocRef = doc(appState.db, FIRESTORE_PATHS.history(appState.userId), historyItemId);
-        const docSnap = await getDoc(historyDocRef);
-        if (docSnap.exists()) {
-            const item = docSnap.data();
-            addTextToHistory('Before Restore from History', elements.textArea.value);
-            elements.textArea.value = item.textSnapshot; 
+        const history = getHistory();
+        const item = history.find(h => h.id === historyItemId);
+        
+        if (item) {
+            addToHistory('Before Restore from History', elements.textArea.value);
+            elements.textArea.value = item.text; 
             handleTextInput();
             showStatus(`Restored from history: ${item.action}`, 3000, 'success'); 
         } else {
@@ -1374,14 +1294,13 @@ async function restoreFromHistory(historyItemId) {
     }
 }
 
-async function loadSavedText(savedTextId) {
-    if (!appState.userId || !appState.db) return;
+function loadSavedText(savedTextId) {
     try {
-        const savedTextDocRef = doc(appState.db, FIRESTORE_PATHS.savedTexts(appState.userId), savedTextId);
-        const docSnap = await getDoc(savedTextDocRef);
-        if (docSnap.exists()) {
-            const item = docSnap.data();
-            addTextToHistory('Load Saved Text', elements.textArea.value);
+        const savedTexts = getSavedTexts();
+        const item = savedTexts.find(s => s.id === savedTextId);
+        
+        if (item) {
+            addToHistory('Load Saved Text', elements.textArea.value);
             elements.textArea.value = item.text; 
             handleTextInput(); 
             showStatus(`Loaded: "${item.title}"`, 3000, 'success'); 
@@ -1394,12 +1313,17 @@ async function loadSavedText(savedTextId) {
     }
 }
 
-async function deleteSavedTextSnippet(savedTextId) {
-    if (!appState.userId || !appState.db) return;
+function deleteSavedTextSnippet(savedTextId) {
     try {
-        const savedTextDocRef = doc(appState.db, FIRESTORE_PATHS.savedTexts(appState.userId), savedTextId);
-        await deleteDoc(savedTextDocRef);
-        showStatus('Deleted saved text snippet', 2000, 'success');
+        const savedTexts = getSavedTexts();
+        const index = savedTexts.findIndex(s => s.id === savedTextId);
+        
+        if (index !== -1) {
+            savedTexts.splice(index, 1);
+            localStorage.setItem('textman_savedTexts', JSON.stringify(savedTexts));
+            updateSavedTextsUI();
+            showStatus('Deleted saved text snippet', 2000, 'success');
+        }
     } catch (e) {
         console.error("Error deleting saved text snippet:", e);
         showStatus('Error deleting snippet.', 3000, 'error');
@@ -1530,6 +1454,10 @@ function renderSidebarSections() {
         const findReplaceAllBtn = document.querySelector('[data-find-replace-all]');
         if (findReplaceAllBtn) findReplaceAllBtn.addEventListener('click', () => findAndReplace(true));
         
+        // Update UI with current data
+        updateHistoryUI();
+        updateSavedTextsUI();
+        
         // Initial mini analytics update
         setTimeout(() => {
             try {
@@ -1576,7 +1504,7 @@ function toggleTheme() {
         document.body.style.transition = '';
     }, 300);
     
-    saveUIStateToFirestore();
+    saveUIState();
     showStatus(`Switched to ${newTheme} theme`, 1500, 'success');
 }
 
@@ -1612,7 +1540,7 @@ function toggleSidebar(side) {
         collapseBtn.setAttribute('aria-label', `${!isCurrentlyExpanded ? 'Show' : 'Hide'} tools panel`);
     }
     
-    saveUIStateToFirestore();
+    saveUIState();
     showStatus(`${side.charAt(0).toUpperCase() + side.slice(1)} panel ${!isCurrentlyExpanded ? 'hidden' : 'shown'}`, 1500, 'success');
 }
 
@@ -1626,17 +1554,17 @@ function toggleSection(sectionElement) {
     const chevron = header.querySelector('.fa-chevron-down');
     chevron.classList.toggle('-rotate-90', isCurrentlyExpanded);
     
-    saveUIStateToFirestore();
+    saveUIState();
 }
 
 function loadUIStateFromData(uiStateData = {}) {
-    window.uiStateSnapshot = uiStateData.uiState || {};
+    window.uiStateSnapshot = uiStateData;
 
     const leftSidebar = document.getElementById('leftSidebar');
     const rightSidebar = document.getElementById('rightSidebar');
 
     // Handle left sidebar state
-    if (uiStateData.uiState?.leftSidebarExpanded === false) {
+    if (uiStateData.leftSidebarExpanded === false) {
         leftSidebar.classList.add('collapsed');
         const leftCollapseBtn = leftSidebar.querySelector('.sidebar-collapse-btn');
         if (leftCollapseBtn) {
@@ -1647,21 +1575,10 @@ function loadUIStateFromData(uiStateData = {}) {
             leftCollapseBtn.setAttribute('title', 'Show workspace panel (Alt+1)');
             leftCollapseBtn.setAttribute('aria-label', 'Show workspace panel');
         }
-    } else {
-        leftSidebar.classList.remove('collapsed');
-        const leftCollapseBtn = leftSidebar.querySelector('.sidebar-collapse-btn');
-        if (leftCollapseBtn) {
-            const icon = leftCollapseBtn.querySelector('i');
-            const hint = leftCollapseBtn.querySelector('.collapse-hint');
-            icon.className = 'fas fa-fw fa-chevron-left';
-            hint.textContent = 'Hide';
-            leftCollapseBtn.setAttribute('title', 'Hide workspace panel (Alt+1)');
-            leftCollapseBtn.setAttribute('aria-label', 'Hide workspace panel');
-        }
     }
 
     // Handle right sidebar state
-    if (uiStateData.uiState?.rightSidebarExpanded === false) {
+    if (uiStateData.rightSidebarExpanded === false) {
         rightSidebar.classList.add('collapsed');
         const rightCollapseBtn = rightSidebar.querySelector('.sidebar-collapse-btn');
         if (rightCollapseBtn) {
@@ -1671,17 +1588,6 @@ function loadUIStateFromData(uiStateData = {}) {
             hint.textContent = 'Show';
             rightCollapseBtn.setAttribute('title', 'Show tools panel (Alt+2)');
             rightCollapseBtn.setAttribute('aria-label', 'Show tools panel');
-        }
-    } else {
-        rightSidebar.classList.remove('collapsed');
-        const rightCollapseBtn = rightSidebar.querySelector('.sidebar-collapse-btn');
-        if (rightCollapseBtn) {
-            const icon = rightCollapseBtn.querySelector('i');
-            const hint = rightCollapseBtn.querySelector('.collapse-hint');
-            icon.className = 'fas fa-fw fa-chevron-right';
-            hint.textContent = 'Hide';
-            rightCollapseBtn.setAttribute('title', 'Hide tools panel (Alt+2)');
-            rightCollapseBtn.setAttribute('aria-label', 'Hide tools panel');
         }
     }
 }
@@ -1751,7 +1657,7 @@ function setupDragAndDropForQuickActions() {
         if (draggedElement) { 
             draggedElement.setAttribute('data-dragging', 'false'); 
             draggedElement = null; 
-            saveUIStateToFirestore();
+            saveUIState();
         } 
     });
     
@@ -1774,7 +1680,7 @@ function setupDragAndDropForQuickActions() {
         if (e.key === 'Enter' || e.key === ' ') { 
             const isGrabbed = currentItem.getAttribute('aria-grabbed') === 'true'; 
             currentItem.setAttribute('aria-grabbed', String(!isGrabbed)); 
-            if (isGrabbed) saveUIStateToFirestore(); 
+            if (isGrabbed) saveUIState(); 
         } else if (currentItem.getAttribute('aria-grabbed') === 'true') {
             if (e.key === 'ArrowRight' && currentItem.nextElementSibling) {
                 currentItem.parentNode.insertBefore(currentItem, currentItem.nextElementSibling.nextSibling);
@@ -1786,14 +1692,21 @@ function setupDragAndDropForQuickActions() {
     });
 }
 
-function loadQuickActionOrder(order) {
-    const validOrder = order && Array.isArray(order) && order.length > 0 
-        ? order 
-        : defaultQuickActions.map(qa => qa.action);
-    renderQuickActions(validOrder);
-}
-
-function loadQuickActionOrderFromDefaults() {
+function loadQuickActionOrder() {
+    try {
+        const uiState = localStorage.getItem('textman_uiState');
+        if (uiState) {
+            const parsed = JSON.parse(uiState);
+            if (parsed.quickActionOrder && Array.isArray(parsed.quickActionOrder)) {
+                renderQuickActions(parsed.quickActionOrder);
+                return;
+            }
+        }
+    } catch (e) {
+        console.error('Error loading quick action order:', e);
+    }
+    
+    // Fall back to defaults
     renderQuickActions(defaultQuickActions.map(qa => qa.action));
 }
 
@@ -1804,7 +1717,7 @@ function applyTransformation(type) {
         showStatus('No text to transform', 2000, 'warning'); 
         return; 
     }
-    addTextToHistory(`Transform: ${type}`, text); 
+    addToHistory(`Transform: ${type}`, text); 
     let transformed = text;
     const fns = {
         uppercase: s => s.toUpperCase(), 
@@ -1828,7 +1741,7 @@ function applyFormatting(type) {
         showStatus('No text to format', 2000, 'warning'); 
         return; 
     }
-    addTextToHistory(`Format: ${type}`, text); 
+    addToHistory(`Format: ${type}`, text); 
     let formatted = text;
     const fns = {
         'trim': s => s.trim(), 
@@ -1862,7 +1775,7 @@ function applyManipulation(type) {
     }
     let manipulated = text;
     try {
-        addTextToHistory(`Manipulate: ${type}`, text);
+        addToHistory(`Manipulate: ${type}`, text);
         const fns = {
             'reverse': s => s.split('').reverse().join(''),
             'rot13': s => s.replace(/[a-zA-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() < 'n' ? 13 : -13))),
@@ -1926,7 +1839,7 @@ function findAndReplace(isReplaceAll) {
             return; 
         }
         
-        addTextToHistory(isReplaceAll ? 'Replace All' : 'Replace', text);
+        addToHistory(isReplaceAll ? 'Replace All' : 'Replace', text);
         elements.textArea.value = newText; 
         handleTextInput(); 
         showStatus(`Replaced ${matchCount} occurrence(s)`, 3000, 'success');
@@ -1948,7 +1861,7 @@ function handleFileImport(e) {
     
     const reader = new FileReader();
     reader.onload = (event) => { 
-        addTextToHistory('Import File', elements.textArea.value); 
+        addToHistory('Import File', elements.textArea.value); 
         elements.textArea.value = event.target.result; 
         handleTextInput(); 
         showStatus(`Imported ${file.name} (${file.size.toLocaleString()} bytes)`, 3000, 'success'); 
@@ -2107,7 +2020,7 @@ function showHelp() {
                     <ul class="text-sm space-y-1" style="color: var(--text-secondary)">
                         <li>• Use <kbd class="px-1 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-700">Alt+1</kbd> and <kbd class="px-1 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-700">Alt+2</kbd> to toggle panels</li>
                         <li>• Auto-save keeps your work safe as you type</li>
-                        <li>• All data syncs across your devices when signed in</li>
+                        <li>• All data is stored locally in your browser</li>
                         <li>• Use Ctrl+F to quickly open Find & Replace</li>
                     </ul>
                 </div>
@@ -2265,31 +2178,22 @@ function showSettingsModal() {
                         </button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="space-y-3">
-                <h4 class="font-semibold text-blue-500 border-b border-blue-500/30 pb-1">👤 Account Information</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="font-medium">User ID:</span>
-                        <div class="text-xs mt-1 font-mono p-2 rounded" style="background: var(--bg-hover); word-break: break-all;">
-                            ${appState.userId || 'Not available'}
-                        </div>
+                
+                <div class="p-3 rounded-lg border" style="border-color: var(--border-primary); background: var(--bg-tertiary)">
+                    <div class="flex items-center gap-3 mb-2">
+                        <i class="fas fa-trash-alt text-red-500"></i>
+                        <div class="font-medium">Clear Data</div>
                     </div>
-                    <div>
-                        <span class="font-medium">Status:</span>
-                        <div class="text-xs mt-1">
-                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded" style="background: var(--success-light); color: var(--success)">
-                                <i class="fas fa-check-circle"></i> Connected
-                            </span>
-                        </div>
-                    </div>
+                    <p class="text-xs mb-3" style="color: var(--text-muted)">Remove all saved texts, history, and settings from your browser</p>
+                    <button class="btn btn-secondary w-full" onclick="clearAllData()">
+                        <i class="fas fa-eraser"></i> Clear All Local Data
+                    </button>
                 </div>
             </div>
             
             <div class="text-center pt-4 border-t" style="border-color: var(--border-primary)">
                 <p class="text-xs" style="color: var(--text-muted)">
-                    Settings are automatically saved and synced across your devices
+                    All data is stored locally in your browser
                 </p>
             </div>
         </div>
@@ -2326,7 +2230,7 @@ function showSettingsModal() {
             if (newAutoSaveStatus !== appState.autoSaveEnabled) {
                 appState.autoSaveEnabled = newAutoSaveStatus;
                 elements.autoSaveStatus.innerHTML = `<i class="fas fa-save fa-fw"></i> Auto-save: ${appState.autoSaveEnabled ? 'On' : 'Off'}`;
-                saveUIStateToFirestore();
+                saveUIState();
                 showStatus(`Auto-save turned ${appState.autoSaveEnabled ? 'On' : 'Off'}`, 2000, 'success');
             }
             hideModal();
@@ -2343,12 +2247,49 @@ function showSettingsModal() {
                     document.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     
-                    saveUIStateToFirestore();
+                    saveUIState();
                     showStatus(`Switched to ${selectedTheme} theme`, 1500, 'success');
                 }
             });
         });
     });
+}
+
+// Clear all data function
+function clearAllData() {
+    showModal('Confirm Clear All Data', 
+        `<p style="color: var(--text-secondary)">Are you sure you want to clear all data? This will remove:</p>
+        <ul style="margin: 16px 0; padding-left: 24px; color: var(--text-muted)">
+            <li>All saved text snippets</li>
+            <li>All history entries</li>
+            <li>Current text in editor</li>
+            <li>All settings and preferences</li>
+        </ul>
+        <p style="color: var(--danger)"><strong>This action cannot be undone!</strong></p>`,
+        [
+            { text: 'Cancel', class: 'btn-secondary', callback: hideModal },
+            { text: 'Clear Everything', class: 'btn-primary btn-delete', callback: () => {
+                // Clear all localStorage
+                localStorage.clear();
+                
+                // Reset app state
+                appState.currentText = '';
+                appState.undoStack = [];
+                appState.redoStack = [];
+                appState.autoSaveEnabled = true;
+                appState.analyticsCache = null;
+                
+                // Clear text area
+                elements.textArea.value = '';
+                
+                // Reload the page to reset everything
+                showStatus('All data cleared. Reloading...', 2000, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            }}
+        ]
+    );
 }
 
 // --- Enhanced Templates with More Comprehensive Content ---
@@ -2836,3 +2777,11 @@ npm run lint
 - 💬 Discord: [discord-link]
 - 🐛 Issues: [github-issues-link]
 - 📖 Wiki: [wiki-link]`
+    }
+};
+
+// --- HTML Content Generators ---
+function getTemplatesHTML() { 
+    return `<div class="space-y-2">${Object.keys(templates).map(k => 
+        `<button class="tool-btn btn w-full text-left" data-template="${k}">
+            <i class="fas
