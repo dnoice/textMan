@@ -868,6 +868,14 @@ body {
   justify-content: center;
   z-index: var(--z-modal-backdrop);
   backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.search-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .search-box {
