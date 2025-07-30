@@ -1,713 +1,1786 @@
-// --- ENHANCED TEXTMAN APPLICATION (CLIENT-SIDE ONLY) ---
+// textMan v2 - Modern JavaScript Implementation
 
-// Global state object
-const appState = {
-    currentText: '',
-    undoStack: [],
-    redoStack: [],
-    autoSaveEnabled: true,
-    listeners: [],
-    tooltips: new Map(),
-    analyticsCache: null,
-    analyticsCacheTimestamp: 0,
+// ===== Constants =====
+const STORAGE_KEYS = {
+    CURRENT_TEXT: 'textman_v2_current',
+    HISTORY: 'textman_v2_history',
+    SAVED_TEXTS: 'textman_v2_saved',
+    SETTINGS: 'textman_v2_settings',
+    UI_STATE: 'textman_v2_ui_state'
 };
 
-const elements = {}; // DOM element cache
+const DEFAULT_SETTINGS = {
+    theme: 'dark',
+    autoSave: true,
+    autoSaveInterval: 30000,
+    fontSize: 14,
+    fontFamily: 'JetBrains Mono',
+    wordWrap: true,
+    spellCheck: true
+};
 
-/**
- * Caches frequently accessed DOM elements
- */
-function cacheDOMElements() {
-    Object.assign(elements, {
-        textArea: document.getElementById('mainTextArea'),
-        charCount: document.getElementById('charCount'), 
-        wordCount: document.getElementById('wordCount'), 
-        lineCount: document.getElementById('lineCount'),
-        readTimeStat: document.getElementById('readTimeStat'),
-        statusMessage: document.getElementById('statusMessage'),
-        leftSidebarContent: document.querySelector('#leftSidebar .sidebar-content'),
-        rightSidebarContent: document.getElementById('rightSidebarContent'),
-        quickActionsContainer: document.getElementById('quickActions'),
-        btnUndo: document.getElementById('btnUndo'), 
-        btnRedo: document.getElementById('btnRedo'), 
-        btnCopy: document.getElementById('btnCopy'), 
-        btnClear: document.getElementById('btnClear'),
-        themeToggle: document.getElementById('themeToggle'), 
-        autoSaveStatus: document.getElementById('autoSaveStatus'),
-        btnHelp: document.getElementById('btnHelp'), 
-        btnShortcuts: document.getElementById('btnShortcuts'), 
-        btnSettings: document.getElementById('btnSettings'),
-        modalContainer: document.getElementById('modalContainer'), 
-        modalTitle: document.getElementById('modalTitle'),
-        modalContent: document.getElementById('modalContent'), 
-        modalActions: document.getElementById('modalActions'), 
-        modalClose: document.getElementById('modalClose'),
-        userIdDisplay: document.getElementById('userIdDisplay'),
-        userIdValue: document.getElementById('userIdValue'),
-    });
-}
+const QUICK_ACTIONS = [
+    { id: 'uppercase', label: 'UPPERCASE', icon: 'fa-font', action: 'transform' },
+    { id: 'lowercase', label: 'lowercase', icon: 'fa-text-height', action: 'transform' },
+    { id: 'analyze', label: 'Analyze', icon: 'fa-chart-bar', action: 'analyze' },
+    { id: 'find', label: 'Find', icon: 'fa-search', action: 'find' }
+];
 
-/**
- * Initializes the application
- */
-function init() {
-    try {
-        cacheDOMElements();
-        
-        // Hide user ID display since we're not using Firebase
-        if (elements.userIdDisplay) {
-            elements.userIdDisplay.style.display = 'none';
-        }
-        
-        // Load saved data from localStorage
-        loadFromLocalStorage();
-        
-        // Set up all the UI components
-        setupEventListeners();
-        renderSidebarSections();
-        loadQuickActionOrder();
-        updateAllStats();
-        initializeTooltips();
-        
-        // Show ready status
-        showStatus('Ready', 2000, 'success');
-        
-        // Set up periodic auto-save (every 30 seconds)
-        setInterval(() => {
-            if (appState.autoSaveEnabled && elements.textArea.value !== appState.currentText) {
-                saveToLocalStorage();
-            }
-        }, 30000);
-        
-        // Set up beforeunload handler to warn about unsaved changes
-        window.addEventListener('beforeunload', (e) => {
-            if (elements.textArea.value !== appState.currentText && elements.textArea.value.trim()) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-            }
-        });
-        
-        console.log('textMan initialized successfully');
-        
-    } catch (error) {
-        console.error('Initialization error:', error);
-        showStatus('Error during initialization', 5000, 'error');
-        
-        // Try to still show basic functionality
-        if (elements.textArea) {
-            elements.textArea.addEventListener('input', updateAllStats);
-        }
+const TEMPLATES = {
+    email: {
+        name: 'Email',
+        icon: 'fa-envelope',
+        content: `Subject: [Your Subject Here]
+
+Dear [Recipient Name],
+
+I hope this email finds you well. I am writing to [state your purpose].
+
+[Main content of your email]
+
+Please let me know if you have any questions or need any additional information.
+
+Best regards,
+[Your Name]
+[Your Title]
+[Contact Information]`
+    },
+    meeting: {
+        name: 'Meeting Notes',
+        icon: 'fa-users',
+        content: `Meeting Notes
+Date: ${new Date().toLocaleDateString()}
+Time: [Start Time] - [End Time]
+Attendees: [List attendees]
+
+Agenda:
+1. [Topic 1]
+2. [Topic 2]
+3. [Topic 3]
+
+Discussion Points:
+• [Key point 1]
+• [Key point 2]
+• [Key point 3]
+
+Action Items:
+□ [Task 1] - Assigned to: [Name] - Due: [Date]
+□ [Task 2] - Assigned to: [Name] - Due: [Date]
+
+Next Meeting: [Date and Time]`
+    },
+    blog: {
+        name: 'Blog Post',
+        icon: 'fa-blog',
+        content: `# [Blog Post Title]
+
+*Published on ${new Date().toLocaleDateString()}*
+
+## Introduction
+
+[Hook your readers with an engaging opening paragraph]
+
+## Main Content
+
+### Section 1: [Subheading]
+
+[Content for section 1]
+
+### Section 2: [Subheading]
+
+[Content for section 2]
+
+### Section 3: [Subheading]
+
+[Content for section 3]
+
+## Conclusion
+
+[Summarize key points and include a call to action]
+
+---
+
+Tags: #tag1 #tag2 #tag3`
+    },
+    todo: {
+        name: 'To-Do List',
+        icon: 'fa-tasks',
+        content: `To-Do List - ${new Date().toLocaleDateString()}
+
+High Priority:
+□ [Task 1]
+□ [Task 2]
+□ [Task 3]
+
+Medium Priority:
+□ [Task 4]
+□ [Task 5]
+□ [Task 6]
+
+Low Priority:
+□ [Task 7]
+□ [Task 8]
+□ [Task 9]
+
+Notes:
+• [Important note 1]
+• [Important note 2]`
     }
-}
+};
 
-/**
- * Load data from localStorage
- */
-function loadFromLocalStorage() {
-    try {
-        // Load current text
-        const savedText = safeLocalStorageOperation('get', 'textman_currentText');
-        if (savedText !== null) {
-            elements.textArea.value = savedText;
-            appState.currentText = savedText;
-        }
-        
-        // Load auto-save preference
-        const autoSave = safeLocalStorageOperation('get', 'textman_autoSave');
-        appState.autoSaveEnabled = autoSave !== 'false';
-        elements.autoSaveStatus.innerHTML = `<i class="fas fa-save fa-fw"></i> Auto-save: ${appState.autoSaveEnabled ? 'On' : 'Off'}`;
-        
-        // Load theme
-        const theme = safeLocalStorageOperation('get', 'textman_theme') || 'dark';
-        loadTheme(theme);
-        
-        // Load UI state
-        const uiState = safeLocalStorageOperation('get', 'textman_uiState');
-        if (uiState) {
-            try {
-                const parsed = JSON.parse(uiState);
-                loadUIStateFromData(parsed);
-            } catch (e) {
-                console.error('Error parsing UI state:', e);
-            }
-        }
-        
-    } catch (e) {
-        console.error('Error loading from localStorage:', e);
+// ===== State Management =====
+class AppState {
+    constructor() {
+        this.currentText = '';
+        this.history = [];
+        this.savedTexts = [];
+        this.settings = { ...DEFAULT_SETTINGS };
+        this.undoStack = [];
+        this.redoStack = [];
+        this.lastSaved = Date.now();
+        this.isFullscreen = false;
     }
-}
 
-/**
- * Save current text to localStorage
- */
-const saveToLocalStorage = debounce(function() {
-    if (!appState.autoSaveEnabled) return;
-    
-    try {
-        if (safeLocalStorageOperation('set', 'textman_currentText', elements.textArea.value)) {
-            // Also save to history
-            const history = getHistory();
-            if (history.length === 0 || history[0].text !== elements.textArea.value) {
-                addToHistory('Auto-save', elements.textArea.value);
-            }
-        }
-    } catch (e) {
-        console.error('Error saving to localStorage:', e);
-        showStatus('Error: Could not save text locally', 3000, 'error');
-    }
-}, 1000);
-
-/**
- * Get history from localStorage
- */
-function getHistory() {
-    try {
-        const history = safeLocalStorageOperation('get', 'textman_history');
-        return history ? JSON.parse(history) : [];
-    } catch (e) {
-        console.error('Error getting history:', e);
-        return [];
-    }
-}
-
-/**
- * Add to history
- */
-function addToHistory(action, text) {
-    if (!text.trim()) return;
-    
-    try {
-        const history = getHistory();
-        const newEntry = {
-            id: Date.now().toString(),
+    addToHistory(action, text) {
+        const entry = {
+            id: Date.now(),
             action,
-            text: text.substring(0, 5000),
+            text,
             timestamp: new Date().toISOString(),
-            dateString: new Date().toLocaleString(),
-            wordCount: text.trim().split(/\s+/).filter(Boolean).length,
+            wordCount: this.countWords(text),
             charCount: text.length
         };
         
-        history.unshift(newEntry);
-        
-        // Keep only last 20 entries
-        if (history.length > 20) {
-            history.splice(20);
+        this.history.unshift(entry);
+        if (this.history.length > 50) {
+            this.history = this.history.slice(0, 50);
         }
         
-        safeLocalStorageOperation('set', 'textman_history', JSON.stringify(history));
-        updateHistoryUI();
-    } catch (e) {
-        console.error('Error adding to history:', e);
+        this.saveToStorage();
     }
-}
 
-/**
- * Get saved texts from localStorage
- */
-function getSavedTexts() {
-    try {
-        const saved = safeLocalStorageOperation('get', 'textman_savedTexts');
-        return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-        console.error('Error getting saved texts:', e);
-        return [];
-    }
-}
-
-/**
- * Save UI state to localStorage
- */
-function saveUIState() {
-    try {
-        const currentQuickActionOrder = [...elements.quickActionsContainer.children].map(item => item.dataset.action);
-        
-        const uiStateData = {
-            theme: document.documentElement.getAttribute('data-theme'),
-            autoSaveEnabled: appState.autoSaveEnabled,
-            leftSidebarExpanded: !document.getElementById('leftSidebar').classList.contains('collapsed'),
-            rightSidebarExpanded: !document.getElementById('rightSidebar').classList.contains('collapsed'),
-            sections: {},
-            quickActionOrder: currentQuickActionOrder
+    saveText(title, text) {
+        const saved = {
+            id: Date.now(),
+            title,
+            text,
+            timestamp: new Date().toISOString(),
+            wordCount: this.countWords(text),
+            charCount: text.length
         };
         
-        document.querySelectorAll('.sidebar-section').forEach(section => {
-            const sectionId = section.id.replace('section-', '');
-            uiStateData.sections[sectionId] = !section.classList.contains('collapsed');
+        this.savedTexts.unshift(saved);
+        this.saveToStorage();
+        return saved;
+    }
+
+    deleteSavedText(id) {
+        this.savedTexts = this.savedTexts.filter(text => text.id !== id);
+        this.saveToStorage();
+    }
+
+    updateSettings(newSettings) {
+        this.settings = { ...this.settings, ...newSettings };
+        this.saveToStorage();
+    }
+
+    saveToStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEYS.CURRENT_TEXT, this.currentText);
+            localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(this.history));
+            localStorage.setItem(STORAGE_KEYS.SAVED_TEXTS, JSON.stringify(this.savedTexts));
+            localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings));
+        } catch (e) {
+            console.error('Failed to save to localStorage:', e);
+        }
+    }
+
+    loadFromStorage() {
+        try {
+            this.currentText = localStorage.getItem(STORAGE_KEYS.CURRENT_TEXT) || '';
+            this.history = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]');
+            this.savedTexts = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVED_TEXTS) || '[]');
+            this.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}') };
+        } catch (e) {
+            console.error('Failed to load from localStorage:', e);
+        }
+    }
+
+    countWords(text) {
+        return text.trim() ? text.trim().split(/\s+/).length : 0;
+    }
+}
+
+// ===== UI Manager =====
+class UIManager {
+    constructor(state) {
+        this.state = state;
+        this.elements = {};
+        this.autoSaveTimer = null;
+    }
+
+    init() {
+        this.cacheElements();
+        this.setupEventListeners();
+        this.renderQuickActions();
+        this.renderTemplates();
+        this.renderTools();
+        this.updateHistory();
+        this.updateSavedTexts();
+        this.applySettings();
+        this.startAutoSave();
+        this.hideLoadingScreen();
+    }
+
+    cacheElements() {
+        this.elements = {
+            // Loading
+            loadingScreen: document.getElementById('loadingScreen'),
+            app: document.getElementById('app'),
+            
+            // Editor
+            editor: document.getElementById('mainEditor'),
+            charCount: document.getElementById('charCount'),
+            wordCount: document.getElementById('wordCount'),
+            lineCount: document.getElementById('lineCount'),
+            readTime: document.getElementById('readTime'),
+            statusMessage: document.getElementById('statusMessage'),
+            
+            // Toolbar
+            undoBtn: document.getElementById('undoBtn'),
+            redoBtn: document.getElementById('redoBtn'),
+            cutBtn: document.getElementById('cutBtn'),
+            copyBtn: document.getElementById('copyBtn'),
+            pasteBtn: document.getElementById('pasteBtn'),
+            boldBtn: document.getElementById('boldBtn'),
+            italicBtn: document.getElementById('italicBtn'),
+            underlineBtn: document.getElementById('underlineBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            
+            // Header
+            searchBtn: document.getElementById('searchBtn'),
+            fullscreenBtn: document.getElementById('fullscreenBtn'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            themeToggle: document.getElementById('themeToggle'),
+            
+            // Sidebars
+            leftSidebar: document.getElementById('leftSidebar'),
+            rightSidebar: document.getElementById('rightSidebar'),
+            
+            // Content areas
+            quickActions: document.getElementById('quickActions'),
+            historyContent: document.getElementById('historyContent'),
+            templatesContent: document.getElementById('templatesContent'),
+            savedContent: document.getElementById('savedContent'),
+            analyticsMini: document.getElementById('analyticsMini'),
+            transformTools: document.getElementById('transformTools'),
+            formatTools: document.getElementById('formatTools'),
+            encodeTools: document.getElementById('encodeTools'),
+            exportOptions: document.getElementById('exportOptions'),
+            
+            // Modals
+            modalBackdrop: document.getElementById('modalBackdrop'),
+            modal: document.getElementById('modal'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalBody: document.getElementById('modalBody'),
+            modalFooter: document.getElementById('modalFooter'),
+            modalClose: document.getElementById('modalClose'),
+            
+            // Search
+            searchOverlay: document.getElementById('searchOverlay'),
+            searchClose: document.getElementById('searchClose'),
+            findInput: document.getElementById('findInput'),
+            replaceInput: document.getElementById('replaceInput'),
+            caseSensitive: document.getElementById('caseSensitive'),
+            useRegex: document.getElementById('useRegex'),
+            findNextBtn: document.getElementById('findNextBtn'),
+            replaceBtn: document.getElementById('replaceBtn'),
+            replaceAllBtn: document.getElementById('replaceAllBtn'),
+            
+            // Others
+            toastContainer: document.getElementById('toastContainer'),
+            contextMenu: document.getElementById('contextMenu'),
+            autoSaveIndicator: document.getElementById('autoSaveIndicator'),
+            importBtn: document.getElementById('importBtn'),
+            fileInput: document.getElementById('fileInput'),
+            fullAnalyticsBtn: document.getElementById('fullAnalyticsBtn')
+        };
+    }
+
+    setupEventListeners() {
+        // Editor
+        this.elements.editor.addEventListener('input', () => this.handleTextChange());
+        this.elements.editor.addEventListener('contextmenu', (e) => this.showContextMenu(e));
+        
+        // Toolbar
+        this.elements.undoBtn.addEventListener('click', () => this.undo());
+        this.elements.redoBtn.addEventListener('click', () => this.redo());
+        this.elements.cutBtn.addEventListener('click', () => this.cut());
+        this.elements.copyBtn.addEventListener('click', () => this.copy());
+        this.elements.pasteBtn.addEventListener('click', () => this.paste());
+        this.elements.saveBtn.addEventListener('click', () => this.saveText());
+        this.elements.clearBtn.addEventListener('click', () => this.clearText());
+        
+        // Header
+        this.elements.searchBtn.addEventListener('click', () => this.showSearch());
+        this.elements.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        this.elements.settingsBtn.addEventListener('click', () => this.showSettings());
+        this.elements.themeToggle.addEventListener('click', () => this.toggleTheme());
+        
+        // Sidebars
+        document.querySelectorAll('.sidebar-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sidebar = e.target.closest('[data-sidebar]').dataset.sidebar;
+                this.toggleSidebar(sidebar);
+            });
         });
         
-        safeLocalStorageOperation('set', 'textman_uiState', JSON.stringify(uiStateData));
-        safeLocalStorageOperation('set', 'textman_theme', uiStateData.theme);
-        safeLocalStorageOperation('set', 'textman_autoSave', appState.autoSaveEnabled.toString());
-    } catch (e) {
-        console.error('Error saving UI state:', e);
-    }
-}
-
-/**
- * Sets up all event listeners
- */
-function setupEventListeners() {
-    elements.textArea.addEventListener('input', handleTextInput);
-    elements.textArea.addEventListener('keydown', handleKeyDown);
-    elements.btnUndo.addEventListener('click', undo); 
-    elements.btnRedo.addEventListener('click', redo);
-    elements.btnCopy.addEventListener('click', copyText);
-    elements.btnClear.addEventListener('click', () => showModal('Confirm Clear', 'Are you sure you want to clear all text? This action can be undone.',
-        [{ text: 'Cancel', class: 'btn-secondary', callback: hideModal }, 
-         { text: 'Clear All', class: 'btn-primary btn-delete', callback: () => { clearText(); hideModal(); } }]));
-    
-    elements.themeToggle.addEventListener('click', toggleTheme);
-    elements.btnHelp.addEventListener('click', showHelp); 
-    elements.btnShortcuts.addEventListener('click', showShortcuts); 
-    elements.btnSettings.addEventListener('click', showSettingsModal);
-    
-    elements.modalContainer.addEventListener('click', (e) => { 
-        if (e.target === elements.modalContainer) hideModal(); 
-    });
-    elements.modalClose.addEventListener('click', hideModal);
-    
-    document.querySelectorAll('.sidebar').forEach(sidebar => 
-        sidebar.addEventListener('click', handleSidebarClicks));
-    
-    // Global keyboard shortcuts
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    
-    setupDragAndDropForQuickActions();
-}
-
-/**
- * Handles global keyboard shortcuts
- */
-function handleGlobalKeyDown(e) {
-    // Alt+1 for left sidebar, Alt+2 for right sidebar
-    if (e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        if (e.key === '1') {
-            e.preventDefault();
-            toggleSidebar('left');
-        } else if (e.key === '2') {
-            e.preventDefault();
-            toggleSidebar('right');
-        }
-    }
-}
-
-/**
- * Handles clicks within sidebars
- */
-function handleSidebarClicks(e) {
-    const target = e.target;
-    const sectionHeader = target.closest('.section-header');
-    const toolBtn = target.closest('.tool-btn');
-    const fileInputBtn = target.closest('#fileInputBtn');
-    const saveBtn = target.closest('#saveCurrentTextBtn');
-    const restoreBtn = target.closest('.btn-restore-history');
-    const loadBtn = target.closest('.btn-load-saved');
-    const deleteSavedBtn = target.closest('.btn-delete-saved');
-    const templateBtn = target.closest('[data-template]');
-    const collapseSidebarBtn = target.closest('[data-action="collapse-sidebar"]');
-    const quickInsightsBtn = target.closest('#quickInsightsBtn');
-    const generateReportBtn = target.closest('[onclick*="generateReport"]');
-    
-    if (sectionHeader) toggleSection(sectionHeader.parentElement);
-    if (toolBtn && !generateReportBtn && !quickInsightsBtn) handleToolClick(toolBtn);
-    if (fileInputBtn) document.getElementById('fileInput').click();
-    if (saveBtn) saveCurrentTextAsSnippet();
-    if (restoreBtn) restoreFromHistory(restoreBtn.dataset.id);
-    if (loadBtn) loadSavedText(loadBtn.dataset.id);
-    if (templateBtn) applyTemplate(templateBtn.dataset.template);
-    if (quickInsightsBtn) showQuickInsights();
-    if (generateReportBtn) generateReport();
-    if (collapseSidebarBtn) {
-        const sidebarId = collapseSidebarBtn.dataset.sidebarTarget;
-        toggleSidebar(sidebarId.includes('left') ? 'left' : 'right');
-    }
-    if (deleteSavedBtn) {
-        const id = deleteSavedBtn.dataset.id;
-        showModal('Confirm Deletion', 'Are you sure you want to delete this saved text snippet?', [
-            { text: 'Cancel', class: 'btn-secondary', callback: hideModal },
-            { text: 'Delete', class: 'btn-primary btn-delete', callback: () => { deleteSavedTextSnippet(id); hideModal(); } }
-        ]);
-    }
-}
-
-/**
- * Handles tool button clicks
- */
-function handleToolClick(button) {
-    try {
-        const type = button.dataset.transform || button.dataset.format || button.dataset.manipulate || button.dataset.export;
-        if (button.dataset.transform) applyTransformation(type);
-        if (button.dataset.format) applyFormatting(type);
-        if (button.dataset.manipulate) applyManipulation(type);
-        if (button.dataset.export) exportText(type);
-    } catch (e) {
-        console.error('Error handling tool click:', e);
-        showStatus('Error processing tool action', 3000, 'error');
-    }
-}
-
-/**
- * Handles text input changes
- */
-function handleTextInput() {
-    const newText = elements.textArea.value;
-    if (appState.currentText !== newText) {
-        appState.undoStack.push(appState.currentText);
-        if (appState.undoStack.length > 50) appState.undoStack.shift();
-        appState.redoStack = [];
-        appState.currentText = newText;
-        
-        // Invalidate analytics cache when text changes
-        appState.analyticsCache = null;
-    }
-    updateAllStats();
-    updateMiniAnalytics();
-    saveToLocalStorage();
-}
-
-/**
- * Handles keyboard shortcuts
- */
-function handleKeyDown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { 
-        e.preventDefault(); 
-        undo(); 
-    }
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { 
-        e.preventDefault(); 
-        redo(); 
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { 
-        e.preventDefault(); 
-        saveCurrentTextAsSnippet(); 
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') { 
-        e.preventDefault(); 
-        const findInput = document.getElementById('findInput');
-        if (findInput) {
-            findInput.focus();
-            document.getElementById('section-findReplace')?.classList.remove('collapsed');
-        }
-    }
-}
-
-// Undo/Redo functions
-function undo() {
-    if (appState.undoStack.length > 0) {
-        appState.redoStack.push(elements.textArea.value);
-        elements.textArea.value = appState.undoStack.pop();
-        appState.currentText = elements.textArea.value;
-        updateAllStats(); 
-        updateMiniAnalytics();
-        saveToLocalStorage();
-        showStatus('Undo applied', 1500, 'success');
-    } else {
-        showStatus('Nothing to undo', 2000, 'warning');
-    }
-}
-
-function redo() {
-    if (appState.redoStack.length > 0) {
-        appState.undoStack.push(elements.textArea.value);
-        elements.textArea.value = appState.redoStack.pop();
-        appState.currentText = elements.textArea.value;
-        updateAllStats();
-        updateMiniAnalytics();
-        saveToLocalStorage();
-        showStatus('Redo applied', 1500, 'success');
-    } else {
-        showStatus('Nothing to redo', 2000, 'warning');
-    }
-}
-
-function copyText() {
-    if (elements.textArea.value) {
-        navigator.clipboard.writeText(elements.textArea.value)
-            .then(() => showStatus('Copied to clipboard', 2000, 'success'))
-            .catch(() => {
-                // Fallback method
-                const tempTextArea = document.createElement('textarea');
-                tempTextArea.value = elements.textArea.value;
-                document.body.appendChild(tempTextArea);
-                tempTextArea.select();
-                try {
-                    document.execCommand('copy');
-                    showStatus('Copied to clipboard', 2000, 'success');
-                } catch (err) {
-                    showStatus('Failed to copy', 3000, 'error');
-                    console.error('Copy failed:', err);
-                }
-                document.body.removeChild(tempTextArea);
+        document.querySelectorAll('.panel-header').forEach(header => {
+            header.addEventListener('click', (e) => {
+                const section = e.target.closest('.panel-section');
+                section.classList.toggle('collapsed');
             });
-    } else {
-        showStatus('Nothing to copy', 2000, 'warning');
+        });
+        
+        // Modal
+        this.elements.modalBackdrop.addEventListener('click', (e) => {
+            if (e.target === this.elements.modalBackdrop) {
+                this.hideModal();
+            }
+        });
+        this.elements.modalClose.addEventListener('click', () => this.hideModal());
+        
+        // Search
+        this.elements.searchClose.addEventListener('click', () => this.hideSearch());
+        this.elements.findNextBtn.addEventListener('click', () => this.findNext());
+        this.elements.replaceBtn.addEventListener('click', () => this.replace());
+        this.elements.replaceAllBtn.addEventListener('click', () => this.replaceAll());
+        
+        // Import
+        this.elements.importBtn.addEventListener('click', () => this.elements.fileInput.click());
+        this.elements.fileInput.addEventListener('change', (e) => this.importFile(e));
+        
+        // Analytics
+        this.elements.fullAnalyticsBtn.addEventListener('click', () => this.showFullAnalytics());
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        
+        // Window events
+        window.addEventListener('beforeunload', (e) => this.handleBeforeUnload(e));
+        document.addEventListener('click', () => this.hideContextMenu());
     }
-}
 
-function clearText() {
-    if (elements.textArea.value === '') return;
-    addToHistory('Clear Text', elements.textArea.value);
-    elements.textArea.value = ''; 
-    handleTextInput();
-    showStatus('Text cleared', 2000, 'success');
-}
-
-/**
- * Save text snippet
- */
-function saveCurrentTextAsSnippet() {
-    const text = elements.textArea.value.trim();
-    if (!text) { 
-        showStatus('No text to save', 2000, 'warning'); 
-        return; 
+    handleTextChange() {
+        const text = this.elements.editor.value;
+        
+        // Update state
+        if (text !== this.state.currentText) {
+            this.state.undoStack.push(this.state.currentText);
+            if (this.state.undoStack.length > 100) {
+                this.state.undoStack.shift();
+            }
+            this.state.redoStack = [];
+            this.state.currentText = text;
+        }
+        
+        // Update stats
+        this.updateStats();
+        this.updateMiniAnalytics();
+        
+        // Update button states
+        this.updateButtonStates();
     }
 
-    showModal('Save Text Snippet', 
-        `<div class="space-y-3">
-            <label for="saveTitleInput" class="block text-sm font-medium" style="color: var(--text-secondary)">Enter a title for your snippet:</label>
-            <input type="text" id="saveTitleInput" class="form-input" placeholder="My important document..." maxlength="100">
-            <p class="text-xs" style="color: var(--text-muted)">
-                <i class="fas fa-info-circle"></i> 
-                This will save ${text.length.toLocaleString()} characters to your snippets library.
-            </p>
-        </div>`,
-        [
-            { text: 'Cancel', class: 'btn-secondary', callback: hideModal }, 
-            { text: 'Save Snippet', class: 'btn-primary', callback: () => {
-                const titleInput = document.getElementById('saveTitleInput');
-                const title = titleInput.value.trim();
-                if (title) {
-                    try {
-                        const savedTexts = getSavedTexts();
-                        const newSaved = {
-                            id: Date.now().toString(),
-                            title,
-                            text,
-                            timestamp: new Date().toISOString(),
-                            dateString: new Date().toLocaleString(),
-                            wordCount: text.trim().split(/\s+/).filter(Boolean).length,
-                            charCount: text.length
-                        };
-                        
-                        savedTexts.unshift(newSaved);
-                        
-                        // Keep only last 50 saved texts
-                        if (savedTexts.length > 50) {
-                            savedTexts.splice(50);
+    updateStats() {
+        const text = this.elements.editor.value;
+        const chars = text.length;
+        const words = this.state.countWords(text);
+        const lines = text ? text.split('\n').length : 0;
+        const readTime = Math.max(1, Math.ceil(words / 200));
+        
+        this.elements.charCount.innerHTML = `<i class="fas fa-text-width"></i> ${chars.toLocaleString()}`;
+        this.elements.wordCount.innerHTML = `<i class="fas fa-font"></i> ${words.toLocaleString()}`;
+        this.elements.lineCount.innerHTML = `<i class="fas fa-list"></i> ${lines.toLocaleString()}`;
+        this.elements.readTime.innerHTML = `<i class="fas fa-clock"></i> ${readTime}m`;
+    }
+
+    updateMiniAnalytics() {
+        const text = this.elements.editor.value;
+        if (!text) {
+            this.elements.analyticsMini.innerHTML = `
+                <div class="analytics-card">
+                    <div class="analytics-value">0</div>
+                    <div class="analytics-label">Sentences</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">0</div>
+                    <div class="analytics-label">Paragraphs</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">0.0</div>
+                    <div class="analytics-label">Avg Words/Sent</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="analytics-value">Easy</div>
+                    <div class="analytics-label">Readability</div>
+                </div>
+            `;
+            return;
+        }
+        
+        const analytics = TextAnalyzer.analyze(text);
+        
+        this.elements.analyticsMini.innerHTML = `
+            <div class="analytics-card">
+                <div class="analytics-value">${analytics.sentences}</div>
+                <div class="analytics-label">Sentences</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value">${analytics.paragraphs}</div>
+                <div class="analytics-label">Paragraphs</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value">${analytics.avgWordsPerSentence.toFixed(1)}</div>
+                <div class="analytics-label">Avg Words/Sent</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value">${analytics.readability.level}</div>
+                <div class="analytics-label">Readability</div>
+            </div>
+        `;
+    }
+
+    updateButtonStates() {
+        this.elements.undoBtn.disabled = this.state.undoStack.length === 0;
+        this.elements.redoBtn.disabled = this.state.redoStack.length === 0;
+        this.elements.cutBtn.disabled = !this.elements.editor.value;
+        this.elements.copyBtn.disabled = !this.elements.editor.value;
+        this.elements.clearBtn.disabled = !this.elements.editor.value;
+    }
+
+    renderQuickActions() {
+        this.elements.quickActions.innerHTML = QUICK_ACTIONS.map(action => `
+            <button class="quick-action-btn" data-action="${action.id}">
+                <i class="fas ${action.icon}"></i>
+                <span>${action.label}</span>
+            </button>
+        `).join('');
+        
+        // Add event listeners
+        this.elements.quickActions.querySelectorAll('.quick-action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const actionId = e.currentTarget.dataset.action;
+                this.handleQuickAction(actionId);
+            });
+        });
+    }
+
+    handleQuickAction(actionId) {
+        switch (actionId) {
+            case 'uppercase':
+                this.transformText('uppercase');
+                break;
+            case 'lowercase':
+                this.transformText('lowercase');
+                break;
+            case 'analyze':
+                this.showFullAnalytics();
+                break;
+            case 'find':
+                this.showSearch();
+                break;
+        }
+    }
+
+    renderTemplates() {
+        this.elements.templatesContent.innerHTML = Object.entries(TEMPLATES).map(([key, template]) => `
+            <button class="tool-btn" data-template="${key}">
+                <i class="fas ${template.icon}"></i>
+                <span>${template.name}</span>
+            </button>
+        `).join('');
+        
+        // Add event listeners
+        this.elements.templatesContent.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const templateKey = e.currentTarget.dataset.template;
+                this.applyTemplate(templateKey);
+            });
+        });
+    }
+
+    applyTemplate(templateKey) {
+        const template = TEMPLATES[templateKey];
+        if (!template) return;
+        
+        if (this.elements.editor.value.trim()) {
+            this.showModal('Apply Template', 
+                'This will replace your current text. Are you sure?',
+                [
+                    { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+                    { label: 'Apply', class: 'btn-primary', action: () => {
+                        this.state.addToHistory('Apply Template', this.elements.editor.value);
+                        this.elements.editor.value = template.content;
+                        this.handleTextChange();
+                        this.hideModal();
+                        this.showToast(`Applied ${template.name} template`, 'success');
+                    }}
+                ]
+            );
+        } else {
+            this.elements.editor.value = template.content;
+            this.handleTextChange();
+            this.showToast(`Applied ${template.name} template`, 'success');
+        }
+    }
+
+    renderTools() {
+        // Transform tools
+        this.elements.transformTools.innerHTML = `
+            <button class="tool-btn" data-transform="title">Title Case</button>
+            <button class="tool-btn" data-transform="sentence">Sentence case</button>
+            <button class="tool-btn" data-transform="capitalize">Capitalize</button>
+            <button class="tool-btn" data-transform="alternate">aLtErNaTe</button>
+            <button class="tool-btn" data-transform="camel">camelCase</button>
+            <button class="tool-btn" data-transform="pascal">PascalCase</button>
+            <button class="tool-btn" data-transform="snake">snake_case</button>
+            <button class="tool-btn" data-transform="kebab">kebab-case</button>
+        `;
+        
+        // Format tools
+        this.elements.formatTools.innerHTML = `
+            <button class="tool-btn" data-format="trim">Trim Spaces</button>
+            <button class="tool-btn" data-format="remove-extra">Remove Extra</button>
+            <button class="tool-btn" data-format="remove-lines">Remove Lines</button>
+            <button class="tool-btn" data-format="sort">Sort Lines</button>
+            <button class="tool-btn" data-format="reverse">Reverse Lines</button>
+            <button class="tool-btn" data-format="unique">Unique Lines</button>
+            <button class="tool-btn" data-format="number">Number Lines</button>
+            <button class="tool-btn" data-format="shuffle">Shuffle Lines</button>
+        `;
+        
+        // Encode tools
+        this.elements.encodeTools.innerHTML = `
+            <button class="tool-btn" data-encode="base64-encode">Base64 Encode</button>
+            <button class="tool-btn" data-encode="base64-decode">Base64 Decode</button>
+            <button class="tool-btn" data-encode="url-encode">URL Encode</button>
+            <button class="tool-btn" data-encode="url-decode">URL Decode</button>
+            <button class="tool-btn" data-encode="html-encode">HTML Encode</button>
+            <button class="tool-btn" data-encode="html-decode">HTML Decode</button>
+            <button class="tool-btn" data-encode="morse">Morse Code</button>
+            <button class="tool-btn" data-encode="reverse">Reverse Text</button>
+        `;
+        
+        // Export options
+        this.elements.exportOptions.innerHTML = `
+            <button class="tool-btn" data-export="txt">
+                <i class="fas fa-file-alt"></i> Export as TXT
+            </button>
+            <button class="tool-btn" data-export="pdf">
+                <i class="fas fa-file-pdf"></i> Export as PDF
+            </button>
+            <button class="tool-btn" data-export="json">
+                <i class="fas fa-file-code"></i> Export as JSON
+            </button>
+            <button class="tool-btn" data-export="markdown">
+                <i class="fas fa-file-alt"></i> Export as MD
+            </button>
+        `;
+        
+        // Add event listeners
+        document.querySelectorAll('[data-transform]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.transformText(e.target.dataset.transform);
+            });
+        });
+        
+        document.querySelectorAll('[data-format]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.formatText(e.target.dataset.format);
+            });
+        });
+        
+        document.querySelectorAll('[data-encode]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.encodeText(e.target.dataset.encode);
+            });
+        });
+        
+        document.querySelectorAll('[data-export]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.exportText(e.target.dataset.export);
+            });
+        });
+    }
+
+    // Text manipulation methods
+    transformText(type) {
+        const text = this.elements.editor.value;
+        if (!text && type !== 'reverse') {
+            this.showToast('No text to transform', 'warning');
+            return;
+        }
+        
+        let transformed = text;
+        
+        switch (type) {
+            case 'uppercase':
+                transformed = text.toUpperCase();
+                break;
+            case 'lowercase':
+                transformed = text.toLowerCase();
+                break;
+            case 'title':
+                transformed = text.replace(/\w\S*/g, txt => 
+                    txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+                );
+                break;
+            case 'sentence':
+                transformed = text.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase());
+                break;
+            case 'capitalize':
+                transformed = text.replace(/\b\w/g, c => c.toUpperCase());
+                break;
+            case 'alternate':
+                transformed = text.split('').map((c, i) => 
+                    i % 2 === 0 ? c.toLowerCase() : c.toUpperCase()
+                ).join('');
+                break;
+            case 'camel':
+                transformed = text.replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => 
+                    index === 0 ? word.toLowerCase() : word.toUpperCase()
+                ).replace(/\s+/g, '');
+                break;
+            case 'pascal':
+                transformed = text.replace(/(?:^\w|[A-Z]|\b\w)/g, word => 
+                    word.toUpperCase()
+                ).replace(/\s+/g, '');
+                break;
+            case 'snake':
+                transformed = text.replace(/\W+/g, ' ')
+                    .split(/ |\B(?=[A-Z])/)
+                    .map(word => word.toLowerCase())
+                    .join('_');
+                break;
+            case 'kebab':
+                transformed = text.replace(/\W+/g, ' ')
+                    .split(/ |\B(?=[A-Z])/)
+                    .map(word => word.toLowerCase())
+                    .join('-');
+                break;
+        }
+        
+        if (transformed !== text) {
+            this.state.addToHistory(`Transform: ${type}`, text);
+            this.elements.editor.value = transformed;
+            this.handleTextChange();
+            this.showToast(`Applied ${type} transformation`, 'success');
+        }
+    }
+
+    formatText(type) {
+        const text = this.elements.editor.value;
+        if (!text) {
+            this.showToast('No text to format', 'warning');
+            return;
+        }
+        
+        let formatted = text;
+        
+        switch (type) {
+            case 'trim':
+                formatted = text.trim();
+                break;
+            case 'remove-extra':
+                formatted = text.replace(/\s+/g, ' ').trim();
+                break;
+            case 'remove-lines':
+                formatted = text.replace(/\n+/g, ' ').trim();
+                break;
+            case 'sort':
+                formatted = text.split('\n').sort().join('\n');
+                break;
+            case 'reverse':
+                formatted = text.split('\n').reverse().join('\n');
+                break;
+            case 'unique':
+                formatted = [...new Set(text.split('\n'))].join('\n');
+                break;
+            case 'number':
+                formatted = text.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n');
+                break;
+            case 'shuffle':
+                const lines = text.split('\n');
+                for (let i = lines.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [lines[i], lines[j]] = [lines[j], lines[i]];
+                }
+                formatted = lines.join('\n');
+                break;
+        }
+        
+        if (formatted !== text) {
+            this.state.addToHistory(`Format: ${type}`, text);
+            this.elements.editor.value = formatted;
+            this.handleTextChange();
+            this.showToast(`Applied ${type} formatting`, 'success');
+        }
+    }
+
+    encodeText(type) {
+        const text = this.elements.editor.value;
+        if (!text) {
+            this.showToast('No text to encode/decode', 'warning');
+            return;
+        }
+        
+        let encoded = text;
+        
+        try {
+            switch (type) {
+                case 'base64-encode':
+                    encoded = btoa(unescape(encodeURIComponent(text)));
+                    break;
+                case 'base64-decode':
+                    encoded = decodeURIComponent(escape(atob(text)));
+                    break;
+                case 'url-encode':
+                    encoded = encodeURIComponent(text);
+                    break;
+                case 'url-decode':
+                    encoded = decodeURIComponent(text);
+                    break;
+                case 'html-encode':
+                    encoded = text.replace(/[&<>"']/g, m => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    })[m]);
+                    break;
+                case 'html-decode':
+                    const textarea = document.createElement('textarea');
+                    textarea.innerHTML = text;
+                    encoded = textarea.value;
+                    break;
+                case 'morse':
+                    encoded = TextEncoder.toMorse(text);
+                    break;
+                case 'reverse':
+                    encoded = text.split('').reverse().join('');
+                    break;
+            }
+            
+            if (encoded !== text) {
+                this.state.addToHistory(`Encode: ${type}`, text);
+                this.elements.editor.value = encoded;
+                this.handleTextChange();
+                this.showToast(`Applied ${type}`, 'success');
+            }
+        } catch (error) {
+            this.showToast(`Failed to ${type}: ${error.message}`, 'error');
+        }
+    }
+
+    // File operations
+    importFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.state.addToHistory('Import File', this.elements.editor.value);
+            this.elements.editor.value = e.target.result;
+            this.handleTextChange();
+            this.showToast(`Imported ${file.name}`, 'success');
+        };
+        reader.onerror = () => {
+            this.showToast('Failed to read file', 'error');
+        };
+        reader.readAsText(file);
+        
+        // Reset input
+        event.target.value = '';
+    }
+
+    exportText(format) {
+        const text = this.elements.editor.value;
+        if (!text) {
+            this.showToast('No text to export', 'warning');
+            return;
+        }
+        
+        const timestamp = new Date().toISOString().slice(0, 10);
+        let filename, content, mimeType;
+        
+        switch (format) {
+            case 'txt':
+                filename = `textman-${timestamp}.txt`;
+                content = text;
+                mimeType = 'text/plain';
+                break;
+            case 'json':
+                filename = `textman-${timestamp}.json`;
+                content = JSON.stringify({
+                    text,
+                    metadata: {
+                        exported: new Date().toISOString(),
+                        wordCount: this.state.countWords(text),
+                        charCount: text.length
+                    }
+                }, null, 2);
+                mimeType = 'application/json';
+                break;
+            case 'markdown':
+                filename = `textman-${timestamp}.md`;
+                content = text;
+                mimeType = 'text/markdown';
+                break;
+            case 'pdf':
+                this.exportAsPDF(text);
+                return;
+        }
+        
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this.showToast(`Exported as ${format.toUpperCase()}`, 'success');
+    }
+
+    exportAsPDF(text) {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>textMan Export</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            padding: 40px;
+                            max-width: 800px;
+                            margin: 0 auto;
                         }
-                        
-                        safeLocalStorageOperation('set', 'textman_savedTexts', JSON.stringify(savedTexts));
-                        updateSavedTextsUI();
-                        showStatus(`Snippet "${title}" saved successfully!`, 3000, 'success'); 
-                        hideModal();
-                    } catch (e) {
-                        console.error("Error saving text snippet:", e);
-                        showStatus('Error saving snippet.', 3000, 'error');
+                        h1 {
+                            color: #333;
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 10px;
+                        }
+                        .metadata {
+                            color: #666;
+                            font-size: 0.9em;
+                            margin-bottom: 30px;
+                        }
+                        .content {
+                            white-space: pre-wrap;
+                            font-family: 'Courier New', monospace;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>textMan Export</h1>
+                    <div class="metadata">
+                        <p>Exported on: ${new Date().toLocaleString()}</p>
+                        <p>Word count: ${this.state.countWords(text).toLocaleString()}</p>
+                        <p>Character count: ${text.length.toLocaleString()}</p>
+                    </div>
+                    <div class="content">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+        
+        this.showToast('Opening print dialog...', 'info');
+    }
+
+    // History and saved texts
+    updateHistory() {
+        if (this.state.history.length === 0) {
+            this.elements.historyContent.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <p>No history yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        this.elements.historyContent.innerHTML = this.state.history.slice(0, 10).map(entry => `
+            <div class="history-item" data-id="${entry.id}">
+                <div class="history-header">
+                    <span class="history-action">${entry.action}</span>
+                    <span class="history-time">${new Date(entry.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="history-stats">
+                    <span><i class="fas fa-font"></i> ${entry.wordCount}</span>
+                    <span><i class="fas fa-text-width"></i> ${entry.charCount}</span>
+                </div>
+                <button class="tool-btn" onclick="ui.restoreHistory(${entry.id})">
+                    <i class="fas fa-undo"></i> Restore
+                </button>
+            </div>
+        `).join('');
+    }
+
+    restoreHistory(id) {
+        const entry = this.state.history.find(h => h.id === id);
+        if (!entry) return;
+        
+        this.state.addToHistory('Restore from History', this.elements.editor.value);
+        this.elements.editor.value = entry.text;
+        this.handleTextChange();
+        this.showToast('Restored from history', 'success');
+    }
+
+    updateSavedTexts() {
+        if (this.state.savedTexts.length === 0) {
+            this.elements.savedContent.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-bookmark"></i>
+                    <p>No saved texts</p>
+                </div>
+            `;
+            return;
+        }
+        
+        this.elements.savedContent.innerHTML = this.state.savedTexts.map(saved => `
+            <div class="saved-item" data-id="${saved.id}">
+                <div class="saved-header">
+                    <span class="saved-title">${saved.title}</span>
+                    <button class="icon-btn" onclick="ui.deleteSaved(${saved.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="saved-stats">
+                    <span><i class="fas fa-font"></i> ${saved.wordCount}</span>
+                    <span><i class="fas fa-text-width"></i> ${saved.charCount}</span>
+                    <span><i class="fas fa-clock"></i> ${new Date(saved.timestamp).toLocaleDateString()}</span>
+                </div>
+                <button class="tool-btn" onclick="ui.loadSaved(${saved.id})">
+                    <i class="fas fa-download"></i> Load
+                </button>
+            </div>
+        `).join('');
+    }
+
+    loadSaved(id) {
+        const saved = this.state.savedTexts.find(s => s.id === id);
+        if (!saved) return;
+        
+        if (this.elements.editor.value.trim()) {
+            this.showModal('Load Saved Text', 
+                'This will replace your current text. Are you sure?',
+                [
+                    { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+                    { label: 'Load', class: 'btn-primary', action: () => {
+                        this.state.addToHistory('Load Saved Text', this.elements.editor.value);
+                        this.elements.editor.value = saved.text;
+                        this.handleTextChange();
+                        this.hideModal();
+                        this.showToast(`Loaded "${saved.title}"`, 'success');
+                    }}
+                ]
+            );
+        } else {
+            this.elements.editor.value = saved.text;
+            this.handleTextChange();
+            this.showToast(`Loaded "${saved.title}"`, 'success');
+        }
+    }
+
+    deleteSaved(id) {
+        const saved = this.state.savedTexts.find(s => s.id === id);
+        if (!saved) return;
+        
+        this.showModal('Delete Saved Text', 
+            `Are you sure you want to delete "${saved.title}"?`,
+            [
+                { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+                { label: 'Delete', class: 'btn-danger', action: () => {
+                    this.state.deleteSavedText(id);
+                    this.updateSavedTexts();
+                    this.hideModal();
+                    this.showToast('Deleted saved text', 'success');
+                }}
+            ]
+        );
+    }
+
+    saveText() {
+        const text = this.elements.editor.value.trim();
+        if (!text) {
+            this.showToast('No text to save', 'warning');
+            return;
+        }
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Enter a title...';
+        input.className = 'modal-input';
+        
+        this.showModal('Save Text', input, [
+            { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+            { label: 'Save', class: 'btn-primary', action: () => {
+                const title = input.value.trim();
+                if (!title) {
+                    this.showToast('Please enter a title', 'warning');
+                    return;
+                }
+                
+                this.state.saveText(title, text);
+                this.updateSavedTexts();
+                this.hideModal();
+                this.showToast(`Saved "${title}"`, 'success');
+            }}
+        ]);
+        
+        setTimeout(() => input.focus(), 100);
+    }
+
+    // Editor operations
+    undo() {
+        if (this.state.undoStack.length === 0) return;
+        
+        this.state.redoStack.push(this.elements.editor.value);
+        this.elements.editor.value = this.state.undoStack.pop();
+        this.state.currentText = this.elements.editor.value;
+        this.updateStats();
+        this.updateMiniAnalytics();
+        this.updateButtonStates();
+        this.showToast('Undo', 'info');
+    }
+
+    redo() {
+        if (this.state.redoStack.length === 0) return;
+        
+        this.state.undoStack.push(this.elements.editor.value);
+        this.elements.editor.value = this.state.redoStack.pop();
+        this.state.currentText = this.elements.editor.value;
+        this.updateStats();
+        this.updateMiniAnalytics();
+        this.updateButtonStates();
+        this.showToast('Redo', 'info');
+    }
+
+    cut() {
+        if (!this.elements.editor.value) return;
+        
+        const selection = this.elements.editor.value.substring(
+            this.elements.editor.selectionStart,
+            this.elements.editor.selectionEnd
+        );
+        
+        if (selection) {
+            navigator.clipboard.writeText(selection);
+            this.elements.editor.setRangeText('');
+            this.handleTextChange();
+            this.showToast('Cut to clipboard', 'success');
+        } else {
+            navigator.clipboard.writeText(this.elements.editor.value);
+            this.elements.editor.value = '';
+            this.handleTextChange();
+            this.showToast('Cut all text to clipboard', 'success');
+        }
+    }
+
+    copy() {
+        if (!this.elements.editor.value) return;
+        
+        const selection = this.elements.editor.value.substring(
+            this.elements.editor.selectionStart,
+            this.elements.editor.selectionEnd
+        );
+        
+        const textToCopy = selection || this.elements.editor.value;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            this.showToast('Copied to clipboard', 'success');
+        }).catch(() => {
+            this.showToast('Failed to copy', 'error');
+        });
+    }
+
+    async paste() {
+        try {
+            const text = await navigator.clipboard.readText();
+            const start = this.elements.editor.selectionStart;
+            const end = this.elements.editor.selectionEnd;
+            
+            this.elements.editor.setRangeText(text, start, end, 'end');
+            this.handleTextChange();
+            this.showToast('Pasted from clipboard', 'success');
+        } catch (error) {
+            this.showToast('Failed to paste', 'error');
+        }
+    }
+
+    clearText() {
+        if (!this.elements.editor.value) return;
+        
+        this.showModal('Clear Text', 
+            'Are you sure you want to clear all text?',
+            [
+                { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+                { label: 'Clear', class: 'btn-danger', action: () => {
+                    this.state.addToHistory('Clear Text', this.elements.editor.value);
+                    this.elements.editor.value = '';
+                    this.handleTextChange();
+                    this.hideModal();
+                    this.showToast('Text cleared', 'success');
+                }}
+            ]
+        );
+    }
+
+    // Search functionality
+    showSearch() {
+        this.elements.searchOverlay.hidden = false;
+        this.elements.searchOverlay.classList.add('show');
+        setTimeout(() => this.elements.findInput.focus(), 100);
+    }
+
+    hideSearch() {
+        this.elements.searchOverlay.classList.remove('show');
+        setTimeout(() => {
+            this.elements.searchOverlay.hidden = true;
+            this.elements.findInput.value = '';
+            this.elements.replaceInput.value = '';
+        }, 300);
+    }
+
+    findNext() {
+        const searchTerm = this.elements.findInput.value;
+        if (!searchTerm) return;
+        
+        const text = this.elements.editor.value;
+        const caseSensitive = this.elements.caseSensitive.checked;
+        const useRegex = this.elements.useRegex.checked;
+        
+        let startPos = this.elements.editor.selectionEnd;
+        let foundPos = -1;
+        
+        try {
+            if (useRegex) {
+                const flags = caseSensitive ? 'g' : 'gi';
+                const regex = new RegExp(searchTerm, flags);
+                const match = regex.exec(text.substring(startPos));
+                if (match) {
+                    foundPos = startPos + match.index;
+                }
+            } else {
+                const searchIn = caseSensitive ? text : text.toLowerCase();
+                const searchFor = caseSensitive ? searchTerm : searchTerm.toLowerCase();
+                foundPos = searchIn.indexOf(searchFor, startPos);
+            }
+            
+            if (foundPos === -1 && startPos > 0) {
+                // Wrap around
+                if (useRegex) {
+                    const flags = caseSensitive ? 'g' : 'gi';
+                    const regex = new RegExp(searchTerm, flags);
+                    const match = regex.exec(text);
+                    if (match) {
+                        foundPos = match.index;
                     }
                 } else {
-                    showStatus('Title cannot be empty.', 2000, 'warning');
-                    titleInput.focus();
+                    const searchIn = caseSensitive ? text : text.toLowerCase();
+                    const searchFor = caseSensitive ? searchTerm : searchTerm.toLowerCase();
+                    foundPos = searchIn.indexOf(searchFor);
                 }
-            }}
-        ], 
-        () => { 
-            const titleInput = document.getElementById('saveTitleInput');
-            titleInput.focus();
-            titleInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const saveBtn = document.querySelector('.modal-actions .btn-primary');
-                    if (saveBtn) saveBtn.click();
+            }
+            
+            if (foundPos !== -1) {
+                this.elements.editor.setSelectionRange(foundPos, foundPos + searchTerm.length);
+                this.elements.editor.focus();
+                this.showToast('Found match', 'info');
+            } else {
+                this.showToast('No matches found', 'warning');
+            }
+        } catch (error) {
+            this.showToast('Invalid search pattern', 'error');
+        }
+    }
+
+    replace() {
+        const searchTerm = this.elements.findInput.value;
+        const replaceTerm = this.elements.replaceInput.value;
+        
+        if (!searchTerm) return;
+        
+        const selection = this.elements.editor.value.substring(
+            this.elements.editor.selectionStart,
+            this.elements.editor.selectionEnd
+        );
+        
+        if (selection === searchTerm) {
+            this.elements.editor.setRangeText(replaceTerm);
+            this.handleTextChange();
+            this.showToast('Replaced', 'success');
+            this.findNext();
+        } else {
+            this.findNext();
+        }
+    }
+
+    replaceAll() {
+        const searchTerm = this.elements.findInput.value;
+        const replaceTerm = this.elements.replaceInput.value;
+        
+        if (!searchTerm) return;
+        
+        const text = this.elements.editor.value;
+        const caseSensitive = this.elements.caseSensitive.checked;
+        const useRegex = this.elements.useRegex.checked;
+        
+        try {
+            let newText;
+            let count = 0;
+            
+            if (useRegex) {
+                const flags = caseSensitive ? 'g' : 'gi';
+                const regex = new RegExp(searchTerm, flags);
+                newText = text.replace(regex, (match) => {
+                    count++;
+                    return replaceTerm;
+                });
+            } else {
+                const regex = new RegExp(
+                    searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                    caseSensitive ? 'g' : 'gi'
+                );
+                newText = text.replace(regex, (match) => {
+                    count++;
+                    return replaceTerm;
+                });
+            }
+            
+            if (count > 0) {
+                this.state.addToHistory('Replace All', text);
+                this.elements.editor.value = newText;
+                this.handleTextChange();
+                this.showToast(`Replaced ${count} occurrence(s)`, 'success');
+            } else {
+                this.showToast('No matches found', 'warning');
+            }
+        } catch (error) {
+            this.showToast('Invalid search pattern', 'error');
+        }
+    }
+
+    // UI utilities
+    showModal(title, content, actions = []) {
+        this.elements.modalTitle.textContent = title;
+        
+        if (typeof content === 'string') {
+            this.elements.modalBody.innerHTML = content;
+        } else {
+            this.elements.modalBody.innerHTML = '';
+            this.elements.modalBody.appendChild(content);
+        }
+        
+        this.elements.modalFooter.innerHTML = actions.map((action, index) => `
+            <button class="btn ${action.class}" data-action="${index}">
+                ${action.label}
+            </button>
+        `).join('');
+        
+        // Add event listeners
+        this.elements.modalFooter.querySelectorAll('button').forEach((btn, index) => {
+            btn.addEventListener('click', () => actions[index].action());
+        });
+        
+        this.elements.modalBackdrop.hidden = false;
+        setTimeout(() => this.elements.modalBackdrop.classList.add('show'), 10);
+    }
+
+    hideModal() {
+        this.elements.modalBackdrop.classList.remove('show');
+        setTimeout(() => {
+            this.elements.modalBackdrop.hidden = true;
+            this.elements.modalBody.innerHTML = '';
+            this.elements.modalFooter.innerHTML = '';
+        }, 300);
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                           type === 'error' ? 'exclamation-circle' : 
+                           type === 'warning' ? 'exclamation-triangle' : 
+                           'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        this.elements.toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    showContextMenu(event) {
+        event.preventDefault();
+        
+        const x = event.pageX;
+        const y = event.pageY;
+        
+        this.elements.contextMenu.style.left = `${x}px`;
+        this.elements.contextMenu.style.top = `${y}px`;
+        this.elements.contextMenu.hidden = false;
+        
+        // Add event listeners
+        this.elements.contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const action = e.currentTarget.dataset.action;
+                switch (action) {
+                    case 'cut':
+                        this.cut();
+                        break;
+                    case 'copy':
+                        this.copy();
+                        break;
+                    case 'paste':
+                        this.paste();
+                        break;
+                    case 'selectAll':
+                        this.elements.editor.select();
+                        break;
                 }
+                this.hideContextMenu();
             });
+        });
+    }
+
+    hideContextMenu() {
+        this.elements.contextMenu.hidden = true;
+    }
+
+    // Settings
+    showSettings() {
+        const settingsHTML = `
+            <div class="settings-section">
+                <h4>Theme</h4>
+                <div class="settings-options">
+                    <label class="settings-option">
+                        <input type="radio" name="theme" value="light" ${this.state.settings.theme === 'light' ? 'checked' : ''}>
+                        <span><i class="fas fa-sun"></i> Light</span>
+                    </label>
+                    <label class="settings-option">
+                        <input type="radio" name="theme" value="dark" ${this.state.settings.theme === 'dark' ? 'checked' : ''}>
+                        <span><i class="fas fa-moon"></i> Dark</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>Editor</h4>
+                <label class="settings-checkbox">
+                    <input type="checkbox" id="autoSaveCheck" ${this.state.settings.autoSave ? 'checked' : ''}>
+                    <span>Enable auto-save</span>
+                </label>
+                <label class="settings-checkbox">
+                    <input type="checkbox" id="wordWrapCheck" ${this.state.settings.wordWrap ? 'checked' : ''}>
+                    <span>Word wrap</span>
+                </label>
+                <label class="settings-checkbox">
+                    <input type="checkbox" id="spellCheckCheck" ${this.state.settings.spellCheck ? 'checked' : ''}>
+                    <span>Spell check</span>
+                </label>
+            </div>
+            
+            <div class="settings-section">
+                <h4>Font Size</h4>
+                <input type="range" id="fontSizeRange" min="12" max="24" value="${this.state.settings.fontSize}" class="settings-range">
+                <span id="fontSizeValue">${this.state.settings.fontSize}px</span>
+            </div>
+            
+            <div class="settings-section danger-zone">
+                <h4>Danger Zone</h4>
+                <button class="btn btn-danger" id="clearAllData">
+                    <i class="fas fa-trash"></i> Clear All Data
+                </button>
+            </div>
+        `;
+        
+        this.showModal('Settings', settingsHTML, [
+            { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+            { label: 'Save', class: 'btn-primary', action: () => this.saveSettings() }
+        ]);
+        
+        // Add event listeners
+        document.getElementById('fontSizeRange').addEventListener('input', (e) => {
+            document.getElementById('fontSizeValue').textContent = `${e.target.value}px`;
+        });
+        
+        document.getElementById('clearAllData').addEventListener('click', () => {
+            this.clearAllData();
+        });
+    }
+
+    saveSettings() {
+        const newSettings = {
+            theme: document.querySelector('input[name="theme"]:checked').value,
+            autoSave: document.getElementById('autoSaveCheck').checked,
+            wordWrap: document.getElementById('wordWrapCheck').checked,
+            spellCheck: document.getElementById('spellCheckCheck').checked,
+            fontSize: parseInt(document.getElementById('fontSizeRange').value)
+        };
+        
+        this.state.updateSettings(newSettings);
+        this.applySettings();
+        this.hideModal();
+        this.showToast('Settings saved', 'success');
+    }
+
+    applySettings() {
+        // Theme
+        document.documentElement.setAttribute('data-theme', this.state.settings.theme);
+        this.elements.themeToggle.innerHTML = `<i class="fas fa-${this.state.settings.theme === 'dark' ? 'moon' : 'sun'}"></i>`;
+        
+        // Editor settings
+        this.elements.editor.style.fontSize = `${this.state.settings.fontSize}px`;
+        this.elements.editor.style.whiteSpace = this.state.settings.wordWrap ? 'pre-wrap' : 'pre';
+        this.elements.editor.spellcheck = this.state.settings.spellCheck;
+        
+        // Auto-save
+        if (this.state.settings.autoSave) {
+            this.startAutoSave();
+            this.elements.autoSaveIndicator.style.display = 'flex';
+        } else {
+            this.stopAutoSave();
+            this.elements.autoSaveIndicator.style.display = 'none';
         }
-    );
-}
+    }
 
-/**
- * Enhanced statistics update
- */
-function updateAllStats() {
-    const text = elements.textArea.value;
-    const chars = text.length;
-    const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-    const lines = text ? text.split('\n').length : 0;
-    const sentences = (text.match(/[.!?…]+(\s|$)/g) || []).length;
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim()).length;
-    const WPM = 200; 
-    const readTime = Math.max(1, Math.ceil(words / WPM));
+    clearAllData() {
+        this.showModal('Clear All Data', 
+            'Are you sure you want to clear all data? This will delete all saved texts, history, and settings. This action cannot be undone!',
+            [
+                { label: 'Cancel', class: 'btn-secondary', action: () => this.hideModal() },
+                { label: 'Clear Everything', class: 'btn-danger', action: () => {
+                    localStorage.clear();
+                    this.showToast('All data cleared. Reloading...', 'info');
+                    setTimeout(() => location.reload(), 1000);
+                }}
+            ]
+        );
+    }
 
-    elements.charCount.innerHTML = `<i class="fas fa-text-width fa-fw"></i> ${chars.toLocaleString()}`;
-    elements.wordCount.innerHTML = `<i class="fas fa-font fa-fw"></i> ${words.toLocaleString()}`;
-    elements.lineCount.innerHTML = `<i class="fas fa-list fa-fw"></i> ${lines.toLocaleString()}`;
-    elements.readTimeStat.innerHTML = `<i class="fas fa-clock fa-fw"></i> ${readTime} min`;
+    // Theme
+    toggleTheme() {
+        const newTheme = this.state.settings.theme === 'dark' ? 'light' : 'dark';
+        this.state.updateSettings({ theme: newTheme });
+        this.applySettings();
+        this.showToast(`Switched to ${newTheme} theme`, 'info');
+    }
 
-    // Update button states
-    elements.btnUndo.disabled = appState.undoStack.length === 0;
-    elements.btnRedo.disabled = appState.redoStack.length === 0;
-    elements.btnCopy.disabled = chars === 0;
-    elements.btnClear.disabled = chars === 0;
-}
+    // Sidebar
+    toggleSidebar(side) {
+        const sidebar = side === 'left' ? this.elements.leftSidebar : this.elements.rightSidebar;
+        sidebar.classList.toggle('collapsed');
+        
+        const icon = sidebar.querySelector('.sidebar-toggle i');
+        if (side === 'left') {
+            icon.className = sidebar.classList.contains('collapsed') ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+        } else {
+            icon.className = sidebar.classList.contains('collapsed') ? 'fas fa-chevron-left' : 'fas fa-chevron-right';
+        }
+    }
 
-/**
- * Update mini analytics in sidebar
- */
-function updateMiniAnalytics() {
-    try {
-        const text = elements.textArea.value;
-        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-        const chars = text.length;
-        const readTime = Math.max(1, Math.ceil(words / 200));
+    // Fullscreen
+    toggleFullscreen() {
+        if (!this.state.isFullscreen) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+            this.elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            this.state.isFullscreen = true;
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            this.elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            this.state.isFullscreen = false;
+        }
+    }
 
-        const miniWords = document.getElementById('miniWords');
-        const miniChars = document.getElementById('miniChars');
-        const miniTime = document.getElementById('miniTime');
+    // Analytics
+    showFullAnalytics() {
+        const text = this.elements.editor.value;
+        if (!text) {
+            this.showToast('No text to analyze', 'warning');
+            return;
+        }
+        
+        const analytics = TextAnalyzer.analyze(text);
+        
+        const analyticsHTML = `
+            <div class="analytics-report">
+                <div class="analytics-section">
+                    <h4>Basic Statistics</h4>
+                    <div class="analytics-grid">
+                        <div class="analytics-stat">
+                            <span class="stat-label">Characters</span>
+                            <span class="stat-value">${analytics.characters.toLocaleString()}</span>
+                        </div>
+                        <div class="analytics-stat">
+                            <span class="stat-label">Words</span>
+                            <span class="stat-value">${analytics.words.toLocaleString()}</span>
+                        </div>
+                        <div class="analytics-stat">
+                            <span class="stat-label">Sentences</span>
+                            <span class="stat-value">${analytics.sentences.toLocaleString()}</span>
+                        </div>
+                        <div class="analytics-stat">
+                            <span class="stat-label">Paragraphs</span>
+                            <span class="stat-value">${analytics.paragraphs.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analytics-section">
+                    <h4>Readability</h4>
+                    <div class="readability-score">
+                        <div class="score-circle ${analytics.readability.class}">
+                            ${analytics.readability.score}
+                        </div>
+                        <div class="score-details">
+                            <h5>${analytics.readability.level}</h5>
+                            <p>${analytics.readability.description}</p>
+                            <p class="score-breakdown">
+                                Flesch-Kincaid Grade: ${analytics.fleschKincaid.toFixed(1)}<br>
+                                Avg words/sentence: ${analytics.avgWordsPerSentence.toFixed(1)}<br>
+                                Avg syllables/word: ${analytics.avgSyllablesPerWord.toFixed(1)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analytics-section">
+                    <h4>Reading Time</h4>
+                    <div class="reading-time-grid">
+                        <div class="reading-speed">
+                            <span class="speed-label">Slow (150 wpm)</span>
+                            <span class="speed-time">${Math.ceil(analytics.words / 150)} min</span>
+                        </div>
+                        <div class="reading-speed">
+                            <span class="speed-label">Average (200 wpm)</span>
+                            <span class="speed-time">${Math.ceil(analytics.words / 200)} min</span>
+                        </div>
+                        <div class="reading-speed">
+                            <span class="speed-label">Fast (250 wpm)</span>
+                            <span class="speed-time">${Math.ceil(analytics.words / 250)} min</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analytics-section">
+                    <h4>Word Frequency</h4>
+                    <div class="word-frequency">
+                        ${analytics.topWords.slice(0, 10).map(([word, count]) => `
+                            <div class="word-item">
+                                <span class="word">${word}</span>
+                                <span class="count">${count}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.showModal('Text Analysis', analyticsHTML, [
+            { label: 'Close', class: 'btn-primary', action: () => this.hideModal() }
+        ]);
+    }
 
-        if (miniWords) miniWords.textContent = words.toLocaleString();
-        if (miniChars) miniChars.textContent = chars.toLocaleString();
-        if (miniTime) miniTime.textContent = `${readTime}m`;
-    } catch (e) {
-        console.error('Error updating mini analytics:', e);
+    // Auto-save
+    startAutoSave() {
+        if (this.autoSaveTimer) return;
+        
+        this.autoSaveTimer = setInterval(() => {
+            if (this.state.currentText !== this.elements.editor.value) {
+                this.state.currentText = this.elements.editor.value;
+                this.state.saveToStorage();
+                this.elements.statusMessage.textContent = 'Auto-saved';
+                this.elements.statusMessage.classList.add('success');
+                setTimeout(() => {
+                    this.elements.statusMessage.textContent = 'Ready';
+                    this.elements.statusMessage.classList.remove('success');
+                }, 2000);
+            }
+        }, this.state.settings.autoSaveInterval);
+    }
+
+    stopAutoSave() {
+        if (this.autoSaveTimer) {
+            clearInterval(this.autoSaveTimer);
+            this.autoSaveTimer = null;
+        }
+    }
+
+    // Keyboard shortcuts
+    handleKeyboard(event) {
+        const ctrl = event.ctrlKey || event.metaKey;
+        
+        if (ctrl) {
+            switch (event.key) {
+                case 's':
+                    event.preventDefault();
+                    this.saveText();
+                    break;
+                case 'f':
+                    event.preventDefault();
+                    this.showSearch();
+                    break;
+                case 'z':
+                    if (!event.shiftKey) {
+                        event.preventDefault();
+                        this.undo();
+                    }
+                    break;
+                case 'y':
+                    event.preventDefault();
+                    this.redo();
+                    break;
+                case 'a':
+                    // Let default select all behavior work
+                    break;
+            }
+        } else if (event.key === 'Escape') {
+            if (!this.elements.modalBackdrop.hidden) {
+                this.hideModal();
+            } else if (!this.elements.searchOverlay.hidden) {
+                this.hideSearch();
+            }
+        }
+    }
+
+    handleBeforeUnload(event) {
+        if (this.state.currentText !== this.elements.editor.value && this.elements.editor.value.trim()) {
+            event.preventDefault();
+            event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    }
+
+    hideLoadingScreen() {
+        setTimeout(() => {
+            this.elements.loadingScreen.classList.add('hide');
+            this.elements.app.classList.add('loaded');
+            
+            // Set initial text
+            this.elements.editor.value = this.state.currentText;
+            this.updateStats();
+            this.updateMiniAnalytics();
+            this.updateButtonStates();
+            
+            setTimeout(() => {
+                this.elements.loadingScreen.style.display = 'none';
+            }, 350);
+        }, 500);
     }
 }
 
-/**
- * Get comprehensive text analytics
- */
-function getTextAnalytics() {
-    // Use cache if available and recent (within 5 seconds)
-    if (appState.analyticsCache && (Date.now() - appState.analyticsCacheTimestamp < 5000)) {
-        return appState.analyticsCache;
-    }
-
-    const text = elements.textArea.value;
-    if (!text.trim()) {
-        return null;
-    }
-    
-    // Basic metrics
-    const chars = text.length;
-    const charsNoSpaces = text.replace(/\s/g, '').length;
-    const words = text.trim().split(/\s+/).filter(Boolean);
-    const wordCount = words.length;
-    const sentences = text.split(/[.!?…]+/).filter(s => s.trim()).length;
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim()).length;
-    const lines = text.split('\n').length;
-    
-    // Advanced metrics
-    const avgWordsPerSentence = sentences > 0 ? wordCount / sentences : 0;
-    const avgCharsPerWord = wordCount > 0 ? charsNoSpaces / wordCount : 0;
-    const avgSentencesPerParagraph = paragraphs > 0 ? sentences / paragraphs : 0;
-    
-    // Reading time estimates
-    const readingTime200 = Math.max(1, Math.ceil(wordCount / 200));
-    const readingTime250 = Math.max(1, Math.ceil(wordCount / 250));
-    const readingTime150 = Math.max(1, Math.ceil(wordCount / 150));
-    
-    // Word frequency analysis
-    const wordFreq = {};
-    const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'it', 'that', 'this', 'these', 'those']);
-    
-    words.forEach(word => {
-        const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
-        if (cleanWord.length > 2 && !stopWords.has(cleanWord)) {
-            wordFreq[cleanWord] = (wordFreq[cleanWord] || 0) + 1;
+// ===== Text Analyzer =====
+class TextAnalyzer {
+    static analyze(text) {
+        if (!text.trim()) {
+            return this.getEmptyAnalysis();
         }
-    });
-    
-    const topWords = Object.entries(wordFreq)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10);
-    
-    // Calculate readability scores
-    const readabilityScores = calculateReadabilityScores(text, wordCount, sentences, words);
-    
-    // Basic sentiment analysis
-    const sentiment = analyzeSentiment(text);
-    
-    // Lexical diversity
-    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
-    const lexicalDiversity = wordCount > 0 ? (uniqueWords.size / wordCount) : 0;
-    
-    // Longest and shortest sentence
-    const sentencesList = text.split(/[.!?…]+/).filter(s => s.trim());
-    let longestSentence = '';
-    let shortestSentence = sentencesList[0] || '';
-    
-    sentencesList.forEach(sentence => {
-        const trimmed = sentence.trim();
-        if (trimmed.split(/\s+/).length > longestSentence.split(/\s+/).length) {
-            longestSentence = trimmed;
-        }
-        if (trimmed && trimmed.split(/\s+/).length < shortestSentence.split(/\s+/).length) {
-            shortestSentence = trimmed;
-        }
-    });
-    
-    const analytics = {
-        basicMetrics: {
-            chars,
-            charsNoSpaces,
-            wordCount,
+        
+        const characters = text.length;
+        const words = text.trim().split(/\s+/).filter(Boolean).length;
+        const sentences = this.countSentences(text);
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim()).length;
+        const syllables = this.countSyllables(text);
+        
+        const avgWordsPerSentence = sentences > 0 ? words / sentences : 0;
+        const avgSyllablesPerWord = words > 0 ? syllables / words : 0;
+        
+        // Flesch Reading Ease
+        const fleschScore = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllablesPerWord;
+        const readability = this.getReadabilityLevel(fleschScore);
+        
+        // Flesch-Kincaid Grade Level
+        const fleschKincaid = 0.39 * avgWordsPerSentence + 11.8 * avgSyllablesPerWord - 15.59;
+        
+        // Word frequency
+        const wordFreq = this.getWordFrequency(text);
+        const topWords = Object.entries(wordFreq)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 20);
+        
+        return {
+            characters,
+            words,
             sentences,
             paragraphs,
-            lines,
-            uniqueWords: uniqueWords.size,
-            lexicalDiversity: (lexicalDiversity * 100).toFixed(1)
-        },
-        averages: {
-            avgWordsPerSentence: avgWordsPerSentence.toFixed(1),
-            avgCharsPerWord: avgCharsPerWord.toFixed(1),
-            avgSentencesPerParagraph: avgSentencesPerParagraph.toFixed(1)
-        },
-        readingTimes: {
-            slow: readingTime150,
-            average: readingTime200,
-            fast: readingTime250
-        },
-        wordFrequency: topWords,
-        readability: readabilityScores,
-        sentiment,
-        extremes: {
-            longestSentence,
-            shortestSentence,
-            longestWord: words.reduce((a, b) => a.length > b.length ? a : b, ''),
-            shortestWord: words.reduce((a, b) => (a.length < b.length && b.length > 0) ? a : b, words[0] || '')
-        }
-    };
-    
-    // Cache the results
-    appState.analyticsCache = analytics;
-    appState.analyticsCacheTimestamp = Date.now();
-    
-    return analytics;
-}
-
-/**
- * Calculate readability scores
- */
-function calculateReadabilityScores(text, wordCount, sentences, words) {
-    if (!text.trim() || wordCount === 0 || sentences === 0) {
-        return {
-            fleschReadingEase: { score: 0, level: 'N/A', description: 'No text to analyze' },
-            fleschKincaid: { score: 0, level: 'N/A' },
-            gunningFog: { score: 0, level: 'N/A' },
-            smog: { score: 0, level: 'N/A' },
-            automatedReadability: { score: 0, level: 'N/A' },
-            complexity: { avgSyllablesPerWord: 0, complexWords: 0, percentageComplexWords: 0 }
+            syllables,
+            avgWordsPerSentence,
+            avgSyllablesPerWord,
+            fleschScore: Math.max(0, Math.min(100, fleschScore)),
+            fleschKincaid: Math.max(0, fleschKincaid),
+            readability,
+            topWords
         };
     }
     
-    // Count syllables (simplified method)
-    const countSyllables = (word) => {
+    static getEmptyAnalysis() {
+        return {
+            characters: 0,
+            words: 0,
+            sentences: 0,
+            paragraphs: 0,
+            syllables: 0,
+            avgWordsPerSentence: 0,
+            avgSyllablesPerWord: 0,
+            fleschScore: 0,
+            fleschKincaid: 0,
+            readability: { score: 0, level: 'N/A', description: 'No text to analyze', class: 'easy' },
+            topWords: []
+        };
+    }
+    
+    static countSentences(text) {
+        // Count sentences ending with ., !, ?, or ellipsis
+        const sentences = text.match(/[.!?…]+(\s|$)/g);
+        return sentences ? sentences.length : 0;
+    }
+    
+    static countSyllables(text) {
+        const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+        let totalSyllables = 0;
+        
+        words.forEach(word => {
+            totalSyllables += this.countWordSyllables(word);
+        });
+        
+        return totalSyllables;
+    }
+    
+    static countWordSyllables(word) {
         word = word.toLowerCase();
         let count = 0;
         let previousWasVowel = false;
-        const vowels = 'aeiouy';
         
         for (let i = 0; i < word.length; i++) {
-            const isVowel = vowels.includes(word[i]);
+            const isVowel = 'aeiouy'.includes(word[i]);
             if (isVowel && !previousWasVowel) {
                 count++;
             }
@@ -719,2409 +1792,309 @@ function calculateReadabilityScores(text, wordCount, sentences, words) {
             count--;
         }
         
-        // Ensure at least one syllable
-        if (count === 0) {
-            count = 1;
-        }
-        
-        return count;
-    };
-    
-    const totalSyllables = words.reduce((total, word) => total + countSyllables(word), 0);
-    const avgSyllablesPerWord = totalSyllables / wordCount;
-    const avgWordsPerSentence = wordCount / sentences;
-    
-    // Count complex words (3+ syllables)
-    const complexWords = words.filter(word => countSyllables(word) >= 3).length;
-    const percentageComplexWords = (complexWords / wordCount) * 100;
-    
-    // Get charsNoSpaces from text
-    const charsNoSpaces = text.replace(/\s/g, '').length;
-    
-    // Flesch Reading Ease
-    const fleschScore = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllablesPerWord;
-    let fleschLevel = '';
-    let fleschDescription = '';
-    
-    if (fleschScore >= 90) {
-        fleschLevel = 'Very Easy';
-        fleschDescription = '5th grade';
-    } else if (fleschScore >= 80) {
-        fleschLevel = 'Easy';
-        fleschDescription = '6th grade';
-    } else if (fleschScore >= 70) {
-        fleschLevel = 'Fairly Easy';
-        fleschDescription = '7th grade';
-    } else if (fleschScore >= 60) {
-        fleschLevel = 'Standard';
-        fleschDescription = '8th-9th grade';
-    } else if (fleschScore >= 50) {
-        fleschLevel = 'Fairly Difficult';
-        fleschDescription = '10th-12th grade';
-    } else if (fleschScore >= 30) {
-        fleschLevel = 'Difficult';
-        fleschDescription = 'College';
-    } else {
-        fleschLevel = 'Very Difficult';
-        fleschDescription = 'Graduate';
+        // Words should have at least one syllable
+        return Math.max(1, count);
     }
     
-    // Flesch-Kincaid Grade Level
-    const fkGrade = 0.39 * avgWordsPerSentence + 11.8 * avgSyllablesPerWord - 15.59;
-    
-    // Gunning Fog Index
-    const gunningFog = 0.4 * (avgWordsPerSentence + percentageComplexWords);
-    
-    // SMOG Index (simplified)
-    const smog = Math.sqrt(complexWords * (30 / sentences)) + 3;
-    
-    // Automated Readability Index
-    const ari = 4.71 * (charsNoSpaces / wordCount) + 0.5 * avgWordsPerSentence - 21.43;
-    
-    return {
-        fleschReadingEase: {
-            score: Math.max(0, Math.min(100, fleschScore)).toFixed(1),
-            level: fleschLevel,
-            description: fleschDescription
-        },
-        fleschKincaid: {
-            score: Math.max(0, fkGrade).toFixed(1),
-            level: `Grade ${Math.round(Math.max(0, fkGrade))}`
-        },
-        gunningFog: {
-            score: Math.max(0, gunningFog).toFixed(1),
-            level: `Grade ${Math.round(Math.max(0, gunningFog))}`
-        },
-        smog: {
-            score: Math.max(0, smog).toFixed(1),
-            level: `Grade ${Math.round(Math.max(0, smog))}`
-        },
-        automatedReadability: {
-            score: Math.max(0, ari).toFixed(1),
-            level: `Grade ${Math.round(Math.max(0, ari))}`
-        },
-        complexity: {
-            avgSyllablesPerWord: avgSyllablesPerWord.toFixed(2),
-            complexWords,
-            percentageComplexWords: percentageComplexWords.toFixed(1)
-        }
-    };
-}
-
-/**
- * Basic sentiment analysis
- */
-function analyzeSentiment(text) {
-    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love', 'happy', 'joy', 'beautiful', 'awesome', 'brilliant', 'superb', 'positive', 'perfect', 'best', 'win', 'success', 'accomplish', 'achieve'];
-    const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'hate', 'sad', 'angry', 'fear', 'ugly', 'worst', 'fail', 'lose', 'wrong', 'mistake', 'error', 'problem', 'issue', 'difficult', 'hard', 'negative'];
-    
-    const words = text.toLowerCase().split(/\s+/);
-    let positiveCount = 0;
-    let negativeCount = 0;
-    
-    words.forEach(word => {
-        const cleanWord = word.replace(/[^\w]/g, '');
-        if (positiveWords.includes(cleanWord)) positiveCount++;
-        if (negativeWords.includes(cleanWord)) negativeCount++;
-    });
-    
-    const totalSentimentWords = positiveCount + negativeCount;
-    let sentiment = 'Neutral';
-    let confidence = 0;
-    
-    if (totalSentimentWords > 0) {
-        const positiveRatio = positiveCount / totalSentimentWords;
-        confidence = Math.abs(positiveCount - negativeCount) / totalSentimentWords * 100;
-        
-        if (positiveRatio > 0.6) {
-            sentiment = 'Positive';
-        } else if (positiveRatio < 0.4) {
-            sentiment = 'Negative';
-        }
-    }
-    
-    return {
-        sentiment,
-        confidence: confidence.toFixed(0),
-        positiveWords: positiveCount,
-        negativeWords: negativeCount,
-        score: totalSentimentWords > 0 ? ((positiveCount - negativeCount) / totalSentimentWords * 100).toFixed(0) : 0
-    };
-}
-
-/**
- * Enhanced text analysis and reporting
- */
-function generateReport() {
-    const analytics = getTextAnalytics();
-    
-    if (!analytics) {
-        showStatus('No text to analyze', 2000, 'warning');
-        return;
-    }
-    
-    const content = `
-        <div class="analytics-dashboard">
-            <div class="dashboard-nav">
-                <button class="nav-tab active" data-tab="overview">Overview</button>
-                <button class="nav-tab" data-tab="readability">Readability</button>
-                <button class="nav-tab" data-tab="wordAnalysis">Word Analysis</button>
-                <button class="nav-tab" data-tab="sentiment">Sentiment</button>
-            </div>
-            
-            <div class="tab-content active" id="tab-overview">
-                <div class="metrics-grid">
-                    <div class="metric-card primary">
-                        <div class="metric-header">
-                            <h4>Text Statistics</h4>
-                            <i class="fas fa-chart-bar text-green-500"></i>
-                        </div>
-                        <div class="metric-stats">
-                            <div class="stat-item">
-                                <span class="stat-value">${analytics.basicMetrics.wordCount.toLocaleString()}</span>
-                                <span class="stat-label">Words</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value">${analytics.basicMetrics.sentences.toLocaleString()}</span>
-                                <span class="stat-label">Sentences</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value">${analytics.basicMetrics.paragraphs.toLocaleString()}</span>
-                                <span class="stat-label">Paragraphs</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <h4>Reading Time</h4>
-                            <i class="fas fa-clock text-blue-500"></i>
-                        </div>
-                        <div class="reading-time-chart">
-                            <div class="time-bar ${analytics.readingTimes.slow >= analytics.readingTimes.average ? 'primary' : ''}">
-                                <span>Slow (150 WPM)</span>
-                                <span>${analytics.readingTimes.slow} min</span>
-                            </div>
-                            <div class="time-bar primary">
-                                <span>Average (200 WPM)</span>
-                                <span>${analytics.readingTimes.average} min</span>
-                            </div>
-                            <div class="time-bar ${analytics.readingTimes.fast <= analytics.readingTimes.average ? 'primary' : ''}">
-                                <span>Fast (250 WPM)</span>
-                                <span>${analytics.readingTimes.fast} min</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <h4>Readability</h4>
-                            <i class="fas fa-book-open text-purple-500"></i>
-                        </div>
-                        <div class="readability-summary">
-                            <div class="grade-circle">
-                                <span class="grade-number">${Math.round(analytics.readability.fleschKincaid.score)}</span>
-                                <span class="grade-suffix">Grade</span>
-                            </div>
-                            <div class="grade-info">
-                                <div class="grade-level">${analytics.readability.fleschReadingEase.level}</div>
-                                <div class="grade-description">${analytics.readability.fleschReadingEase.description}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <h4>Sentiment</h4>
-                            <i class="fas fa-smile text-orange-500"></i>
-                        </div>
-                        <div class="sentiment-display">
-                            <div class="sentiment-icon ${analytics.sentiment.sentiment.toLowerCase()}">
-                                <i class="fas fa-${analytics.sentiment.sentiment === 'Positive' ? 'smile' : analytics.sentiment.sentiment === 'Negative' ? 'frown' : 'meh'}"></i>
-                            </div>
-                            <div class="sentiment-info">
-                                <div class="sentiment-label">${analytics.sentiment.sentiment}</div>
-                                <div class="sentiment-confidence">${analytics.sentiment.confidence}% confidence</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="quick-recommendations">
-                    <h4><i class="fas fa-lightbulb"></i> Quick Recommendations</h4>
-                    <div class="recommendations-list">
-                        ${getRecommendations(analytics)}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-readability">
-                <div class="readability-detailed">
-                    <div class="readability-scores">
-                        <h4>Readability Scores</h4>
-                        <div class="score-grid">
-                            ${Object.entries(analytics.readability).filter(([key]) => key !== 'complexity').map(([name, data]) => `
-                                <div class="score-card">
-                                    <span class="score-name">${formatReadabilityName(name)}</span>
-                                    <span class="score-value">${data.score}</span>
-                                    <div class="score-bar">
-                                        <div class="score-fill" style="width: ${Math.min(100, data.score)}%"></div>
-                                    </div>
-                                    <span class="score-level">${data.level}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <div class="readability-breakdown">
-                        <h4>Complexity Factors</h4>
-                        <div class="complexity-factors">
-                            <div class="factor">
-                                <span class="factor-label">Avg Words/Sentence</span>
-                                <span class="factor-value">${analytics.averages.avgWordsPerSentence}</span>
-                            </div>
-                            <div class="factor">
-                                <span class="factor-label">Avg Syllables/Word</span>
-                                <span class="factor-value">${analytics.readability.complexity.avgSyllablesPerWord}</span>
-                            </div>
-                            <div class="factor">
-                                <span class="factor-label">Complex Words</span>
-                                <span class="factor-value">${analytics.readability.complexity.complexWords} (${analytics.readability.complexity.percentageComplexWords}%)</span>
-                            </div>
-                            <div class="factor">
-                                <span class="factor-label">Lexical Diversity</span>
-                                <span class="factor-value">${analytics.basicMetrics.lexicalDiversity}%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-wordAnalysis">
-                <div class="word-analysis">
-                    <h4>Most Frequent Words</h4>
-                    <div class="word-frequency-chart">
-                        ${analytics.wordFrequency.map(([word, count], index) => `
-                            <div class="word-bar" style="margin-bottom: 8px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                    <span style="font-weight: 600;">${index + 1}. ${word}</span>
-                                    <span style="color: var(--text-muted);">${count} times</span>
-                                </div>
-                                <div class="score-bar">
-                                    <div class="score-fill" style="width: ${(count / analytics.wordFrequency[0][1]) * 100}%"></div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <div style="margin-top: 24px;">
-                        <h4>Text Extremes</h4>
-                        <div class="complexity-factors">
-                            <div class="factor">
-                                <span class="factor-label">Longest Word</span>
-                                <span class="factor-value">"${analytics.extremes.longestWord}" (${analytics.extremes.longestWord.length} chars)</span>
-                            </div>
-                            <div class="factor">
-                                <span class="factor-label">Shortest Word</span>
-                                <span class="factor-value">"${analytics.extremes.shortestWord}" (${analytics.extremes.shortestWord.length} char)</span>
-                            </div>
-                        </div>
-                        <div style="margin-top: 16px; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
-                            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 8px;"><strong>Longest Sentence:</strong></p>
-                            <p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
-                                "${analytics.extremes.longestSentence.substring(0, 150)}${analytics.extremes.longestSentence.length > 150 ? '...' : ''}"
-                                <span style="display: block; margin-top: 4px; font-style: normal;">
-                                    (${analytics.extremes.longestSentence.split(/\s+/).length} words)
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-sentiment">
-                <div class="sentiment-analysis">
-                    <div class="sentiment-overview" style="text-align: center; padding: 24px;">
-                        <div class="sentiment-icon ${analytics.sentiment.sentiment.toLowerCase()}" style="font-size: 4rem; width: 100px; height: 100px; margin: 0 auto 16px;">
-                            <i class="fas fa-${analytics.sentiment.sentiment === 'Positive' ? 'smile' : analytics.sentiment.sentiment === 'Negative' ? 'frown' : 'meh'}"></i>
-                        </div>
-                        <h3 style="font-size: 1.5rem; margin-bottom: 8px;">${analytics.sentiment.sentiment} Sentiment</h3>
-                        <p style="color: var(--text-muted);">Confidence: ${analytics.sentiment.confidence}%</p>
-                    </div>
-                    
-                    <div class="sentiment-details">
-                        <div class="metrics-grid" style="grid-template-columns: 1fr 1fr;">
-                            <div class="metric-card">
-                                <div class="metric-header">
-                                    <h4>Positive Words</h4>
-                                    <i class="fas fa-plus-circle text-green-500"></i>
-                                </div>
-                                <div style="text-align: center; padding: 16px;">
-                                    <span class="stat-value" style="color: var(--success);">${analytics.sentiment.positiveWords}</span>
-                                </div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-header">
-                                    <h4>Negative Words</h4>
-                                    <i class="fas fa-minus-circle text-red-500"></i>
-                                </div>
-                                <div style="text-align: center; padding: 16px;">
-                                    <span class="stat-value" style="color: var(--danger);">${analytics.sentiment.negativeWords}</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 8px;">
-                            <h4 style="margin-bottom: 12px;">Sentiment Score</h4>
-                            <div class="score-bar" style="height: 20px; position: relative;">
-                                <div class="score-fill" style="width: ${Math.abs(analytics.sentiment.score)}%; background: ${analytics.sentiment.score > 0 ? 'var(--success)' : 'var(--danger)'};"></div>
-                                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; color: var(--text-primary);">
-                                    ${analytics.sentiment.score > 0 ? '+' : ''}${analytics.sentiment.score}
-                                </span>
-                            </div>
-                            <p style="text-align: center; margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
-                                Scale: -100 (Very Negative) to +100 (Very Positive)
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-    
-    showModal('📊 Comprehensive Text Analysis', content, 
-        [{ text: 'Close', class: 'btn-primary', callback: hideModal }],
-        () => {
-            // Set up tab switching
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    // Remove active class from all tabs and contents
-                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding content
-                    tab.classList.add('active');
-                    const tabId = 'tab-' + tab.dataset.tab;
-                    document.getElementById(tabId)?.classList.add('active');
-                });
-            });
-        }
-    );
-}
-
-/**
- * Get recommendations based on analytics
- */
-function getRecommendations(analytics) {
-    const recommendations = [];
-    
-    // Readability recommendations
-    const readingLevel = parseFloat(analytics.readability.fleschKincaid.score);
-    if (readingLevel > 12) {
-        recommendations.push({
-            priority: 'high',
-            text: 'Consider simplifying sentences to improve readability'
-        });
-    }
-    
-    if (analytics.averages.avgWordsPerSentence > 20) {
-        recommendations.push({
-            priority: 'medium',
-            text: 'Break up long sentences for better clarity'
-        });
-    }
-    
-    if (analytics.readability.complexity.percentageComplexWords > 20) {
-        recommendations.push({
-            priority: 'medium',
-            text: 'Replace complex words with simpler alternatives'
-        });
-    }
-    
-    // Sentiment recommendations
-    if (analytics.sentiment.sentiment === 'Negative' && analytics.sentiment.confidence > 50) {
-        recommendations.push({
-            priority: 'low',
-            text: 'Consider adding more positive language'
-        });
-    }
-    
-    // Structure recommendations
-    if (analytics.basicMetrics.paragraphs === 1 && analytics.basicMetrics.wordCount > 200) {
-        recommendations.push({
-            priority: 'medium',
-            text: 'Add paragraph breaks to improve structure'
-        });
-    }
-    
-    if (recommendations.length === 0) {
-        recommendations.push({
-            priority: 'low',
-            text: 'Your text is well-balanced!'
-        });
-    }
-    
-    return recommendations.map(rec => `
-        <div class="recommendation-item ${rec.priority}">
-            <i class="fas fa-${rec.priority === 'high' ? 'exclamation-circle' : rec.priority === 'medium' ? 'info-circle' : 'check-circle'}"></i>
-            <span>${rec.text}</span>
-        </div>
-    `).join('');
-}
-
-/**
- * Format readability metric names
- */
-function formatReadabilityName(name) {
-    const names = {
-        fleschReadingEase: 'Flesch Reading Ease',
-        fleschKincaid: 'Flesch-Kincaid Grade',
-        gunningFog: 'Gunning Fog Index',
-        smog: 'SMOG Index',
-        automatedReadability: 'Automated Readability'
-    };
-    return names[name] || name;
-}
-
-/**
- * Show quick insights popup
- */
-function showQuickInsights() {
-    const analytics = getTextAnalytics();
-    
-    if (!analytics) {
-        showStatus('No text to analyze', 2000, 'warning');
-        return;
-    }
-    
-    const content = `
-        <div class="quick-insights-popup">
-            <div class="insights-header">
-                <i class="fas fa-bolt text-yellow-500"></i>
-                <h4>Quick Insights</h4>
-            </div>
-            
-            <div class="insight-cards">
-                <div class="insight-card">
-                    <div class="insight-icon">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <div class="insight-content">
-                        <div class="insight-title">Reading Level</div>
-                        <div class="insight-value">${analytics.readability.fleschReadingEase.level}</div>
-                        <div class="insight-detail">Grade ${Math.round(analytics.readability.fleschKincaid.score)}</div>
-                    </div>
-                </div>
-                
-                <div class="insight-card">
-                    <div class="insight-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="insight-content">
-                        <div class="insight-title">Read Time</div>
-                        <div class="insight-value">${analytics.readingTimes.average} min</div>
-                        <div class="insight-detail">at 200 WPM</div>
-                    </div>
-                </div>
-                
-                <div class="insight-card">
-                    <div class="insight-icon">
-                        <i class="fas fa-${analytics.sentiment.sentiment === 'Positive' ? 'smile' : analytics.sentiment.sentiment === 'Negative' ? 'frown' : 'meh'}"></i>
-                    </div>
-                    <div class="insight-content">
-                        <div class="insight-title">Sentiment</div>
-                        <div class="insight-value">${analytics.sentiment.sentiment}</div>
-                        <div class="insight-detail">${analytics.sentiment.confidence}% sure</div>
-                    </div>
-                </div>
-                
-                <div class="insight-card">
-                    <div class="insight-icon">
-                        <i class="fas fa-font"></i>
-                    </div>
-                    <div class="insight-content">
-                        <div class="insight-title">Top Word</div>
-                        <div class="insight-value">${analytics.wordFrequency[0] ? analytics.wordFrequency[0][0] : 'N/A'}</div>
-                        <div class="insight-detail">${analytics.wordFrequency[0] ? analytics.wordFrequency[0][1] + ' times' : ''}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="insights-footer">
-                <button class="btn btn-primary btn-sm" onclick="generateReport()">
-                    <i class="fas fa-chart-line"></i> View Full Report
-                </button>
-            </div>
-        </div>`;
-    
-    showModal('⚡ Quick Insights', content, [{ text: 'Close', class: 'btn-secondary', callback: hideModal }]);
-}
-
-// UI update functions
-function updateHistoryUI() {
-    const container = document.getElementById('historyList');
-    if (!container) return;
-    
-    const historyItems = getHistory();
-    
-    container.innerHTML = historyItems.length === 0 
-        ? `<div class="text-center p-6 text-sm" style="color:var(--text-muted)">
-            <i class="fas fa-history text-3xl opacity-30 mb-3 block"></i>
-            <p class="font-medium">No history yet</p>
-            <p class="text-xs mt-1">Your text changes will appear here</p>
-           </div>`
-        : historyItems.map(item => `
-            <div class="p-3 mb-2 rounded-lg transition-all hover:bg-gray-50 dark:hover:bg-gray-800" style="background:var(--bg-tertiary); border: 1px solid var(--border-primary)">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="font-medium text-sm">${item.action}</div>
-                    <button class="btn btn-secondary text-xs px-2 py-1 btn-restore-history hover:bg-green-500 hover:text-white transition-colors" data-id="${item.id}" title="Restore this version">
-                        <i class="fas fa-undo mr-1"></i>Restore
-                    </button>
-                </div>
-                <div class="text-xs grid grid-cols-3 gap-2 mb-2" style="color:var(--text-muted)">
-                    <span><i class="fas fa-font"></i> ${item.wordCount || 0} words</span>
-                    <span><i class="fas fa-text-width"></i> ${item.charCount || 0} chars</span>
-                    <span><i class="fas fa-clock"></i> ${item.dateString}</span>
-                </div>
-                <div class="text-xs p-2 rounded" style="background:var(--bg-hover); color:var(--text-muted); max-height: 40px; overflow: hidden;">
-                    ${(item.text || '').substring(0, 100)}${(item.text || '').length > 100 ? '...' : ''}
-                </div>
-            </div>`).join('');
-}
-
-function updateSavedTextsUI() {
-    const container = document.getElementById('savedList');
-    if (!container) return;
-    
-    const savedTexts = getSavedTexts();
-    
-    container.innerHTML = savedTexts.length === 0 
-        ? `<div class="text-center p-6 text-sm" style="color:var(--text-muted)">
-            <i class="fas fa-bookmark text-3xl opacity-30 mb-3 block"></i>
-            <p class="font-medium">No saved snippets</p>
-            <p class="text-xs mt-1">Save important text for later use</p>
-           </div>`
-        : savedTexts.map(item => `
-            <div class="p-3 mb-2 rounded-lg transition-all hover:bg-gray-50 dark:hover:bg-gray-800" style="background:var(--bg-tertiary); border: 1px solid var(--border-primary)">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="font-medium text-sm truncate pr-2" title="${item.title}">${item.title}</div>
-                    <div class="flex gap-1 flex-shrink-0">
-                        <button class="btn btn-secondary text-xs px-2 py-1 btn-load-saved hover:bg-blue-500 hover:text-white transition-colors" data-id="${item.id}" title="Load this snippet">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="btn btn-secondary btn-delete-saved text-xs px-2 py-1 hover:bg-red-500 hover:text-white transition-colors" data-id="${item.id}" title="Delete this snippet">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="text-xs grid grid-cols-3 gap-2" style="color:var(--text-muted)">
-                    <span><i class="fas fa-font"></i> ${item.wordCount || 0} words</span>
-                    <span><i class="fas fa-text-width"></i> ${item.charCount || 0} chars</span>
-                    <span><i class="fas fa-clock"></i> ${item.dateString}</span>
-                </div>
-            </div>`).join('');
-}
-
-// Restore and load functions
-function restoreFromHistory(historyItemId) {
-    try {
-        const history = getHistory();
-        const item = history.find(h => h.id === historyItemId);
-        
-        if (item) {
-            addToHistory('Before Restore from History', elements.textArea.value);
-            elements.textArea.value = item.text; 
-            handleTextInput();
-            showStatus(`Restored from history: ${item.action}`, 3000, 'success'); 
+    static getReadabilityLevel(score) {
+        if (score >= 90) {
+            return { score: Math.round(score), level: 'Very Easy', description: '5th grade level', class: 'very-easy' };
+        } else if (score >= 80) {
+            return { score: Math.round(score), level: 'Easy', description: '6th grade level', class: 'easy' };
+        } else if (score >= 70) {
+            return { score: Math.round(score), level: 'Fairly Easy', description: '7th grade level', class: 'fairly-easy' };
+        } else if (score >= 60) {
+            return { score: Math.round(score), level: 'Standard', description: '8th-9th grade level', class: 'standard' };
+        } else if (score >= 50) {
+            return { score: Math.round(score), level: 'Fairly Difficult', description: '10th-12th grade level', class: 'fairly-difficult' };
+        } else if (score >= 30) {
+            return { score: Math.round(score), level: 'Difficult', description: 'College level', class: 'difficult' };
         } else {
-            showStatus('History item not found.', 3000, 'error');
+            return { score: Math.round(score), level: 'Very Difficult', description: 'Graduate level', class: 'very-difficult' };
         }
-    } catch (e) {
-        console.error("Error restoring from history:", e);
-        showStatus('Error restoring history.', 3000, 'error');
     }
-}
-
-function loadSavedText(savedTextId) {
-    try {
-        const savedTexts = getSavedTexts();
-        const item = savedTexts.find(s => s.id === savedTextId);
+    
+    static getWordFrequency(text) {
+        const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+        const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'it', 'that', 'this', 'these', 'those', 'i', 'you', 'he', 'she', 'we', 'they']);
         
-        if (item) {
-            addToHistory('Load Saved Text', elements.textArea.value);
-            elements.textArea.value = item.text; 
-            handleTextInput(); 
-            showStatus(`Loaded: "${item.title}"`, 3000, 'success'); 
-        } else {
-            showStatus('Saved text not found.', 3000, 'error');
-        }
-    } catch (e) {
-        console.error("Error loading saved text:", e);
-        showStatus('Error loading saved text.', 3000, 'error');
-    }
-}
-
-function deleteSavedTextSnippet(savedTextId) {
-    try {
-        const savedTexts = getSavedTexts();
-        const index = savedTexts.findIndex(s => s.id === savedTextId);
+        const frequency = {};
         
-        if (index !== -1) {
-            savedTexts.splice(index, 1);
-            safeLocalStorageOperation('set', 'textman_savedTexts', JSON.stringify(savedTexts));
-            updateSavedTextsUI();
-            showStatus('Deleted saved text snippet', 2000, 'success');
-        }
-    } catch (e) {
-        console.error("Error deleting saved text snippet:", e);
-        showStatus('Error deleting snippet.', 3000, 'error');
+        words.forEach(word => {
+            if (word.length > 2 && !stopWords.has(word)) {
+                frequency[word] = (frequency[word] || 0) + 1;
+            }
+        });
+        
+        return frequency;
     }
 }
 
-/**
- * Enhanced status message system with types
- */
-let statusTimeout;
-function showStatus(message, duration = 3000, type = 'info') {
-    clearTimeout(statusTimeout);
-    elements.statusMessage.textContent = message;
-    
-    // Remove all type classes first
-    elements.statusMessage.classList.remove('success', 'error', 'warning');
-    
-    // Add the appropriate type class
-    if (type !== 'info') {
-        elements.statusMessage.classList.add(type);
-    }
-    
-    elements.statusMessage.classList.remove('opacity-0');
-    elements.statusMessage.classList.add('opacity-100');
-    
-    statusTimeout = setTimeout(() => {
-        elements.statusMessage.classList.remove('opacity-100');
-        elements.statusMessage.classList.add('opacity-0');
-        setTimeout(() => {
-            elements.statusMessage.classList.remove('success', 'error', 'warning');
-        }, 300);
-    }, duration);
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
+// ===== Text Encoder Utilities =====
+class TextEncoder {
+    static toMorse(text) {
+        const morseCode = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
+            '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+            '8': '---..', '9': '----.', '.': '.-.-.-', ',': '--..--', '?': '..--..',
+            "'": '.----.', '!': '-.-.--', '/': '-..-.', '(': '-.--.', ')': '-.--.-',
+            '&': '.-...', ':': '---...', ';': '-.-.-.', '=': '-...-', '+': '.-.-.',
+            '-': '-....-', '_': '..--.-', '"': '.-..-.', '$': '...-..-', '@': '.--.-.',
+            ' ': '/'
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-/**
- * Enhanced modal with better UX
- */
-function showModal(title, content, buttons = [], onOpen = null) {
-    elements.modalTitle.textContent = title; 
-    elements.modalContent.innerHTML = content; 
-    elements.modalActions.innerHTML = '';
-    buttons.forEach(btnInfo => { 
-        const button = document.createElement('button'); 
-        button.textContent = btnInfo.text; 
-        button.className = `btn ${btnInfo.class || 'btn-secondary'}`;
-        button.onclick = btnInfo.callback; 
-        elements.modalActions.appendChild(button); 
-    });
-    
-    elements.modalContainer.hidden = false; 
-    document.body.style.overflow = 'hidden';
-    
-    requestAnimationFrame(() => {
-        elements.modalContainer.classList.add('visible');
-        const primaryBtn = elements.modalActions.querySelector('.btn-primary');
-        const firstBtn = elements.modalActions.querySelector('button:not([disabled])');
-        const focusTarget = primaryBtn || firstBtn || elements.modalClose;
-        if (focusTarget) focusTarget.focus();
         
-        if (onOpen) onOpen();
-    });
-    
-    // Add escape key listener
-    const escapeHandler = (e) => {
-        if (e.key === 'Escape') {
-            hideModal();
-            document.removeEventListener('keydown', escapeHandler);
-        }
-    };
-    document.addEventListener('keydown', escapeHandler);
-}
-
-function hideModal() {
-    elements.modalContainer.classList.remove('visible');
-    setTimeout(() => { 
-        elements.modalContainer.hidden = true; 
-        document.body.style.overflow = ''; 
-    }, 300);
-}
-
-// --- Enhanced UI State Management ---
-
-function renderSidebarSections() {
-    try {
-        const leftSidebarSections = [
-            { id: 'history', title: 'History', icon: 'fa-history', content: '<div id="historyList" class="max-h-80 overflow-y-auto"></div>' },
-            { id: 'templates', title: 'Templates', icon: 'fa-file-alt', content: getTemplatesHTML() },
-            { id: 'saved', title: 'Saved Texts', icon: 'fa-bookmark', content: '<div id="savedList" class="max-h-80 overflow-y-auto"></div><button id="saveCurrentTextBtn" class="btn btn-primary w-full mt-3 compact-btn"><i class="fas fa-save fa-fw"></i> Save Current Text</button>' }
-        ];
-        
-        const rightSidebarSections = [
-            { id: 'quickAnalysis', title: 'Quick Analysis', icon: 'fa-chart-bar', content: getQuickAnalysisHTML() },
-            { id: 'case', title: 'Case Transform', icon: 'fa-font', content: getCaseToolsHTML() },
-            { id: 'findReplace', title: 'Find & Replace', icon: 'fa-search', content: getFindReplaceHTML() },
-            { id: 'ops', title: 'Text Operations', icon: 'fa-edit', content: getOpsToolsHTML() },
-            { id: 'encode', title: 'Encode/Decode', icon: 'fa-shield-alt', content: getEncodeToolsHTML() },
-            { id: 'importExport', title: 'Import / Export', icon: 'fa-file-import', content: getImportExportHTML() }
-        ];
-        
-        const defaultSectionStates = {};
-        [...leftSidebarSections, ...rightSidebarSections].forEach(s => defaultSectionStates[s.id] = true);
-
-        const currentSectionStates = window.uiStateSnapshot?.sections || defaultSectionStates;
-
-        elements.leftSidebarContent.innerHTML = leftSidebarSections.map(s => 
-            createSectionHTML(s, currentSectionStates[s.id] !== false)).join('');
-        elements.rightSidebarContent.innerHTML = rightSidebarSections.map(s => 
-            createSectionHTML(s, currentSectionStates[s.id] !== false)).join('');
-        
-        const fileInput = document.getElementById('fileInput');
-        if (fileInput) fileInput.addEventListener('change', handleFileImport);
-
-        const findReplaceBtn = document.querySelector('[data-find-replace]');
-        if (findReplaceBtn) findReplaceBtn.addEventListener('click', () => findAndReplace(false));
-        
-        const findReplaceAllBtn = document.querySelector('[data-find-replace-all]');
-        if (findReplaceAllBtn) findReplaceAllBtn.addEventListener('click', () => findAndReplace(true));
-        
-        // Update UI with current data
-        updateHistoryUI();
-        updateSavedTextsUI();
-        
-        // Initial mini analytics update
-        setTimeout(() => {
-            try {
-                updateMiniAnalytics();
-            } catch (e) {
-                console.error('Error updating mini analytics on init:', e);
-            }
-        }, 100);
-        
-    } catch (e) {
-        console.error('Error rendering sidebar sections:', e);
-        showStatus('Error loading sidebar tools', 3000, 'error');
+        return text.toUpperCase().split('').map(char => morseCode[char] || char).join(' ');
     }
 }
 
-function createSectionHTML({id, title, icon, content}, isExpanded) {
-    return `
-        <section class="sidebar-section ${isExpanded ? '' : 'collapsed'}" id="section-${id}">
-            <h3 class="section-header" role="button" aria-expanded="${isExpanded}" aria-controls="content-${id}" tabindex="0">
-                <span class="flex items-center gap-2 font-semibold text-sm">
-                    <i class="fas ${icon} fa-fw text-green-500 w-4"></i> ${title}
-                </span>
-                <i class="fas fa-chevron-down fa-fw transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}"></i>
-            </h3>
-            <div id="content-${id}" class="section-content">${content}</div>
-        </section>`;
-}
+// ===== Initialize App =====
+const state = new AppState();
+const ui = new UIManager(state);
 
-/**
- * Enhanced theme toggle with smooth transitions
- */
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    // Add transition class
-    document.body.style.transition = 'all 0.3s ease';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    elements.themeToggle.querySelector('i').className = `fas fa-fw theme-icon ${newTheme === 'dark' ? 'fa-moon' : 'fa-sun'}`;
-    
-    // Remove transition after completion
-    setTimeout(() => {
-        document.body.style.transition = '';
-    }, 300);
-    
-    saveUIState();
-    showStatus(`Switched to ${newTheme} theme`, 1500, 'success');
-}
+// Load saved data
+state.loadFromStorage();
 
-function loadTheme(themePreference) {
-    const theme = themePreference || 'dark';
-    document.documentElement.setAttribute('data-theme', theme);
-    elements.themeToggle.querySelector('i').className = `fas fa-fw theme-icon ${theme === 'dark' ? 'fa-moon' : 'fa-sun'}`;
-}
-
-/**
- * Enhanced sidebar toggle with animations
- */
-function toggleSidebar(side) {
-    const sidebarEl = document.getElementById(side + 'Sidebar');
-    const isCurrentlyExpanded = !sidebarEl.classList.contains('collapsed');
-    
-    sidebarEl.classList.toggle('collapsed', isCurrentlyExpanded);
-    
-    // Update the collapse button text and icon
-    const collapseBtn = sidebarEl.querySelector('.sidebar-collapse-btn');
-    const icon = collapseBtn.querySelector('i');
-    const hint = collapseBtn.querySelector('.collapse-hint');
-    
-    if (side === 'left') {
-        icon.className = `fas fa-fw ${!isCurrentlyExpanded ? 'fa-chevron-right' : 'fa-chevron-left'}`;
-        hint.textContent = !isCurrentlyExpanded ? 'Show' : 'Hide';
-        collapseBtn.setAttribute('title', `${!isCurrentlyExpanded ? 'Show' : 'Hide'} workspace panel (Alt+1)`);
-        collapseBtn.setAttribute('aria-label', `${!isCurrentlyExpanded ? 'Show' : 'Hide'} workspace panel`);
-    } else {
-        icon.className = `fas fa-fw ${!isCurrentlyExpanded ? 'fa-chevron-left' : 'fa-chevron-right'}`;
-        hint.textContent = !isCurrentlyExpanded ? 'Show' : 'Hide';
-        collapseBtn.setAttribute('title', `${!isCurrentlyExpanded ? 'Show' : 'Hide'} tools panel (Alt+2)`);
-        collapseBtn.setAttribute('aria-label', `${!isCurrentlyExpanded ? 'Show' : 'Hide'} tools panel`);
-    }
-    
-    saveUIState();
-    showStatus(`${side.charAt(0).toUpperCase() + side.slice(1)} panel ${!isCurrentlyExpanded ? 'hidden' : 'shown'}`, 1500, 'success');
-}
-
-function toggleSection(sectionElement) {
-    const isCurrentlyExpanded = !sectionElement.classList.contains('collapsed');
-    sectionElement.classList.toggle('collapsed', isCurrentlyExpanded);
-    
-    const header = sectionElement.querySelector('.section-header');
-    header.setAttribute('aria-expanded', !isCurrentlyExpanded);
-    
-    const chevron = header.querySelector('.fa-chevron-down');
-    chevron.classList.toggle('-rotate-90', isCurrentlyExpanded);
-    
-    saveUIState();
-}
-
-function loadUIStateFromData(uiStateData = {}) {
-    window.uiStateSnapshot = uiStateData;
-
-    const leftSidebar = document.getElementById('leftSidebar');
-    const rightSidebar = document.getElementById('rightSidebar');
-
-    // Handle left sidebar state
-    if (uiStateData.leftSidebarExpanded === false) {
-        leftSidebar.classList.add('collapsed');
-        const leftCollapseBtn = leftSidebar.querySelector('.sidebar-collapse-btn');
-        if (leftCollapseBtn) {
-            const icon = leftCollapseBtn.querySelector('i');
-            const hint = leftCollapseBtn.querySelector('.collapse-hint');
-            icon.className = 'fas fa-fw fa-chevron-right';
-            hint.textContent = 'Show';
-            leftCollapseBtn.setAttribute('title', 'Show workspace panel (Alt+1)');
-            leftCollapseBtn.setAttribute('aria-label', 'Show workspace panel');
-        }
-    }
-
-    // Handle right sidebar state
-    if (uiStateData.rightSidebarExpanded === false) {
-        rightSidebar.classList.add('collapsed');
-        const rightCollapseBtn = rightSidebar.querySelector('.sidebar-collapse-btn');
-        if (rightCollapseBtn) {
-            const icon = rightCollapseBtn.querySelector('i');
-            const hint = rightCollapseBtn.querySelector('.collapse-hint');
-            icon.className = 'fas fa-fw fa-chevron-left';
-            hint.textContent = 'Show';
-            rightCollapseBtn.setAttribute('title', 'Show tools panel (Alt+2)');
-            rightCollapseBtn.setAttribute('aria-label', 'Show tools panel');
-        }
-    }
-}
-
-// --- Enhanced Quick Actions ---
-const defaultQuickActions = [
-    { action: 'uppercase', label: 'Uppercase', icon: 'fa-font' },
-    { action: 'lowercase', label: 'Lowercase', icon: 'fa-text-height' },
-    { action: 'word-count-quick', label: 'Full Report', icon: 'fa-chart-bar' },
-    { action: 'find-replace-quick', label: 'Find/Replace', icon: 'fa-search-plus' },
-];
-
-function renderQuickActions(order) {
-    elements.quickActionsContainer.innerHTML = '';
-    order.forEach(actionKey => {
-        const actionConfig = defaultQuickActions.find(qa => qa.action === actionKey);
-        if (actionConfig) {
-            const item = document.createElement('div');
-            item.className = 'quick-action-item';
-            item.draggable = true;
-            item.dataset.action = actionConfig.action;
-            item.tabIndex = 0;
-            item.role = 'button';
-            item.setAttribute('aria-label', actionConfig.label);
-            item.innerHTML = `<button class="btn btn-secondary text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5" tabindex="-1">
-                <i class="fas ${actionConfig.icon} fa-fw"></i>
-                <span class="hidden md:inline ml-1.5">${actionConfig.label}</span>
-            </button>`;
-            item.addEventListener('click', () => handleQuickActionClick(actionConfig.action));
-            elements.quickActionsContainer.appendChild(item);
-        }
-    });
-}
-
-function handleQuickActionClick(action) {
-    switch(action) {
-        case 'uppercase': 
-            applyTransformation('uppercase'); 
-            break;
-        case 'lowercase': 
-            applyTransformation('lowercase'); 
-            break;
-        case 'find-replace-quick': 
-            document.getElementById('section-findReplace')?.classList.remove('collapsed');
-            setTimeout(() => document.getElementById('findInput')?.focus(), 100);
-            showStatus('Find/Replace opened', 1500, 'success');
-            break;
-        case 'word-count-quick': 
-            generateReport();
-            break;
-        default: 
-            console.warn('Unknown quick action:', action);
-    }
-}
-
-function setupDragAndDropForQuickActions() {
-    let draggedElement = null;
-    
-    elements.quickActionsContainer.addEventListener('dragstart', e => { 
-        if (e.target.classList.contains('quick-action-item')) { 
-            draggedElement = e.target; 
-            setTimeout(() => e.target.setAttribute('data-dragging', 'true'), 0); 
-        } 
-    });
-    
-    elements.quickActionsContainer.addEventListener('dragend', () => { 
-        if (draggedElement) { 
-            draggedElement.setAttribute('data-dragging', 'false'); 
-            draggedElement = null; 
-            saveUIState();
-        } 
-    });
-    
-    elements.quickActionsContainer.addEventListener('dragover', e => { 
-        e.preventDefault(); 
-        const target = e.target.closest('.quick-action-item'); 
-        if (target && draggedElement && target !== draggedElement) { 
-            const rect = target.getBoundingClientRect(); 
-            const next = (e.clientX - rect.left) / rect.width > 0.5; 
-            elements.quickActionsContainer.insertBefore(draggedElement, next ? target.nextSibling : target); 
-        } 
-    });
-    
-    elements.quickActionsContainer.addEventListener('keydown', e => {
-        if(!['ArrowLeft', 'ArrowRight', 'Enter', ' '].includes(e.key)) return;
-        const currentItem = document.activeElement;
-        if (!currentItem || !currentItem.classList.contains('quick-action-item')) return;
-        
-        e.preventDefault();
-        if (e.key === 'Enter' || e.key === ' ') { 
-            const isGrabbed = currentItem.getAttribute('aria-grabbed') === 'true'; 
-            currentItem.setAttribute('aria-grabbed', String(!isGrabbed)); 
-            if (isGrabbed) saveUIState(); 
-        } else if (currentItem.getAttribute('aria-grabbed') === 'true') {
-            if (e.key === 'ArrowRight' && currentItem.nextElementSibling) {
-                currentItem.parentNode.insertBefore(currentItem, currentItem.nextElementSibling.nextSibling);
-            } else if (e.key === 'ArrowLeft' && currentItem.previousElementSibling) {
-                currentItem.parentNode.insertBefore(currentItem, currentItem.previousElementSibling);
-            }
-            currentItem.focus();
-        }
-    });
-}
-
-function loadQuickActionOrder() {
-    try {
-        const uiState = safeLocalStorageOperation('get', 'textman_uiState');
-        if (uiState) {
-            const parsed = JSON.parse(uiState);
-            if (parsed.quickActionOrder && Array.isArray(parsed.quickActionOrder)) {
-                renderQuickActions(parsed.quickActionOrder);
-                return;
-            }
-        }
-    } catch (e) {
-        console.error('Error loading quick action order:', e);
-    }
-    
-    // Fall back to defaults
-    renderQuickActions(defaultQuickActions.map(qa => qa.action));
-}
-
-// --- Enhanced Text Transformation Functions ---
-function applyTransformation(type) {
-    const text = elements.textArea.value; 
-    if (!text && type !== 'add-line-numbers') { 
-        showStatus('No text to transform', 2000, 'warning'); 
-        return; 
-    }
-    addToHistory(`Transform: ${type}`, text); 
-    let transformed = text;
-    const fns = {
-        uppercase: s => s.toUpperCase(), 
-        lowercase: s => s.toLowerCase(),
-        title: s => s.replace(/\b\w/g, l => l.toUpperCase()),
-        sentence: s => s.toLowerCase().replace(/(^\s*\w|[.!?…]\s*\w)/g, c => c.toUpperCase()),
-        camel: s => s.replace(/[\s_-]+(.)?/g, (_, c) => c ? c.toUpperCase() : '').replace(/^(.)/, c => c.toLowerCase()),
-        pascal: s => s.replace(/[\s_-]+(.)?/g, (_, c) => c ? c.toUpperCase() : '').replace(/^(.)/, c => c.toUpperCase()),
-        snake: s => s.replace(/([A-Z])/g, "_$1").replace(/[\s-]+/g, '_').toLowerCase().replace(/^_+|_+$/g, ''),
-        kebab: s => s.replace(/([A-Z])/g, "-$1").replace(/[\s_]+/g, '-').toLowerCase().replace(/^-+|-+$/g, ''),
-    };
-    if(fns[type]) transformed = fns[type](text);
-    elements.textArea.value = transformed; 
-    handleTextInput(); 
-    showStatus(`Applied ${type} case`, 2000, 'success');
-}
-
-function applyFormatting(type) {
-    const text = elements.textArea.value; 
-    if (!text && type !== 'add-line-numbers') { 
-        showStatus('No text to format', 2000, 'warning'); 
-        return; 
-    }
-    addToHistory(`Format: ${type}`, text); 
-    let formatted = text;
-    const fns = {
-        'trim': s => s.trim(), 
-        'remove-extra-spaces': s => s.replace(/\s+/g, ' ').trim(),
-        'remove-line-breaks': s => s.replace(/\r?\n/g, ' ').trim(),
-        'add-line-numbers': s => s.split('\n').map((l, i) => `${(i+1).toString().padStart(s.split('\n').length.toString().length, '0')}: ${l}`).join('\n'),
-        'remove-empty-lines': s => s.split('\n').filter(l => l.trim()).join('\n'),
-        'sort-lines': s => s.split('\n').sort((a, b) => a.localeCompare(b)).join('\n'),
-        'reverse-lines': s => s.split('\n').reverse().join('\n'),
-        'shuffle-lines': s => { 
-            const l=s.split('\n'); 
-            for(let i=l.length-1;i>0;i--){
-                const j=Math.floor(Math.random()*(i+1));
-                [l[i],l[j]]=[l[j],l[i]];
-            } 
-            return l.join('\n'); 
-        },
-        'remove-duplicates': s => [...new Set(s.split('\n'))].join('\n'),
-    };
-    if(fns[type]) formatted = fns[type](text);
-    elements.textArea.value = formatted; 
-    handleTextInput(); 
-    showStatus(`Formatted: ${type.replace(/-/g, ' ')}`, 2000, 'success');
-}
-
-function applyManipulation(type) {
-    const text = elements.textArea.value; 
-    if (!text) { 
-        showStatus('No text to manipulate', 2000, 'warning'); 
-        return; 
-    }
-    let manipulated = text;
-    try {
-        addToHistory(`Manipulate: ${type}`, text);
-        const fns = {
-            'reverse': s => s.split('').reverse().join(''),
-            'rot13': s => s.replace(/[a-zA-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() < 'n' ? 13 : -13))),
-            'base64-encode': s => btoa(unescape(encodeURIComponent(s))),
-            'base64-decode': s => decodeURIComponent(escape(atob(s))),
-            'url-encode': s => encodeURIComponent(s), 
-            'url-decode': s => decodeURIComponent(s),
-            'html-encode': s => { 
-                const d=document.createElement('div'); 
-                d.textContent=s; 
-                return d.innerHTML; 
-            },
-            'html-decode': s => { 
-                const d=document.createElement('div'); 
-                d.innerHTML=s; 
-                return d.textContent; 
-            },
-            'extract-emails': s => (s.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || []).join('\n') || 'No emails found',
-            'extract-urls': s => (s.match(/https?:\/\/[^\s$.?#].[^\s]*/g) || []).join('\n') || 'No URLs found',
-        };
-        if(fns[type]) manipulated = fns[type](text);
-        elements.textArea.value = manipulated; 
-        handleTextInput(); 
-        showStatus(`Applied: ${type.replace(/-/g, ' ')}`, 2000, 'success');
-    } catch (e) { 
-        showStatus(`Error with ${type}: ${e.message}`, 5000, 'error'); 
-        console.error(`Error in ${type}:`, e);
-    }
-}
-
-function findAndReplace(isReplaceAll) {
-    const findInput = document.getElementById('findInput'); 
-    const replaceInput = document.getElementById('replaceInput');
-    if (!findInput || !replaceInput) {
-        showStatus("Find/Replace inputs not found.", 3000, 'error');
-        return;
-    }
-
-    const findText = findInput.value; 
-    if (!findText) { 
-        showStatus('Enter text to find', 2000, 'warning'); 
-        return; 
-    }
-    const replaceText = replaceInput.value; 
-    const text = elements.textArea.value;
-    const useRegex = document.getElementById('useRegex')?.checked || false; 
-    const caseSensitive = document.getElementById('caseSensitive')?.checked || false;
-    
-    try {
-        const flags = (isReplaceAll ? 'g' : '') + (caseSensitive ? '' : 'i');
-        const pattern = useRegex ? new RegExp(findText, flags) : new RegExp(findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
-        
-        let matchCount = 0;
-        const newText = text.replace(pattern, (match) => {
-            matchCount++;
-            return replaceText;
-        });
-
-        if (matchCount === 0) { 
-            showStatus('No matches found', 2000, 'warning'); 
-            return; 
-        }
-        
-        addToHistory(isReplaceAll ? 'Replace All' : 'Replace', text);
-        elements.textArea.value = newText; 
-        handleTextInput(); 
-        showStatus(`Replaced ${matchCount} occurrence(s)`, 3000, 'success');
-    } catch(e) { 
-        showStatus(`Invalid Regex: ${e.message}`, 5000, 'error'); 
-        console.error("Regex error:", e);
-    }
-}
-
-// File handling
-function handleFileImport(e) {
-    const file = e.target.files[0]; 
-    if (!file) return; 
-    
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        showStatus('File too large. Maximum size is 5MB.', 3000, 'error');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (event) => { 
-        addToHistory('Import File', elements.textArea.value); 
-        elements.textArea.value = event.target.result; 
-        handleTextInput(); 
-        showStatus(`Imported ${file.name} (${file.size.toLocaleString()} bytes)`, 3000, 'success'); 
-    };
-    reader.onerror = () => showStatus('Failed to read file', 5000, 'error'); 
-    reader.readAsText(file); 
-    e.target.value = '';
-}
-
-function exportText(format) {
-    const text = elements.textArea.value; 
-    if (!text) { 
-        showStatus('No text to export', 2000, 'warning'); 
-        return; 
-    }
-    if (format === 'pdf') { 
-        exportPDF(); 
-        return; 
-    }
-    
-    let content, mimeType, filename; 
-    const date = new Date().toISOString().slice(0,10);
-    const stats = {
-        chars: text.length,
-        words: text.trim().split(/\s+/).filter(Boolean).length,
-        lines: text.split('\n').length,
-        exported: new Date().toISOString()
-    };
-    
-    switch (format) {
-        case 'txt': 
-            content = text; 
-            mimeType = 'text/plain'; 
-            filename = `textman-export-${date}.txt`; 
-            break;
-        case 'json': 
-            content = JSON.stringify({ text, metadata: stats }, null, 2); 
-            mimeType = 'application/json'; 
-            filename = `textman-export-${date}.json`; 
-            break;
-        case 'csv': 
-            content = `"text","characters","words","lines","exported"\n"${text.replace(/"/g, '""')}","${stats.chars}","${stats.words}","${stats.lines}","${stats.exported}"`; 
-            mimeType = 'text/csv'; 
-            filename = `textman-export-${date}.csv`; 
-            break;
-        default: 
-            showStatus('Unknown export format', 3000, 'error'); 
-            return;
-    }
-    
-    const blob = new Blob([content], { type: mimeType }); 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); 
-    a.href = url; 
-    a.download = filename; 
-    document.body.appendChild(a);
-    a.click(); 
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url); 
-    showStatus(`Exported as ${format.toUpperCase()} (${blob.size.toLocaleString()} bytes)`, 3000, 'success');
-}
-
-function exportPDF() {
-    const text = elements.textArea.value; 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-        showStatus('Popup blocked. Please allow popups for PDF export.', 5000, 'error');
-        return;
-    }
-    
-    const stats = {
-        chars: text.length,
-        words: text.trim().split(/\s+/).filter(Boolean).length,
-        lines: text.split('\n').length,
-    };
-    
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>textMan Export - ${new Date().toLocaleDateString()}</title>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
-                .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-                .stats { background: #f5f5f5; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9em; }
-                .content { white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; }
-                @media print { .no-print { display: none; } }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>textMan Document Export</h1>
-                <p>Generated on ${new Date().toLocaleString()}</p>
-            </div>
-            <div class="stats">
-                <strong>Document Statistics:</strong> 
-                ${stats.chars.toLocaleString()} characters, 
-                ${stats.words.toLocaleString()} words, 
-                ${stats.lines.toLocaleString()} lines
-            </div>
-            <div class="content">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
-        </body>
-        </html>`);
-    printWindow.document.close(); 
-    printWindow.onload = () => { 
-        try { 
-            printWindow.print(); 
-            showStatus('PDF export initiated', 2000, 'success');
-        } catch(e) { 
-            console.error("Print failed", e); 
-            showStatus("PDF generation failed. Try printing manually.", 5000, 'error');
-        } 
-    }
-}
-
-// --- Enhanced Modals ---
-function showHelp() { 
-    const content = `
-        <div class="space-y-6">
-            <div class="text-center">
-                <i class="fas fa-rocket text-4xl text-green-500 mb-3"></i>
-                <p class="text-lg font-medium">Welcome to textMan!</p>
-                <p class="text-sm" style="color: var(--text-muted)">Your comprehensive text manipulation toolkit</p>
-            </div>
-            
-            <div class="space-y-4">
-                <div class="border-l-4 border-green-500 pl-4">
-                    <h4 class="font-semibold text-green-500 mb-2">🏢 Workspace (Left Panel)</h4>
-                    <ul class="text-sm space-y-1" style="color: var(--text-secondary)">
-                        <li><strong>History:</strong> Track and restore previous text versions</li>
-                        <li><strong>Templates:</strong> Quick access to common document formats</li>
-                        <li><strong>Saved Texts:</strong> Store and organize important snippets</li>
-                    </ul>
-                </div>
-                
-                <div class="border-l-4 border-blue-500 pl-4">
-                    <h4 class="font-semibold text-blue-500 mb-2">🛠️ Tools (Right Panel)</h4>
-                    <ul class="text-sm space-y-1" style="color: var(--text-secondary)">
-                        <li><strong>Quick Analysis:</strong> Comprehensive text statistics and insights</li>
-                        <li><strong>Case Transform:</strong> Change text casing (upper, lower, camel, etc.)</li>
-                        <li><strong>Find & Replace:</strong> Search and replace with regex support</li>
-                        <li><strong>Text Operations:</strong> Format, sort, and manipulate text lines</li>
-                        <li><strong>Encode/Decode:</strong> Base64, URL, HTML encoding and more</li>
-                        <li><strong>Import/Export:</strong> Load files and save in various formats</li>
-                    </ul>
-                </div>
-                
-                <div class="border-l-4 border-purple-500 pl-4">
-                    <h4 class="font-semibold text-purple-500 mb-2">⚡ Quick Actions Bar</h4>
-                    <p class="text-sm" style="color: var(--text-secondary)">
-                        Central toolbar with your most-used functions. Drag to reorder and customize your workflow.
-                    </p>
-                </div>
-                
-                <div class="border-l-4 border-orange-500 pl-4">
-                    <h4 class="font-semibold text-orange-500 mb-2">💡 Pro Tips</h4>
-                    <ul class="text-sm space-y-1" style="color: var(--text-secondary)">
-                        <li>• Use <kbd class="px-1 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-700">Alt+1</kbd> and <kbd class="px-1 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-700">Alt+2</kbd> to toggle panels</li>
-                        <li>• Auto-save keeps your work safe as you type</li>
-                        <li>• All data is stored locally in your browser</li>
-                        <li>• Use Ctrl+F to quickly open Find & Replace</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="text-center pt-4 border-t" style="border-color: var(--border-primary)">
-                <p class="text-xs" style="color: var(--text-muted)">
-                    <i class="fas fa-heart text-red-500"></i> 
-                    Built with care for writers, developers, and content creators
-                </p>
-            </div>
-        </div>`;
-    
-    showModal('📚 Help & Guide', content, [{ text: 'Got it!', class: 'btn-primary', callback: hideModal }]);
-}
-
-function showShortcuts() { 
-    const content = `
-        <div class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="font-semibold text-green-500 mb-3 border-b border-green-500/30 pb-1">⌨️ Text Editing</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between items-center">
-                            <span>Undo</span>
-                            <kbd class="kbd">Ctrl + Z</kbd>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Redo</span>
-                            <kbd class="kbd">Ctrl + Y</kbd>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Save Snippet</span>
-                            <kbd class="kbd">Ctrl + S</kbd>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Find & Replace</span>
-                            <kbd class="kbd">Ctrl + F</kbd>
-                        </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <h4 class="font-semibold text-blue-500 mb-3 border-b border-blue-500/30 pb-1">🎛️ Interface</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between items-center">
-                            <span>Toggle Workspace</span>
-                            <kbd class="kbd">Alt + 1</kbd>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Toggle Tools</span>
-                            <kbd class="kbd">Alt + 2</kbd>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Close Modal</span>
-                            <kbd class="kbd">Escape</kbd>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Submit Form</span>
-                            <kbd class="kbd">Enter</kbd>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div>
-                <h4 class="font-semibold text-purple-500 mb-3 border-b border-purple-500/30 pb-1">🚀 Quick Actions</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span>Uppercase</span>
-                            <span class="text-xs px-2 py-1 rounded" style="background: var(--bg-tertiary)">Quick Action</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Lowercase</span>
-                            <span class="text-xs px-2 py-1 rounded" style="background: var(--bg-tertiary)">Quick Action</span>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span>Full Report</span>
-                            <span class="text-xs px-2 py-1 rounded" style="background: var(--bg-tertiary)">Quick Action</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Find/Replace</span>
-                            <span class="text-xs px-2 py-1 rounded" style="background: var(--bg-tertiary)">Quick Action</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-                <div class="flex items-start gap-3">
-                    <i class="fas fa-lightbulb text-yellow-500 mt-0.5"></i>
-                    <div>
-                        <h5 class="font-medium text-yellow-800 dark:text-yellow-200">Power User Tips</h5>
-                        <ul class="text-xs mt-2 space-y-1 text-yellow-700 dark:text-yellow-300">
-                            <li>• Drag quick action buttons to reorder them</li>
-                            <li>• Use keyboard navigation in dialogs for faster workflow</li>
-                            <li>• Press Enter in input fields to submit forms quickly</li>
-                            <li>• Collapse unused panels to focus on your text</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <style>
-            .kbd {
-                display: inline-block;
-                padding: 0.25rem 0.5rem;
-                font-size: 0.75rem;
-                font-family: ui-monospace, monospace;
-                background: var(--bg-tertiary);
-                border: 1px solid var(--border-secondary);
-                border-radius: 0.25rem;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            }
-        </style>`;
-    
-    showModal('⌨️ Keyboard Shortcuts', content, [{ text: 'Close', class: 'btn-primary', callback: hideModal }]);
-}
-
-function showSettingsModal() {
-    const autoSaveChecked = appState.autoSaveEnabled ? 'checked' : '';
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    
-    const content = `
-        <div class="space-y-6">
-            <div class="space-y-4">
-                <h4 class="font-semibold text-green-500 border-b border-green-500/30 pb-1">⚙️ Application Settings</h4>
-                
-                <label class="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" style="border-color: var(--border-primary)">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-save text-blue-500"></i>
-                        <div>
-                            <div class="font-medium">Auto-save</div>
-                            <div class="text-xs" style="color: var(--text-muted)">Automatically save your work as you type</div>
-                        </div>
-                    </div>
-                    <input type="checkbox" id="autoSaveToggle" class="form-checkbox" ${autoSaveChecked}>
-                </label>
-                
-                <div class="p-3 rounded-lg border" style="border-color: var(--border-primary); background: var(--bg-tertiary)">
-                    <div class="flex items-center gap-3 mb-2">
-                        <i class="fas fa-palette text-purple-500"></i>
-                        <div class="font-medium">Theme</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="theme-option ${currentTheme === 'dark' ? 'active' : ''}" data-theme="dark">
-                            <i class="fas fa-moon"></i> Dark
-                        </button>
-                        <button class="theme-option ${currentTheme === 'light' ? 'active' : ''}" data-theme="light">
-                            <i class="fas fa-sun"></i> Light
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="p-3 rounded-lg border" style="border-color: var(--border-primary); background: var(--bg-tertiary)">
-                    <div class="flex items-center gap-3 mb-2">
-                        <i class="fas fa-trash-alt text-red-500"></i>
-                        <div class="font-medium">Clear Data</div>
-                    </div>
-                    <p class="text-xs mb-3" style="color: var(--text-muted)">Remove all saved texts, history, and settings from your browser</p>
-                    <button class="btn btn-secondary w-full" onclick="clearAllData()">
-                        <i class="fas fa-eraser"></i> Clear All Local Data
-                    </button>
-                </div>
-            </div>
-            
-            <div class="text-center pt-4 border-t" style="border-color: var(--border-primary)">
-                <p class="text-xs" style="color: var(--text-muted)">
-                    All data is stored locally in your browser
-                </p>
-            </div>
-        </div>
-        
-        <style>
-            .theme-option {
-                padding: 0.5rem 1rem;
-                border: 1px solid var(--border-secondary);
-                border-radius: 0.5rem;
-                background: var(--bg-primary);
-                color: var(--text-secondary);
-                transition: all 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0.5rem;
-                font-size: 0.875rem;
-            }
-            .theme-option:hover {
-                border-color: var(--accent-primary);
-                color: var(--accent-primary);
-            }
-            .theme-option.active {
-                background: var(--accent-primary);
-                border-color: var(--accent-primary);
-                color: white;
-            }
-        </style>`;
-        
-    showModal('⚙️ Settings', content, [
-        { text: 'Close', class: 'btn-secondary', callback: hideModal },
-        { text: 'Save Settings', class: 'btn-primary', callback: () => {
-            const newAutoSaveStatus = document.getElementById('autoSaveToggle').checked;
-            if (newAutoSaveStatus !== appState.autoSaveEnabled) {
-                appState.autoSaveEnabled = newAutoSaveStatus;
-                elements.autoSaveStatus.innerHTML = `<i class="fas fa-save fa-fw"></i> Auto-save: ${appState.autoSaveEnabled ? 'On' : 'Off'}`;
-                saveUIState();
-                showStatus(`Auto-save turned ${appState.autoSaveEnabled ? 'On' : 'Off'}`, 2000, 'success');
-            }
-            hideModal();
-        }}
-    ], () => {
-        // Theme switching
-        document.querySelectorAll('.theme-option').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const selectedTheme = btn.dataset.theme;
-                if (selectedTheme !== document.documentElement.getAttribute('data-theme')) {
-                    document.documentElement.setAttribute('data-theme', selectedTheme);
-                    elements.themeToggle.querySelector('i').className = `fas fa-fw theme-icon ${selectedTheme === 'dark' ? 'fa-moon' : 'fa-sun'}`;
-                    
-                    document.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    saveUIState();
-                    showStatus(`Switched to ${selectedTheme} theme`, 1500, 'success');
-                }
-            });
-        });
-    });
-}
-
-// Clear all data function
-function clearAllData() {
-    showModal('Confirm Clear All Data', 
-        `<p style="color: var(--text-secondary)">Are you sure you want to clear all data? This will remove:</p>
-        <ul style="margin: 16px 0; padding-left: 24px; color: var(--text-muted)">
-            <li>All saved text snippets</li>
-            <li>All history entries</li>
-            <li>Current text in editor</li>
-            <li>All settings and preferences</li>
-        </ul>
-        <p style="color: var(--danger)"><strong>This action cannot be undone!</strong></p>`,
-        [
-            { text: 'Cancel', class: 'btn-secondary', callback: hideModal },
-            { text: 'Clear Everything', class: 'btn-primary btn-delete', callback: () => {
-                // Clear all localStorage
-                localStorage.clear();
-                
-                // Reset app state
-                appState.currentText = '';
-                appState.undoStack = [];
-                appState.redoStack = [];
-                appState.autoSaveEnabled = true;
-                appState.analyticsCache = null;
-                
-                // Clear text area
-                elements.textArea.value = '';
-                
-                // Reload the page to reset everything
-                showStatus('All data cleared. Reloading...', 2000, 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            }}
-        ]
-    );
-}
-
-// --- Enhanced Templates with More Comprehensive Content ---
-const templates = { 
-    'Email': { 
-        icon: 'fa-envelope', 
-        content: `Subject: [Your Subject Here]
-
-Dear [Recipient Name],
-
-I hope this email finds you well. I am writing to [briefly state your purpose].
-
-[Main body of your message - provide context, details, and any necessary information]
-
-[If requesting action]: I would appreciate it if you could [specific request] by [deadline if applicable].
-
-Please let me know if you need any additional information or have any questions.
-
-Thank you for your time and consideration.
-
-Best regards,
-[Your Name]
-[Your Title]
-[Your Contact Information]`
-    }, 
-    'Meeting Notes': { 
-        icon: 'fa-users', 
-        content: `Meeting Notes
-===========
-
-📅 Date: [Date]
-🕐 Time: [Start Time] - [End Time]
-📍 Location: [Location/Virtual Link]
-✍️ Recorded by: [Your Name]
-
-Attendees:
-----------
-• [Name 1] - [Title/Role]
-• [Name 2] - [Title/Role]
-• [Name 3] - [Title/Role]
-
-Agenda:
--------
-1. [Topic 1]
-2. [Topic 2]
-3. [Topic 3]
-
-Discussion Points:
-------------------
-🔹 [Key discussion point 1]
-   • [Detail or decision]
-   • [Follow-up needed]
-
-🔹 [Key discussion point 2]
-   • [Detail or decision]
-   • [Follow-up needed]
-
-Decisions Made:
----------------
-✅ [Decision 1]
-✅ [Decision 2]
-✅ [Decision 3]
-
-Action Items:
--------------
-📋 [Task/Action] - Assigned to: [Name] - Due: [Date]
-📋 [Task/Action] - Assigned to: [Name] - Due: [Date]
-📋 [Task/Action] - Assigned to: [Name] - Due: [Date]
-
-Next Meeting:
--------------
-📅 Date: [Next meeting date]
-🕐 Time: [Time]
-📝 Agenda Preview: [Brief overview]
-
-Additional Notes:
------------------
-[Any other relevant information, concerns, or observations]`
-    },
-    'Project Plan': {
-        icon: 'fa-tasks',
-        content: `Project Plan: [Project Name]
-==============================
-
-📊 Project Overview:
---------------------
-🎯 Objective: [Clear project goal]
-📅 Start Date: [Date]
-📅 Target Completion: [Date]
-👥 Team Size: [Number] members
-💰 Budget: [Amount if applicable]
-
-🎯 Goals & Objectives:
-----------------------
-• Primary Goal: [Main objective]
-• Secondary Goals:
-  - [Goal 1]
-  - [Goal 2]
-  - [Goal 3]
-
-👥 Team & Responsibilities:
----------------------------
-🏆 Project Manager: [Name]
-👩‍💻 Lead Developer: [Name]
-🎨 Designer: [Name]
-🧪 QA Lead: [Name]
-📊 Stakeholder: [Name]
-
-📋 Project Phases:
-------------------
-
-Phase 1: Planning & Research
-📅 Duration: [Timeframe]
-📝 Deliverables:
-• [Deliverable 1]
-• [Deliverable 2]
-
-Phase 2: Development
-📅 Duration: [Timeframe]
-📝 Deliverables:
-• [Deliverable 1]
-• [Deliverable 2]
-
-Phase 3: Testing & Review
-📅 Duration: [Timeframe]
-📝 Deliverables:
-• [Deliverable 1]
-• [Deliverable 2]
-
-Phase 4: Launch & Deployment
-📅 Duration: [Timeframe]
-📝 Deliverables:
-• [Deliverable 1]
-• [Deliverable 2]
-
-⚠️ Risk Assessment:
--------------------
-🔴 High Risk: [Risk description] - Mitigation: [Strategy]
-🟡 Medium Risk: [Risk description] - Mitigation: [Strategy]
-🟢 Low Risk: [Risk description] - Mitigation: [Strategy]
-
-📊 Success Metrics:
--------------------
-• [Metric 1]: [Target value]
-• [Metric 2]: [Target value]
-• [Metric 3]: [Target value]
-
-📞 Communication Plan:
-----------------------
-• Daily Standups: [Time/Day]
-• Weekly Reviews: [Time/Day]
-• Monthly Reports: [Schedule]
-• Stakeholder Updates: [Frequency]
-
-💡 Additional Notes:
---------------------
-[Any other relevant project information, constraints, or considerations]`
-    },
-    'Blog Post': {
-        icon: 'fa-blog',
-        content: `[Blog Post Title]
-================
-
-📝 Meta Description: [Brief description for SEO - 150-160 characters]
-🏷️ Tags: [tag1], [tag2], [tag3]
-📅 Published: [Date]
-✍️ Author: [Your Name]
-
-Introduction
-------------
-[Hook your readers with an engaging opening paragraph. Present the problem or question your post will address.]
-
-[Brief overview of what readers will learn or gain from this post.]
-
-Main Content
-------------
-
-### [Subheading 1]
-[Detailed content for this section. Use clear, concise language and provide value to your readers.]
-
-Key points:
-• [Point 1]
-• [Point 2]
-• [Point 3]
-
-### [Subheading 2]
-[Continue with more detailed content. Include examples, case studies, or practical tips.]
-
-> "Include relevant quotes or important callouts in blockquotes."
-
-### [Subheading 3]
-[Additional content sections as needed. Keep paragraphs short and scannable.]
-
-📊 Quick Tips:
---------------
-✅ [Actionable tip 1]
-✅ [Actionable tip 2]
-✅ [Actionable tip 3]
-✅ [Actionable tip 4]
-
-Conclusion
-----------
-[Summarize the key takeaways from your post. Reinforce the main message and provide a clear call-to-action.]
-
-What's your experience with [topic]? Share your thoughts in the comments below!
-
----
-
-📚 Related Resources:
-• [Link/Resource 1]
-• [Link/Resource 2]
-• [Link/Resource 3]
-
-#[hashtag1] #[hashtag2] #[hashtag3]`
-    },
-    'Resume': {
-        icon: 'fa-file-alt',
-        content: `[Your Full Name]
-================
-
-📧 Email: [your.email@example.com]
-📱 Phone: [Your Phone Number]
-🌐 LinkedIn: [Your LinkedIn Profile]
-🏠 Location: [City, State]
-💼 Portfolio: [Your Website/Portfolio URL]
-
-Professional Summary
---------------------
-[2-3 sentences describing your professional background, key skills, and career objectives. Tailor this to the specific role you're applying for.]
-
-Core Competencies
------------------
-• [Skill 1] • [Skill 2] • [Skill 3]
-• [Skill 4] • [Skill 5] • [Skill 6]
-• [Skill 7] • [Skill 8] • [Skill 9]
-
-Professional Experience
------------------------
-
-**[Job Title]** | [Company Name] | [Start Date] - [End Date]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-
-**[Job Title]** | [Company Name] | [Start Date] - [End Date]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-
-**[Job Title]** | [Company Name] | [Start Date] - [End Date]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-• [Achievement/responsibility with quantifiable results]
-
-Education
----------
-**[Degree Type]** in [Field of Study]
-[University Name] | [Graduation Year]
-• [Relevant coursework, honors, or achievements]
-
-Certifications & Training
--------------------------
-• [Certification Name] | [Issuing Organization] | [Year]
-• [Certification Name] | [Issuing Organization] | [Year]
-• [Training/Course Name] | [Year]
-
-Projects & Achievements
------------------------
-**[Project Name]** | [Year]
-• [Brief description and your role]
-• [Key technologies/skills used]
-• [Results or impact]
-
-**[Achievement/Award]** | [Year]
-• [Description of achievement and its significance]
-
-Languages
----------
-• [Language]: [Proficiency Level]
-• [Language]: [Proficiency Level]
-
-Volunteer Experience
---------------------
-**[Role]** | [Organization] | [Dates]
-• [Description of volunteer work and impact]
-
----
-References available upon request`
-    },
-    'Technical Documentation': {
-        icon: 'fa-code',
-        content: `# [Project/API Name] Documentation
-
-## Overview
-Brief description of what this project/API does and its main purpose.
-
-**Version:** 1.0.0  
-**Last Updated:** [Date]  
-**Maintained by:** [Team/Author Name]
-
-## Table of Contents
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [API Reference](#api-reference)
-- [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-
-## Installation
-
-### Prerequisites
-- [Requirement 1] (version X.X or higher)
-- [Requirement 2]
-- [Requirement 3]
-
-### Quick Start
-\`\`\`bash
-# Clone the repository
-git clone [repository-url]
-
-# Navigate to directory
-cd [project-directory]
-
-# Install dependencies
-npm install
-
-# Start the application
-npm start
-\`\`\`
-
-## Configuration
-
-### Environment Variables
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| \`API_KEY\` | Your API key | - | Yes |
-| \`PORT\` | Port number | 3000 | No |
-| \`DEBUG\` | Enable debug mode | false | No |
-
-### Configuration File
-Create a \`config.json\` file in the root directory:
-
-\`\`\`json
-{
-  "apiKey": "your-api-key",
-  "baseUrl": "https://api.example.com",
-  "timeout": 5000
-}
-\`\`\`
-
-## Usage
-
-### Basic Usage
-\`\`\`javascript
-const [ProjectName] = require('[package-name]');
-
-const client = new [ProjectName]({
-  apiKey: 'your-api-key'
-});
-
-// Basic example
-const result = await client.getData();
-console.log(result);
-\`\`\`
-
-### Advanced Usage
-\`\`\`javascript
-// More complex example
-const options = {
-  filter: 'active',
-  limit: 10,
-  sort: 'created_at'
-};
-
-const data = await client.query(options);
-\`\`\`
-
-## API Reference
-
-### \`getData(options)\`
-Retrieves data based on specified criteria.
-
-**Parameters:**
-- \`options\` (Object, optional)
-  - \`filter\` (String): Filter criteria
-  - \`limit\` (Number): Maximum results (default: 100)
-  - \`offset\` (Number): Results offset (default: 0)
-
-**Returns:** Promise<Array> - Array of data objects
-
-**Example:**
-\`\`\`javascript
-const data = await client.getData({
-  filter: 'status:active',
-  limit: 50
-});
-\`\`\`
-
-### \`createItem(data)\`
-Creates a new item.
-
-**Parameters:**
-- \`data\` (Object, required)
-  - \`name\` (String): Item name
-  - \`description\` (String, optional): Item description
-
-**Returns:** Promise<Object> - Created item object
-
-## Examples
-
-### Example 1: Basic Data Retrieval
-\`\`\`javascript
-// Fetch all active items
-const activeItems = await client.getData({
-  filter: 'status:active'
-});
-
-console.log(\`Found \${activeItems.length} active items\`);
-\`\`\`
-
-### Example 2: Error Handling
-\`\`\`javascript
-try {
-  const result = await client.createItem({
-    name: 'New Item',
-    description: 'This is a new item'
-  });
-  console.log('Item created:', result.id);
-} catch (error) {
-  console.error('Error creating item:', error.message);
-}
-\`\`\`
-
-## Troubleshooting
-
-### Common Issues
-
-**Error: "API key not provided"**
-- Make sure you've set the \`API_KEY\` environment variable
-- Verify the API key is correct and active
-
-**Error: "Connection timeout"**
-- Check your internet connection
-- Verify the API endpoint is accessible
-- Consider increasing the timeout value
-
-**Error: "Rate limit exceeded"**
-- Implement retry logic with exponential backoff
-- Consider upgrading your API plan
-
-### Debug Mode
-Enable debug mode to see detailed logs:
-
-\`\`\`bash
-DEBUG=true npm start
-\`\`\`
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: \`git checkout -b feature-name\`
-3. Commit changes: \`git commit -m 'Add feature'\`
-4. Push to branch: \`git push origin feature-name\`
-5. Submit a pull request
-
-### Development Setup
-\`\`\`bash
-# Install development dependencies
-npm install --dev
-
-# Run tests
-npm test
-
-# Run linting
-npm run lint
-\`\`\`
-
-## License
-[License Type] - see [LICENSE](LICENSE) file for details.
-
-## Support
-- 📧 Email: [support-email]
-- 💬 Discord: [discord-link]
-- 🐛 Issues: [github-issues-link]
-- 📖 Wiki: [wiki-link]`
-    }
-};
-
-// --- HTML Content Generators ---
-
-function getTemplatesHTML() { 
-    return `<div class="space-y-2">${Object.keys(templates).map(k => 
-        `<button class="tool-btn w-full text-left" data-template="${k}">
-            <i class="fas ${templates[k].icon} fa-fw"></i> ${k}
-        </button>`).join('')}</div>`;
-}
-
-function getQuickAnalysisHTML() {
-    return `
-        <div class="mini-analytics" id="miniAnalytics">
-            <div class="mini-stat">
-                <span class="mini-value" id="miniWords">0</span>
-                <span class="mini-label">Words</span>
-            </div>
-            <div class="mini-stat">
-                <span class="mini-value" id="miniChars">0</span>
-                <span class="mini-label">Chars</span>
-            </div>
-            <div class="mini-stat">
-                <span class="mini-value" id="miniTime">0m</span>
-                <span class="mini-label">Read</span>
-            </div>
-        </div>
-        <div class="space-y-2 mt-4">
-            <button class="tool-btn w-full" id="quickInsightsBtn">
-                <i class="fas fa-bolt fa-fw"></i> Quick Insights
-            </button>
-            <button class="tool-btn w-full" onclick="generateReport()">
-                <i class="fas fa-chart-line fa-fw"></i> Full Report
-            </button>
-        </div>`;
-}
-
-function getCaseToolsHTML() {
-    return `
-        <div class="tool-btn-grid">
-            <button class="tool-btn" data-transform="uppercase" title="Convert to UPPERCASE">
-                <i class="fas fa-font fa-fw"></i> UPPER
-            </button>
-            <button class="tool-btn" data-transform="lowercase" title="Convert to lowercase">
-                <i class="fas fa-text-height fa-fw"></i> lower
-            </button>
-            <button class="tool-btn" data-transform="title" title="Title Case">
-                <i class="fas fa-heading fa-fw"></i> Title
-            </button>
-            <button class="tool-btn" data-transform="sentence" title="Sentence case">
-                <i class="fas fa-paragraph fa-fw"></i> Sentence
-            </button>
-            <button class="tool-btn" data-transform="camel" title="camelCase">
-                <i class="fas fa-code fa-fw"></i> camel
-            </button>
-            <button class="tool-btn" data-transform="pascal" title="PascalCase">
-                <i class="fas fa-code fa-fw"></i> Pascal
-            </button>
-            <button class="tool-btn" data-transform="snake" title="snake_case">
-                <i class="fas fa-code fa-fw"></i> snake
-            </button>
-            <button class="tool-btn" data-transform="kebab" title="kebab-case">
-                <i class="fas fa-code fa-fw"></i> kebab
-            </button>
-        </div>`;
-}
-
-function getFindReplaceHTML() {
-    return `
-        <div class="space-y-3">
-            <div>
-                <label for="findInput" class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Find:</label>
-                <input type="text" id="findInput" class="form-input" placeholder="Text to find...">
-            </div>
-            <div>
-                <label for="replaceInput" class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Replace with:</label>
-                <input type="text" id="replaceInput" class="form-input" placeholder="Replacement text...">
-            </div>
-            <div class="flex gap-2 text-sm">
-                <label class="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" id="caseSensitive" class="form-checkbox">
-                    <span>Case sensitive</span>
-                </label>
-                <label class="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" id="useRegex" class="form-checkbox">
-                    <span>Regex</span>
-                </label>
-            </div>
-            <div class="flex gap-1">
-                <button class="btn btn-secondary flex-1 compact-btn" data-find-replace>
-                    <i class="fas fa-search fa-fw"></i> Replace
-                </button>
-                <button class="btn btn-primary flex-1 compact-btn" data-find-replace-all>
-                    <i class="fas fa-search-plus fa-fw"></i> Replace All
-                </button>
-            </div>
-        </div>`;
-}
-
-function getOpsToolsHTML() {
-    return `
-        <div class="space-y-2">
-            <h5 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-muted)">Format</h5>
-            <div class="tool-btn-grid">
-                <button class="tool-btn" data-format="trim" title="Remove leading/trailing spaces">
-                    <i class="fas fa-cut fa-fw"></i> Trim
-                </button>
-                <button class="tool-btn" data-format="remove-extra-spaces" title="Remove extra spaces">
-                    <i class="fas fa-compress fa-fw"></i> Spaces
-                </button>
-                <button class="tool-btn" data-format="remove-line-breaks" title="Remove line breaks">
-                    <i class="fas fa-minus fa-fw"></i> Breaks
-                </button>
-                <button class="tool-btn" data-format="add-line-numbers" title="Add line numbers">
-                    <i class="fas fa-list-ol fa-fw"></i> Numbers
-                </button>
-            </div>
-            
-            <h5 class="text-xs font-semibold uppercase tracking-wide mt-4" style="color: var(--text-muted)">Lines</h5>
-            <div class="tool-btn-grid">
-                <button class="tool-btn" data-format="remove-empty-lines" title="Remove empty lines">
-                    <i class="fas fa-eraser fa-fw"></i> Empty
-                </button>
-                <button class="tool-btn" data-format="sort-lines" title="Sort lines alphabetically">
-                    <i class="fas fa-sort-alpha-down fa-fw"></i> Sort
-                </button>
-                <button class="tool-btn" data-format="reverse-lines" title="Reverse line order">
-                    <i class="fas fa-sort-amount-up fa-fw"></i> Reverse
-                </button>
-                <button class="tool-btn" data-format="shuffle-lines" title="Shuffle lines randomly">
-                    <i class="fas fa-random fa-fw"></i> Shuffle
-                </button>
-                <button class="tool-btn" data-format="remove-duplicates" title="Remove duplicate lines">
-                    <i class="fas fa-filter fa-fw"></i> Unique
-                </button>
-            </div>
-        </div>`;
-}
-
-function getEncodeToolsHTML() {
-    return `
-        <div class="space-y-2">
-            <h5 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-muted)">Encoding</h5>
-            <div class="tool-btn-grid">
-                <button class="tool-btn" data-manipulate="base64-encode" title="Encode to Base64">
-                    <i class="fas fa-lock fa-fw"></i> B64 ↑
-                </button>
-                <button class="tool-btn" data-manipulate="base64-decode" title="Decode from Base64">
-                    <i class="fas fa-unlock fa-fw"></i> B64 ↓
-                </button>
-                <button class="tool-btn" data-manipulate="url-encode" title="URL encode">
-                    <i class="fas fa-link fa-fw"></i> URL ↑
-                </button>
-                <button class="tool-btn" data-manipulate="url-decode" title="URL decode">
-                    <i class="fas fa-unlink fa-fw"></i> URL ↓
-                </button>
-                <button class="tool-btn" data-manipulate="html-encode" title="HTML encode">
-                    <i class="fas fa-code fa-fw"></i> HTML ↑
-                </button>
-                <button class="tool-btn" data-manipulate="html-decode" title="HTML decode">
-                    <i class="fas fa-code fa-fw"></i> HTML ↓
-                </button>
-            </div>
-            
-            <h5 class="text-xs font-semibold uppercase tracking-wide mt-4" style="color: var(--text-muted)">Transform</h5>
-            <div class="tool-btn-grid">
-                <button class="tool-btn" data-manipulate="reverse" title="Reverse text">
-                    <i class="fas fa-exchange-alt fa-fw"></i> Reverse
-                </button>
-                <button class="tool-btn" data-manipulate="rot13" title="ROT13 cipher">
-                    <i class="fas fa-sync fa-fw"></i> ROT13
-                </button>
-            </div>
-            
-            <h5 class="text-xs font-semibold uppercase tracking-wide mt-4" style="color: var(--text-muted)">Extract</h5>
-            <div class="tool-btn-grid">
-                <button class="tool-btn" data-manipulate="extract-emails" title="Extract email addresses">
-                    <i class="fas fa-at fa-fw"></i> Emails
-                </button>
-                <button class="tool-btn" data-manipulate="extract-urls" title="Extract URLs">
-                    <i class="fas fa-globe fa-fw"></i> URLs
-                </button>
-            </div>
-        </div>`;
-}
-
-function getImportExportHTML() {
-    return `
-        <div class="space-y-3">
-            <div>
-                <h5 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted)">Import</h5>
-                <input type="file" id="fileInput" accept=".txt,.json,.csv,.md" style="display: none;">
-                <button class="btn btn-secondary w-full compact-btn" id="fileInputBtn">
-                    <i class="fas fa-upload fa-fw"></i> Import File
-                </button>
-                <p class="text-xs mt-1" style="color: var(--text-muted)">Supports: TXT, JSON, CSV, MD (max 5MB)</p>
-            </div>
-            
-            <div>
-                <h5 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted)">Export</h5>
-                <div class="space-y-1">
-                    <button class="export-btn" data-export="txt">
-                        <i class="fas fa-file-alt fa-fw"></i>
-                        <span>Plain Text (.txt)</span>
-                    </button>
-                    <button class="export-btn" data-export="json">
-                        <i class="fas fa-file-code fa-fw"></i>
-                        <span>JSON (.json)</span>
-                    </button>
-                    <button class="export-btn" data-export="csv">
-                        <i class="fas fa-file-csv fa-fw"></i>
-                        <span>CSV (.csv)</span>
-                    </button>
-                    <button class="export-btn" data-export="pdf">
-                        <i class="fas fa-file-pdf fa-fw"></i>
-                        <span>PDF (Print)</span>
-                    </button>
-                </div>
-            </div>
-        </div>`;
-}
-
-/**
- * Apply template to text area
- */
-function applyTemplate(templateName) {
-    const template = templates[templateName];
-    if (!template) {
-        showStatus('Template not found', 3000, 'error');
-        return;
-    }
-    
-    if (elements.textArea.value.trim()) {
-        showModal('Apply Template', 
-            `This will replace your current text with the "${templateName}" template. Continue?`,
-            [
-                { text: 'Cancel', class: 'btn-secondary', callback: hideModal },
-                { text: 'Apply Template', class: 'btn-primary', callback: () => {
-                    addToHistory(`Apply Template: ${templateName}`, elements.textArea.value);
-                    elements.textArea.value = template.content;
-                    handleTextInput();
-                    showStatus(`Applied ${templateName} template`, 2000, 'success');
-                    hideModal();
-                }}
-            ]
-        );
-    } else {
-        addToHistory(`Apply Template: ${templateName}`, elements.textArea.value);
-        elements.textArea.value = template.content;
-        handleTextInput();
-        showStatus(`Applied ${templateName} template`, 2000, 'success');
-    }
-}
-
-/**
- * Initialize tooltips
- */
-function initializeTooltips() {
-    // Simple tooltip implementation using title attributes
-    // The CSS already handles most of the tooltip styling via [data-tooltip]
-    document.querySelectorAll('[title]').forEach(element => {
-        // Enhance existing title tooltips with better positioning if needed
-        element.addEventListener('mouseenter', function() {
-            // Tooltip functionality is handled by CSS :hover states
-            // This is just for any additional tooltip logic if needed
-        });
-    });
-}
-
-/**
- * Safe localStorage operations with error handling
- */
-function safeLocalStorageOperation(operation, key, value = null) {
-    try {
-        switch (operation) {
-            case 'get':
-                return localStorage.getItem(key);
-            case 'set':
-                localStorage.setItem(key, value);
-                return true;
-            case 'remove':
-                localStorage.removeItem(key);
-                return true;
-            default:
-                return null;
-        }
-    } catch (e) {
-        console.error(`localStorage ${operation} failed:`, e);
-        if (operation === 'get') return null;
-        showStatus('Storage operation failed', 2000, 'warning');
-        return false;
-    }
-}
-
-// Start the application when DOM is ready
+// Initialize UI when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => ui.init());
 } else {
-    init();
+    ui.init();
 }
+
+// Add styles for custom elements
+const style = document.createElement('style');
+style.textContent = `
+.history-item, .saved-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.history-header, .saved-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.history-action, .saved-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.history-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.history-stats, .saved-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.modal-input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.settings-section {
+    margin-bottom: 24px;
+}
+
+.settings-section h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+.settings-options {
+    display: flex;
+    gap: 16px;
+}
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.settings-option input[type="radio"] {
+    accent-color: var(--color-primary);
+}
+
+.settings-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.settings-checkbox input[type="checkbox"] {
+    accent-color: var(--color-primary);
+}
+
+.settings-range {
+    width: 100%;
+    margin-bottom: 8px;
+    accent-color: var(--color-primary);
+}
+
+.danger-zone {
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.analytics-report {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.analytics-section {
+    margin-bottom: 24px;
+}
+
+.analytics-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.analytics-stat {
+    background: var(--bg-tertiary);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.readability-score {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.score-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.score-circle.very-easy { background: #10b981; }
+.score-circle.easy { background: #34d399; }
+.score-circle.fairly-easy { background: #fbbf24; }
+.score-circle.standard { background: #f59e0b; }
+.score-circle.fairly-difficult { background: #f97316; }
+.score-circle.difficult { background: #ef4444; }
+.score-circle.very-difficult { background: #dc2626; }
+
+.score-details h5 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.score-breakdown {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    line-height: 1.6;
+}
+
+.reading-time-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.reading-speed {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.speed-label {
+    color: var(--text-secondary);
+}
+
+.speed-time {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.word-frequency {
+    display: grid;
+    gap: 4px;
+}
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.word {
+    font-weight: 500;
+}
+
+.count {
+    color: var(--text-tertiary);
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(110%);
+        opacity: 0;
+    }
+}
+`;
+document.head.appendChild(style);
