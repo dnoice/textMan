@@ -356,5 +356,28 @@
 
     <!-- Scripts -->
     <script src="js/scripts.js" type="module"></script>
+    
+    <!-- Fallback for no JavaScript -->
+    <noscript>
+        <style>
+            #loadingScreen { display: none !important; }
+            #app { display: none !important; }
+            body::after {
+                content: 'JavaScript is required to run textMan. Please enable JavaScript in your browser settings.';
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                padding: 2rem;
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                font-family: system-ui, sans-serif;
+                color: #333;
+                max-width: 400px;
+            }
+        </style>
+    </noscript>
 </body>
 </html>
