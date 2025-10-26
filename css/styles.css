@@ -883,6 +883,15 @@ body {
     transform: scale(0.98);
 }
 
+.btn:disabled,
+.tool-btn:disabled,
+.toolbar-btn:disabled,
+.icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .btn-primary {
     background-color: var(--color-primary);
     color: white;

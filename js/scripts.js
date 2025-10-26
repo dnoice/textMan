@@ -54,6 +54,13 @@ const Storage = {
             return true;
         } catch (error) {
             console.error('Storage save error:', error);
+
+            // Handle quota exceeded error
+            if (error.name === 'QuotaExceededError') {
+                Toast?.show('Storage Full', 'Local storage is full. Consider exporting your data.', 'error');
+            } else {
+                Toast?.show('Storage Error', 'Failed to save data locally', 'error');
+            }
             return false;
         }
     },
@@ -844,6 +851,7 @@ const SearchManager = {
         // Event listeners
         document.getElementById('searchBtn').addEventListener('click', () => this.open());
         document.getElementById('searchClose').addEventListener('click', () => this.close());
+        document.getElementById('findPrevBtn').addEventListener('click', () => this.findPrev());
         document.getElementById('findNextBtn').addEventListener('click', () => this.findNext());
         document.getElementById('replaceBtn').addEventListener('click', () => this.replace());
         document.getElementById('replaceAllBtn').addEventListener('click', () => this.replaceAll());
@@ -906,6 +914,35 @@ const SearchManager = {
             if (index === -1) {
                 index = searchIn.indexOf(searchFor, 0);
             }
+        }
+
+        if (index !== -1) {
+            Editor.textarea.setSelectionRange(index, index + searchText.length);
+            Editor.textarea.focus();
+        } else {
+            Toast.show('Not Found', 'No matches found', 'warning');
+        }
+    },
+
+    /**
+     * Find previous occurrence
+     */
+    findPrev() {
+        const searchText = this.findInput.value;
+        if (!searchText) return;
+
+        const text = Editor.textarea.value;
+        const caseSensitive = document.getElementById('caseSensitive').checked;
+        const searchIn = caseSensitive ? text : text.toLowerCase();
+        const searchFor = caseSensitive ? searchText : searchText.toLowerCase();
+
+        // Search backwards from current position
+        const currentPos = Editor.textarea.selectionStart;
+        let index = searchIn.lastIndexOf(searchFor, currentPos - 1);
+
+        // If not found before cursor, wrap to end
+        if (index === -1) {
+            index = searchIn.lastIndexOf(searchFor);
         }
 
         if (index !== -1) {
@@ -1338,8 +1375,20 @@ const ToolsManager = {
         document.getElementById('copyBtn').addEventListener('click', () => this.copyText());
         document.getElementById('cutBtn').addEventListener('click', () => this.cutText());
         document.getElementById('pasteBtn').addEventListener('click', () => this.pasteText());
+        document.getElementById('selectAllBtn').addEventListener('click', () => Editor.textarea.select());
         document.getElementById('saveBtn').addEventListener('click', () => SavedTexts.save());
+        document.getElementById('downloadBtn').addEventListener('click', () => ImportExport.exportText());
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
         document.getElementById('clearBtn').addEventListener('click', () => Editor.clear());
+
+        // Text formatting buttons (markdown style)
+        document.getElementById('boldBtn')?.addEventListener('click', () => this.wrapSelection('**', '**'));
+        document.getElementById('italicBtn')?.addEventListener('click', () => this.wrapSelection('*', '*'));
+        document.getElementById('underlineBtn')?.addEventListener('click', () => this.wrapSelection('__', '__'));
+
+        // Quick action buttons (header)
+        document.getElementById('newTextBtn')?.addEventListener('click', () => CommandPalette.newText());
+        document.getElementById('compareBtn')?.addEventListener('click', () => AdvancedTools.showDiff());
 
         // Header buttons
         document.getElementById('fullAnalyticsBtn').addEventListener('click', () => Analytics.showFull());
@@ -1385,7 +1434,22 @@ const ToolsManager = {
             Editor.replaceSelection(text);
             Toast.show('Pasted', 'Text pasted from clipboard', 'success');
         } catch (error) {
+            console.error('Paste error:', error);
             Toast.show('Error', 'Failed to paste from clipboard', 'error');
+        }
+    },
+
+    /**
+     * Wrap selection with prefix and suffix (for markdown formatting)
+     */
+    wrapSelection(prefix, suffix) {
+        const selection = Editor.getSelection();
+        if (selection.text) {
+            const wrapped = prefix + selection.text + suffix;
+            Editor.replaceSelection(wrapped);
+            Toast.show('Formatted', 'Text formatted successfully', 'success');
+        } else {
+            Toast.show('No Selection', 'Please select text to format', 'warning');
         }
     },
 
