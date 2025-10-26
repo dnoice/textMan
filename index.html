@@ -3,19 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="textMan v2 - Advanced text manipulation tool with modern UI">
-    <meta name="keywords" content="text editor, text manipulation, text tools, productivity">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Primary Meta Tags -->
+    <meta name="description" content="textMan v2 - Professional text manipulation tool with advanced editing, transformation, analytics, and export features. Support for light/dark themes, local storage, and 50+ text operations.">
+    <meta name="keywords" content="text editor, text manipulation, text tools, case converter, base64, url encoder, text analytics, word counter, productivity, developer tools">
     <meta name="author" content="textMan Team">
-    
-    <title>textMan v2 - Advanced Text Editor</title>
-    
-    <!-- Icons & Fonts -->
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://textman.app/">
+    <meta property="og:title" content="textMan v2 - Advanced Text Manipulation Tool">
+    <meta property="og:description" content="Professional text editor with 50+ manipulation tools, analytics, and beautiful light/dark themes. No login required.">
+    <meta property="og:image" content="https://textman.app/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://textman.app/">
+    <meta property="twitter:title" content="textMan v2 - Advanced Text Manipulation Tool">
+    <meta property="twitter:description" content="Professional text editor with 50+ manipulation tools, analytics, and beautiful light/dark themes.">
+    <meta property="twitter:image" content="https://textman.app/twitter-image.png">
+
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="textMan">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="textMan">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#10b981">
+
+    <title>textMan v2 - Advanced Text Manipulation & Editing Tool</title>
+
+    <!-- Favicon & App Icons -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path fill='%2310b981' d='m18.858 0.087595c-0.068533 0.080388-0.09085 0.19042-0.059081 0.29118-0.14604 0.11305-0.2958 0.21943-0.44882 0.31982-2.7005 1.5776-6.341 1.7177-9.4146 1.2188-0.088204-0.014314-0.19748 0.035231-0.24406 0.11154-1.7923 2.9363-3.4305 5.9718-5.1226 8.9685-0.047453 0.08404-0.14253 0.09763-0.21229 0.0304l-1.0931-1.0538c-0.069801-0.067202-0.17989-0.064333-0.24598 0.00658-0.23531 0.25231-0.47053 0.5047-0.70595 0.75691-0.066127 0.07084-0.063028 0.1826 0.00692 0.24964 0.1655 0.15857 0.33092 0.31723 0.49641 0.47582 0.069973 0.06703 0.063138 0.16761-0.015209 0.22461l-1.7383 1.2646a0.14992 0.15001 0 0 0-0.0179 0.22735l6.7659 6.7761a0.1511 0.15119 0 0 0 0.2283-0.01685l1.2798-1.7294c0.057647-0.0779 0.15869-0.08431 0.22571-0.01432 0.15848 0.1656 0.31705 0.33111 0.47555 0.49669 0.066989 0.07001 0.17869 0.07309 0.24948 7e-3 0.25204-0.23558 0.50426-0.47095 0.75646-0.70637 0.0708-0.06614 0.07376-0.1763 0.0066-0.2461l-1.0532-1.0939c-0.06721-0.06981-0.054722-0.16741 0.028112-0.21766 2.9399-1.7834 6.0876-3.238 8.9688-5.1164 0.07462-0.04864 0.12447-0.16013 0.11208-0.24869-0.44224-3.1611-0.43973-6.6048 1.2144-9.4194 0.10034-0.15311 0.20644-0.30308 0.31964-0.44908 0.10071 0.031787 0.21068 0.00946 0.29102-0.059117 0.13824-0.1403 0.11286-0.40525-0.07696-0.47005-0.01756-0.005983-0.04255 0.002647-0.05506 0.016694-1.7485 1.964-3.5702 3.8426-5.4854 5.6395-0.0652 0.061164-0.08469 0.17504-0.04962 0.25727 0.21094 0.49455 0.32039 1.1954-0.03807 1.5311-0.43682 0.40498-1.3051 0.37868-1.9979-0.32159-0.68594-0.67621-0.73588-1.5515-0.32141-1.9991 0.3357-0.35894 1.0365-0.24888 1.5303-0.038056 0.08214 0.035075 0.1944 0.014165 0.25389-0.05256 1.7483-1.9609 3.724-3.6958 5.6417-5.4867 0.01281-0.011962 0.02041-0.036746 0.01432-0.054527-0.06503-0.18964-0.32962-0.21472-0.46967-0.076567z'/></svg>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path fill='%2310b981' d='m18.858 0.087595c-0.068533 0.080388-0.09085 0.19042-0.059081 0.29118-0.14604 0.11305-0.2958 0.21943-0.44882 0.31982-2.7005 1.5776-6.341 1.7177-9.4146 1.2188-0.088204-0.014314-0.19748 0.035231-0.24406 0.11154-1.7923 2.9363-3.4305 5.9718-5.1226 8.9685-0.047453 0.08404-0.14253 0.09763-0.21229 0.0304l-1.0931-1.0538c-0.069801-0.067202-0.17989-0.064333-0.24598 0.00658-0.23531 0.25231-0.47053 0.5047-0.70595 0.75691-0.066127 0.07084-0.063028 0.1826 0.00692 0.24964 0.1655 0.15857 0.33092 0.31723 0.49641 0.47582 0.069973 0.06703 0.063138 0.16761-0.015209 0.22461l-1.7383 1.2646a0.14992 0.15001 0 0 0-0.0179 0.22735l6.7659 6.7761a0.1511 0.15119 0 0 0 0.2283-0.01685l1.2798-1.7294c0.057647-0.0779 0.15869-0.08431 0.22571-0.01432 0.15848 0.1656 0.31705 0.33111 0.47555 0.49669 0.066989 0.07001 0.17869 0.07309 0.24948 7e-3 0.25204-0.23558 0.50426-0.47095 0.75646-0.70637 0.0708-0.06614 0.07376-0.1763 0.0066-0.2461l-1.0532-1.0939c-0.06721-0.06981-0.054722-0.16741 0.028112-0.21766 2.9399-1.7834 6.0876-3.238 8.9688-5.1164 0.07462-0.04864 0.12447-0.16013 0.11208-0.24869-0.44224-3.1611-0.43973-6.6048 1.2144-9.4194 0.10034-0.15311 0.20644-0.30308 0.31964-0.44908 0.10071 0.031787 0.21068 0.00946 0.29102-0.059117 0.13824-0.1403 0.11286-0.40525-0.07696-0.47005-0.01756-0.005983-0.04255 0.002647-0.05506 0.016694-1.7485 1.964-3.5702 3.8426-5.4854 5.6395-0.0652 0.061164-0.08469 0.17504-0.04962 0.25727 0.21094 0.49455 0.32039 1.1954-0.03807 1.5311-0.43682 0.40498-1.3051 0.37868-1.9979-0.32159-0.68594-0.67621-0.73588-1.5515-0.32141-1.9991 0.3357-0.35894 1.0365-0.24888 1.5303-0.038056 0.08214 0.035075 0.1944 0.014165 0.25389-0.05256 1.7483-1.9609 3.724-3.6958 5.6417-5.4867 0.01281-0.011962 0.02041-0.036746 0.01432-0.054527-0.06503-0.18964-0.32962-0.21472-0.46967-0.076567z'/></svg>">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Icons & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -31,6 +63,9 @@
             <div class="loading-text">Loading textMan...</div>
             <div class="loading-bar">
                 <div class="loading-progress"></div>
+            </div>
+            <div class="loading-tips">
+                <p id="loadingTip" class="loading-tip"></p>
             </div>
         </div>
     </div>
@@ -48,13 +83,27 @@
 
             <nav class="header-nav">
                 <div class="quick-actions" id="quickActions">
-                    <!-- Quick action buttons will be injected here -->
+                    <button class="quick-action-btn" id="newTextBtn" title="New Text (Ctrl+N)">
+                        <i class="fas fa-file"></i>
+                    </button>
+                    <button class="quick-action-btn" id="compareBtn" title="Compare Texts">
+                        <i class="fas fa-code-compare"></i>
+                    </button>
+                    <button class="quick-action-btn" id="templatesBtn" title="Text Templates">
+                        <i class="fas fa-layer-group"></i>
+                    </button>
                 </div>
             </nav>
 
             <div class="header-controls">
+                <button class="icon-btn" id="commandPaletteBtn" title="Command Palette (Ctrl+K)">
+                    <i class="fas fa-terminal"></i>
+                </button>
                 <button class="icon-btn" id="searchBtn" title="Search in text (Ctrl+F)">
                     <i class="fas fa-search"></i>
+                </button>
+                <button class="icon-btn" id="keyboardShortcutsBtn" title="Keyboard Shortcuts">
+                    <i class="fas fa-keyboard"></i>
                 </button>
                 <button class="icon-btn" id="fullscreenBtn" title="Toggle fullscreen">
                     <i class="fas fa-expand"></i>
@@ -64,6 +113,9 @@
                 </button>
                 <button class="icon-btn theme-toggle" id="themeToggle" title="Toggle theme">
                     <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn" id="helpBtn" title="Help & About">
+                    <i class="fas fa-question-circle"></i>
                 </button>
             </div>
         </header>
@@ -79,7 +131,7 @@
                     </button>
                 </div>
                 <div class="sidebar-content">
-                    <!-- Dynamic content sections -->
+                    <!-- History Section -->
                     <div class="panel-section" id="historySection">
                         <div class="panel-header" data-toggle="history">
                             <i class="fas fa-history"></i>
@@ -94,6 +146,7 @@
                         </div>
                     </div>
 
+                    <!-- Templates Section -->
                     <div class="panel-section" id="templatesSection">
                         <div class="panel-header" data-toggle="templates">
                             <i class="fas fa-file-alt"></i>
@@ -105,6 +158,7 @@
                         </div>
                     </div>
 
+                    <!-- Saved Texts Section -->
                     <div class="panel-section" id="savedSection">
                         <div class="panel-header" data-toggle="saved">
                             <i class="fas fa-bookmark"></i>
@@ -115,6 +169,21 @@
                             <div class="empty-state">
                                 <i class="fas fa-bookmark"></i>
                                 <p>No saved texts</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clipboard History Section -->
+                    <div class="panel-section" id="clipboardSection">
+                        <div class="panel-header" data-toggle="clipboard">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>Clipboard</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="panel-content" id="clipboardContent">
+                            <div class="empty-state">
+                                <i class="fas fa-clipboard-list"></i>
+                                <p>No clipboard history</p>
                             </div>
                         </div>
                     </div>
@@ -134,25 +203,28 @@
                     </div>
 
                     <div class="toolbar-group">
-                        <button class="toolbar-btn" id="cutBtn" title="Cut">
+                        <button class="toolbar-btn" id="cutBtn" title="Cut (Ctrl+X)">
                             <i class="fas fa-cut"></i>
                         </button>
-                        <button class="toolbar-btn" id="copyBtn" title="Copy">
+                        <button class="toolbar-btn" id="copyBtn" title="Copy (Ctrl+C)">
                             <i class="fas fa-copy"></i>
                         </button>
-                        <button class="toolbar-btn" id="pasteBtn" title="Paste">
+                        <button class="toolbar-btn" id="pasteBtn" title="Paste (Ctrl+V)">
                             <i class="fas fa-paste"></i>
+                        </button>
+                        <button class="toolbar-btn" id="selectAllBtn" title="Select All (Ctrl+A)">
+                            <i class="fas fa-check-double"></i>
                         </button>
                     </div>
 
                     <div class="toolbar-group">
-                        <button class="toolbar-btn" id="boldBtn" title="Bold">
+                        <button class="toolbar-btn" id="boldBtn" title="Bold (Ctrl+B)">
                             <i class="fas fa-bold"></i>
                         </button>
-                        <button class="toolbar-btn" id="italicBtn" title="Italic">
+                        <button class="toolbar-btn" id="italicBtn" title="Italic (Ctrl+I)">
                             <i class="fas fa-italic"></i>
                         </button>
-                        <button class="toolbar-btn" id="underlineBtn" title="Underline">
+                        <button class="toolbar-btn" id="underlineBtn" title="Underline (Ctrl+U)">
                             <i class="fas fa-underline"></i>
                         </button>
                     </div>
@@ -160,6 +232,12 @@
                     <div class="toolbar-group">
                         <button class="toolbar-btn" id="saveBtn" title="Save (Ctrl+S)">
                             <i class="fas fa-save"></i>
+                        </button>
+                        <button class="toolbar-btn" id="downloadBtn" title="Download">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="toolbar-btn" id="printBtn" title="Print (Ctrl+P)">
+                            <i class="fas fa-print"></i>
                         </button>
                         <button class="toolbar-btn" id="clearBtn" title="Clear all">
                             <i class="fas fa-trash"></i>
@@ -169,26 +247,33 @@
                     <div class="toolbar-spacer"></div>
 
                     <div class="toolbar-stats">
-                        <span class="stat-badge" id="charCount">
+                        <span class="stat-badge" id="charCount" title="Character count">
                             <i class="fas fa-text-width"></i> 0
                         </span>
-                        <span class="stat-badge" id="wordCount">
+                        <span class="stat-badge" id="wordCount" title="Word count">
                             <i class="fas fa-font"></i> 0
                         </span>
-                        <span class="stat-badge" id="lineCount">
+                        <span class="stat-badge" id="lineCount" title="Line count">
                             <i class="fas fa-list"></i> 0
                         </span>
-                        <span class="stat-badge" id="readTime">
+                        <span class="stat-badge" id="readTime" title="Reading time">
                             <i class="fas fa-clock"></i> 0m
                         </span>
                     </div>
                 </div>
 
-                <div class="editor-wrapper">
-                    <textarea 
-                        id="mainEditor" 
+                <div class="editor-wrapper" id="editorWrapper">
+                    <div class="drop-zone-overlay" id="dropZoneOverlay" hidden>
+                        <div class="drop-zone-content">
+                            <i class="fas fa-file-upload"></i>
+                            <p>Drop your file here</p>
+                            <span>Supports TXT, MD, JSON, CSV, HTML</span>
+                        </div>
+                    </div>
+                    <textarea
+                        id="mainEditor"
                         class="main-editor"
-                        placeholder="Start typing or paste your text here..."
+                        placeholder="Start typing or paste your text here... (or drag & drop a file)"
                         spellcheck="true"
                         autocomplete="off"
                         autocorrect="off"
@@ -200,6 +285,10 @@
                 <div class="editor-footer">
                     <div class="footer-left">
                         <span id="statusMessage" class="status-message">Ready</span>
+                        <span class="separator">•</span>
+                        <span id="cursorPosition" class="cursor-position">Ln 1, Col 1</span>
+                        <span class="separator">•</span>
+                        <span id="selectedCount" class="selected-count" hidden>0 selected</span>
                     </div>
                     <div class="footer-right">
                         <span class="auto-save-indicator" id="autoSaveIndicator">
@@ -218,7 +307,7 @@
                     </button>
                 </div>
                 <div class="sidebar-content">
-                    <!-- Tool sections -->
+                    <!-- Analytics Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
                             <i class="fas fa-chart-bar"></i> Analytics
@@ -231,6 +320,7 @@
                         </button>
                     </div>
 
+                    <!-- Text Transform Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
                             <i class="fas fa-font"></i> Text Transform
@@ -240,6 +330,7 @@
                         </div>
                     </div>
 
+                    <!-- Format & Clean Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
                             <i class="fas fa-magic"></i> Format & Clean
@@ -249,6 +340,7 @@
                         </div>
                     </div>
 
+                    <!-- Encode/Decode Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
                             <i class="fas fa-code"></i> Encode/Decode
@@ -258,12 +350,34 @@
                         </div>
                     </div>
 
+                    <!-- Advanced Tools Section -->
+                    <div class="tool-section">
+                        <h3 class="tool-section-title">
+                            <i class="fas fa-tools"></i> Advanced
+                        </h3>
+                        <div class="tool-grid">
+                            <button class="tool-btn" id="diffToolBtn">
+                                <i class="fas fa-code-compare"></i> Diff/Compare
+                            </button>
+                            <button class="tool-btn" id="hashToolBtn">
+                                <i class="fas fa-hashtag"></i> Hash Generator
+                            </button>
+                            <button class="tool-btn" id="loremBtn">
+                                <i class="fas fa-paragraph"></i> Lorem Ipsum
+                            </button>
+                            <button class="tool-btn" id="regexToolBtn">
+                                <i class="fas fa-regular-expression"></i> Regex Tester
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Import/Export Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
                             <i class="fas fa-file-export"></i> Import/Export
                         </h3>
                         <div class="import-export-section">
-                            <input type="file" id="fileInput" accept=".txt,.md,.json,.csv" hidden>
+                            <input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.html" hidden>
                             <button class="tool-btn" id="importBtn">
                                 <i class="fas fa-file-import"></i> Import File
                             </button>
@@ -282,7 +396,7 @@
         <div class="modal" id="modal">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalTitle">Modal Title</h3>
-                <button class="modal-close" id="modalClose">
+                <button class="modal-close" id="modalClose" aria-label="Close modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -296,7 +410,7 @@
     </div>
 
     <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer">
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="true">
         <!-- Toast messages will be injected here -->
     </div>
 
@@ -304,19 +418,19 @@
     <div class="search-overlay" id="searchOverlay" hidden>
         <div class="search-box">
             <div class="search-header">
-                <h3>Find & Replace</h3>
-                <button class="search-close" id="searchClose">
+                <h3><i class="fas fa-search"></i> Find & Replace</h3>
+                <button class="search-close" id="searchClose" aria-label="Close search">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="search-content">
                 <div class="search-field">
-                    <label>Find:</label>
-                    <input type="text" id="findInput" placeholder="Search text...">
+                    <label for="findInput">Find:</label>
+                    <input type="text" id="findInput" placeholder="Search text..." aria-label="Search text">
                 </div>
                 <div class="search-field">
-                    <label>Replace:</label>
-                    <input type="text" id="replaceInput" placeholder="Replace with...">
+                    <label for="replaceInput">Replace:</label>
+                    <input type="text" id="replaceInput" placeholder="Replace with..." aria-label="Replace with">
                 </div>
                 <div class="search-options">
                     <label class="checkbox-label">
@@ -327,9 +441,21 @@
                         <input type="checkbox" id="useRegex">
                         <span>Use regex</span>
                     </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="wholeWord">
+                        <span>Whole word</span>
+                    </label>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <span class="search-count" id="searchCount">No results</span>
                 </div>
                 <div class="search-actions">
-                    <button class="btn btn-secondary" id="findNextBtn">Find Next</button>
+                    <button class="btn btn-secondary" id="findPrevBtn">
+                        <i class="fas fa-arrow-up"></i> Previous
+                    </button>
+                    <button class="btn btn-secondary" id="findNextBtn">
+                        <i class="fas fa-arrow-down"></i> Next
+                    </button>
                     <button class="btn btn-secondary" id="replaceBtn">Replace</button>
                     <button class="btn btn-primary" id="replaceAllBtn">Replace All</button>
                 </div>
@@ -337,26 +463,57 @@
         </div>
     </div>
 
+    <!-- Command Palette -->
+    <div class="command-palette-overlay" id="commandPaletteOverlay" hidden>
+        <div class="command-palette">
+            <div class="command-input-wrapper">
+                <i class="fas fa-terminal"></i>
+                <input
+                    type="text"
+                    id="commandInput"
+                    class="command-input"
+                    placeholder="Type a command or search..."
+                    aria-label="Command palette"
+                    autocomplete="off"
+                >
+            </div>
+            <div class="command-results" id="commandResults">
+                <!-- Command results will be injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Context Menu -->
-    <div class="context-menu" id="contextMenu" hidden>
-        <div class="context-menu-item" data-action="cut">
+    <div class="context-menu" id="contextMenu" hidden role="menu">
+        <div class="context-menu-item" data-action="cut" role="menuitem">
             <i class="fas fa-cut"></i> Cut
+            <span class="context-menu-shortcut">Ctrl+X</span>
         </div>
-        <div class="context-menu-item" data-action="copy">
+        <div class="context-menu-item" data-action="copy" role="menuitem">
             <i class="fas fa-copy"></i> Copy
+            <span class="context-menu-shortcut">Ctrl+C</span>
         </div>
-        <div class="context-menu-item" data-action="paste">
+        <div class="context-menu-item" data-action="paste" role="menuitem">
             <i class="fas fa-paste"></i> Paste
+            <span class="context-menu-shortcut">Ctrl+V</span>
         </div>
         <div class="context-menu-separator"></div>
-        <div class="context-menu-item" data-action="selectAll">
+        <div class="context-menu-item" data-action="selectAll" role="menuitem">
             <i class="fas fa-check-double"></i> Select All
+            <span class="context-menu-shortcut">Ctrl+A</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="transform" role="menuitem">
+            <i class="fas fa-font"></i> Transform Text
+        </div>
+        <div class="context-menu-item" data-action="analyze" role="menuitem">
+            <i class="fas fa-chart-bar"></i> Analyze Selection
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="js/scripts.js" type="module"></script>
-    
+
     <!-- Fallback for no JavaScript -->
     <noscript>
         <style>
@@ -376,8 +533,21 @@
                 font-family: system-ui, sans-serif;
                 color: #333;
                 max-width: 400px;
+                z-index: 99999;
             }
         </style>
     </noscript>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(
+                    registration => console.log('ServiceWorker registered:', registration.scope),
+                    err => console.log('ServiceWorker registration failed:', err)
+                ).catch(err => console.log(err));
+            });
+        }
+    </script>
 </body>
 </html>
