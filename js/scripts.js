@@ -27,10 +27,16 @@ const APP_STATE = {
     },
     savedTexts: [],
     recentHistory: [],
+    clipboardHistory: [],
+    templates: [],
     settings: {
         autoSave: true,
         fontSize: 16,
         lineHeight: 1.6
+    },
+    commandPalette: {
+        isOpen: false,
+        selectedIndex: 0
     }
 };
 
@@ -1612,11 +1618,875 @@ const ContextMenu = {
 };
 
 // ============================================================================
+// Loading Tips Manager
+// ============================================================================
+
+const LoadingTips = {
+    tips: [
+        'Pro tip: Press Ctrl+K to open the command palette',
+        'Did you know? You can drag & drop files directly into the editor',
+        'Keyboard shortcut: Ctrl+F for find and replace',
+        'Use Ctrl+S to save your work instantly',
+        'Pro tip: Right-click for quick actions menu',
+        'Tip: All your data is saved locally in your browser',
+        'Did you know? textMan works completely offline',
+        'Keyboard shortcut: Ctrl+/ for keyboard shortcuts list',
+        'Pro tip: Use the templates panel for quick text snippets',
+        'Tip: Export your text in multiple formats (TXT, JSON, HTML)'
+    ],
+
+    /**
+     * Show random tip
+     */
+    showRandomTip() {
+        const tipEl = document.getElementById('loadingTip');
+        if (tipEl) {
+            const randomTip = this.tips[Math.floor(Math.random() * this.tips.length)];
+            tipEl.textContent = randomTip;
+        }
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        this.showRandomTip();
+    }
+};
+
+// ============================================================================
+// Command Palette Manager
+// ============================================================================
+
+const CommandPalette = {
+    overlay: null,
+    input: null,
+    results: null,
+    commands: [],
+    filteredCommands: [],
+
+    /**
+     * Initialize command palette
+     */
+    init() {
+        this.overlay = document.getElementById('commandPaletteOverlay');
+        this.input = document.getElementById('commandInput');
+        this.results = document.getElementById('commandResults');
+
+        // Define all available commands
+        this.commands = [
+            { id: 'new', icon: 'fa-file', title: 'New Text', description: 'Clear editor and start fresh', shortcut: 'Ctrl+N', action: () => this.newText() },
+            { id: 'save', icon: 'fa-save', title: 'Save Text', description: 'Save current text to collection', shortcut: 'Ctrl+S', action: () => SavedTexts.save() },
+            { id: 'search', icon: 'fa-search', title: 'Find & Replace', description: 'Search and replace text', shortcut: 'Ctrl+F', action: () => SearchManager.open() },
+            { id: 'uppercase', icon: 'fa-arrow-up', title: 'Transform to UPPERCASE', description: 'Convert text to uppercase', action: () => TextTools.toUpperCase() },
+            { id: 'lowercase', icon: 'fa-arrow-down', title: 'Transform to lowercase', description: 'Convert text to lowercase', action: () => TextTools.toLowerCase() },
+            { id: 'titlecase', icon: 'fa-heading', title: 'Transform to Title Case', description: 'Convert text to title case', action: () => TextTools.toTitleCase() },
+            { id: 'reverse', icon: 'fa-exchange-alt', title: 'Reverse Text', description: 'Reverse character order', action: () => TextTools.reverse() },
+            { id: 'sort', icon: 'fa-sort-alpha-down', title: 'Sort Lines', description: 'Sort lines alphabetically', action: () => TextTools.sortLines() },
+            { id: 'dedupe', icon: 'fa-clone', title: 'Remove Duplicates', description: 'Remove duplicate lines', action: () => TextTools.removeDuplicates() },
+            { id: 'base64-encode', icon: 'fa-lock', title: 'Base64 Encode', description: 'Encode text to Base64', action: () => TextTools.encodeBase64() },
+            { id: 'base64-decode', icon: 'fa-unlock', title: 'Base64 Decode', description: 'Decode from Base64', action: () => TextTools.decodeBase64() },
+            { id: 'url-encode', icon: 'fa-link', title: 'URL Encode', description: 'Encode text for URL', action: () => TextTools.encodeURL() },
+            { id: 'url-decode', icon: 'fa-unlink', title: 'URL Decode', description: 'Decode URL encoded text', action: () => TextTools.decodeURL() },
+            { id: 'analytics', icon: 'fa-chart-line', title: 'Full Analytics', description: 'Show detailed text analysis', action: () => Analytics.showFull() },
+            { id: 'settings', icon: 'fa-cog', title: 'Settings', description: 'Open settings panel', action: () => ToolsManager.showSettings() },
+            { id: 'theme', icon: 'fa-palette', title: 'Toggle Theme', description: 'Switch between light/dark theme', action: () => ThemeManager.toggle() },
+            { id: 'shortcuts', icon: 'fa-keyboard', title: 'Keyboard Shortcuts', description: 'View all keyboard shortcuts', action: () => KeyboardShortcuts.show() },
+            { id: 'lorem', icon: 'fa-paragraph', title: 'Lorem Ipsum Generator', description: 'Generate placeholder text', action: () => AdvancedTools.showLorem() },
+            { id: 'hash', icon: 'fa-hashtag', title: 'Hash Generator', description: 'Generate text hashes', action: () => AdvancedTools.showHash() },
+            { id: 'diff', icon: 'fa-code-compare', title: 'Text Comparison', description: 'Compare two texts', action: () => AdvancedTools.showDiff() },
+            { id: 'regex', icon: 'fa-asterisk', title: 'Regex Tester', description: 'Test regular expressions', action: () => AdvancedTools.showRegex() }
+        ];
+
+        // Event listeners
+        document.getElementById('commandPaletteBtn').addEventListener('click', () => this.open());
+        this.input.addEventListener('input', () => this.handleInput());
+        this.input.addEventListener('keydown', (e) => this.handleKeyboard(e));
+
+        // Close on backdrop click
+        this.overlay.addEventListener('click', (e) => {
+            if (e.target === this.overlay) {
+                this.close();
+            }
+        });
+    },
+
+    /**
+     * Open command palette
+     */
+    open() {
+        APP_STATE.commandPalette.isOpen = true;
+        APP_STATE.commandPalette.selectedIndex = 0;
+        this.overlay.removeAttribute('hidden');
+        this.input.value = '';
+        this.input.focus();
+        this.filteredCommands = [...this.commands];
+        this.renderResults();
+    },
+
+    /**
+     * Close command palette
+     */
+    close() {
+        APP_STATE.commandPalette.isOpen = false;
+        this.overlay.setAttribute('hidden', '');
+    },
+
+    /**
+     * Handle input changes
+     */
+    handleInput() {
+        const query = this.input.value.toLowerCase().trim();
+
+        if (!query) {
+            this.filteredCommands = [...this.commands];
+        } else {
+            this.filteredCommands = this.commands.filter(cmd =>
+                cmd.title.toLowerCase().includes(query) ||
+                cmd.description.toLowerCase().includes(query) ||
+                cmd.id.includes(query)
+            );
+        }
+
+        APP_STATE.commandPalette.selectedIndex = 0;
+        this.renderResults();
+    },
+
+    /**
+     * Handle keyboard navigation
+     */
+    handleKeyboard(e) {
+        const { selectedIndex } = APP_STATE.commandPalette;
+        const maxIndex = this.filteredCommands.length - 1;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            APP_STATE.commandPalette.selectedIndex = Math.min(selectedIndex + 1, maxIndex);
+            this.renderResults();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            APP_STATE.commandPalette.selectedIndex = Math.max(selectedIndex - 1, 0);
+            this.renderResults();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (this.filteredCommands[selectedIndex]) {
+                this.executeCommand(this.filteredCommands[selectedIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            this.close();
+        }
+    },
+
+    /**
+     * Execute command
+     */
+    executeCommand(command) {
+        this.close();
+        command.action();
+        Toast.show('Command Executed', command.title, 'success');
+    },
+
+    /**
+     * New text command
+     */
+    newText() {
+        if (Editor.textarea.value && !confirm('Clear current text? This cannot be undone.')) {
+            return;
+        }
+        Editor.textarea.value = '';
+        Editor.handleInput();
+        Toast.show('New Text', 'Editor cleared and ready', 'success');
+    },
+
+    /**
+     * Render command results
+     */
+    renderResults() {
+        if (this.filteredCommands.length === 0) {
+            this.results.innerHTML = '<div class="command-empty">No commands found</div>';
+            return;
+        }
+
+        this.results.innerHTML = this.filteredCommands.map((cmd, index) => `
+            <div class="command-item ${index === APP_STATE.commandPalette.selectedIndex ? 'selected' : ''}"
+                 data-command="${cmd.id}">
+                <div class="command-item-icon">
+                    <i class="fas ${cmd.icon}"></i>
+                </div>
+                <div class="command-item-content">
+                    <div class="command-item-title">${cmd.title}</div>
+                    <div class="command-item-description">${cmd.description}</div>
+                </div>
+                ${cmd.shortcut ? `<div class="command-item-shortcut">${cmd.shortcut}</div>` : ''}
+            </div>
+        `).join('');
+
+        // Add click listeners
+        this.results.querySelectorAll('.command-item').forEach((item, index) => {
+            item.addEventListener('click', () => {
+                this.executeCommand(this.filteredCommands[index]);
+            });
+        });
+
+        // Scroll selected into view
+        const selected = this.results.querySelector('.command-item.selected');
+        if (selected) {
+            selected.scrollIntoView({ block: 'nearest' });
+        }
+    }
+};
+
+// ============================================================================
+// Drag & Drop Manager
+// ============================================================================
+
+const DragDrop = {
+    dropZone: null,
+    wrapper: null,
+
+    /**
+     * Initialize drag and drop
+     */
+    init() {
+        this.wrapper = document.getElementById('editorWrapper');
+        this.dropZone = document.getElementById('dropZoneOverlay');
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            this.wrapper.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        // Highlight drop zone
+        ['dragenter', 'dragover'].forEach(eventName => {
+            this.wrapper.addEventListener(eventName, () => {
+                this.dropZone.removeAttribute('hidden');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            this.wrapper.addEventListener(eventName, () => {
+                this.dropZone.setAttribute('hidden', '');
+            });
+        });
+
+        // Handle dropped files
+        this.wrapper.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleFile(files[0]);
+            }
+        });
+    },
+
+    /**
+     * Handle dropped file
+     */
+    handleFile(file) {
+        const validTypes = ['.txt', '.md', '.json', '.csv', '.html'];
+        const fileName = file.name.toLowerCase();
+        const isValid = validTypes.some(type => fileName.endsWith(type));
+
+        if (!isValid) {
+            Toast.show('Invalid File', 'Please drop a TXT, MD, JSON, CSV, or HTML file', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            Editor.textarea.value = e.target.result;
+            Editor.handleInput();
+            Toast.show('File Loaded', `"${file.name}" imported successfully`, 'success');
+        };
+        reader.onerror = () => {
+            Toast.show('Error', 'Failed to read file', 'error');
+        };
+        reader.readAsText(file);
+    }
+};
+
+// ============================================================================
+// Clipboard History Manager
+// ============================================================================
+
+const ClipboardHistory = {
+    maxItems: 20,
+
+    /**
+     * Add to clipboard history
+     */
+    add(text) {
+        if (!text || text.length === 0) return;
+
+        const item = {
+            id: Date.now(),
+            text,
+            preview: text.substring(0, 50),
+            timestamp: new Date().toISOString()
+        };
+
+        APP_STATE.clipboardHistory.unshift(item);
+
+        // Limit size
+        if (APP_STATE.clipboardHistory.length > this.maxItems) {
+            APP_STATE.clipboardHistory.pop();
+        }
+
+        Storage.save('clipboardHistory', APP_STATE.clipboardHistory);
+        this.render();
+    },
+
+    /**
+     * Load from clipboard history
+     */
+    load(id) {
+        const item = APP_STATE.clipboardHistory.find(c => c.id === id);
+        if (item) {
+            Editor.replaceSelection(item.text);
+            Toast.show('Inserted', 'Clipboard item inserted', 'success');
+        }
+    },
+
+    /**
+     * Delete clipboard item
+     */
+    delete(id) {
+        APP_STATE.clipboardHistory = APP_STATE.clipboardHistory.filter(c => c.id !== id);
+        Storage.save('clipboardHistory', APP_STATE.clipboardHistory);
+        this.render();
+    },
+
+    /**
+     * Clear all
+     */
+    clearAll() {
+        APP_STATE.clipboardHistory = [];
+        Storage.save('clipboardHistory', []);
+        this.render();
+        Toast.show('Cleared', 'Clipboard history cleared', 'success');
+    },
+
+    /**
+     * Render clipboard history
+     */
+    render() {
+        const container = document.getElementById('clipboardContent');
+
+        if (APP_STATE.clipboardHistory.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No clipboard history</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = APP_STATE.clipboardHistory.map(item => `
+            <div class="history-item">
+                <div class="item-header">
+                    <span class="item-time">${new Date(item.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="item-preview">${item.preview}${item.text.length > 50 ? '...' : ''}</div>
+                <div class="item-actions">
+                    <button class="item-btn" onclick="ClipboardHistory.load(${item.id})">
+                        <i class="fas fa-paste"></i> Insert
+                    </button>
+                    <button class="item-btn" onclick="ClipboardHistory.delete(${item.id})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        APP_STATE.clipboardHistory = Storage.load('clipboardHistory', []);
+        this.render();
+
+        // Intercept copy events
+        document.addEventListener('copy', () => {
+            const selection = Editor.getSelection();
+            if (selection.text) {
+                setTimeout(() => this.add(selection.text), 100);
+            }
+        });
+    }
+};
+
+// ============================================================================
+// Templates Manager
+// ============================================================================
+
+const Templates = {
+    defaultTemplates: [
+        { name: 'Email Template', content: 'Dear [Name],\n\n[Your message here]\n\nBest regards,\n[Your name]' },
+        { name: 'Meeting Notes', content: '# Meeting Notes\n\nDate: [Date]\nAttendees: [Names]\n\n## Agenda\n- \n\n## Discussion\n- \n\n## Action Items\n- ' },
+        { name: 'TODO List', content: '# TODO List\n\n## Today\n- [ ] \n\n## This Week\n- [ ] \n\n## This Month\n- [ ] ' },
+        { name: 'Bug Report', content: '# Bug Report\n\n## Description\n[Describe the bug]\n\n## Steps to Reproduce\n1. \n\n## Expected Behavior\n[What should happen]\n\n## Actual Behavior\n[What actually happens]\n\n## Environment\n- Browser: \n- OS: ' },
+        { name: 'Code Review', content: '# Code Review\n\n## Summary\n[Brief overview]\n\n## Positives\n- \n\n## Suggestions\n- \n\n## Issues\n- \n\n## Conclusion\n[Overall assessment]' }
+    ],
+
+    /**
+     * Load template
+     */
+    load(template) {
+        Editor.textarea.value = template.content;
+        Editor.handleInput();
+        Toast.show('Template Loaded', template.name, 'success');
+    },
+
+    /**
+     * Save custom template
+     */
+    saveCustom() {
+        Modal.open(
+            '<i class="fas fa-save"></i> Save as Template',
+            `
+                <div class="form-group">
+                    <label class="form-label">Template Name</label>
+                    <input type="text" id="templateName" class="form-input" placeholder="My Template">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content</label>
+                    <textarea id="templateContent" class="form-textarea">${Editor.textarea.value}</textarea>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="Templates.confirmSave()">Save Template</button>
+            `
+        );
+    },
+
+    /**
+     * Confirm save
+     */
+    confirmSave() {
+        const name = document.getElementById('templateName').value.trim();
+        const content = document.getElementById('templateContent').value;
+
+        if (!name) {
+            Toast.show('Error', 'Please enter a template name', 'error');
+            return;
+        }
+
+        APP_STATE.templates.push({ id: Date.now(), name, content, custom: true });
+        Storage.save('templates', APP_STATE.templates);
+        this.render();
+        Modal.close();
+        Toast.show('Saved', 'Template saved successfully', 'success');
+    },
+
+    /**
+     * Delete custom template
+     */
+    delete(id) {
+        APP_STATE.templates = APP_STATE.templates.filter(t => t.id !== id);
+        Storage.save('templates', APP_STATE.templates);
+        this.render();
+    },
+
+    /**
+     * Render templates
+     */
+    render() {
+        const container = document.getElementById('templatesContent');
+        const allTemplates = [...this.defaultTemplates, ...APP_STATE.templates];
+
+        if (allTemplates.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>No templates</p></div>';
+            return;
+        }
+
+        container.innerHTML = allTemplates.map((template, index) => `
+            <button class="tool-btn" onclick="Templates.load(${JSON.stringify(template).replace(/"/g, '&quot;')})">
+                <i class="fas fa-file-alt"></i> ${template.name}
+            </button>
+            ${template.custom ? `<button class="item-btn" onclick="Templates.delete(${template.id})"><i class="fas fa-trash"></i></button>` : ''}
+        `).join('');
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        APP_STATE.templates = Storage.load('templates', []);
+        this.render();
+
+        // Add save template button
+        document.getElementById('templatesBtn')?.addEventListener('click', () => this.saveCustom());
+    }
+};
+
+// ============================================================================
+// Advanced Tools Manager
+// ============================================================================
+
+const AdvancedTools = {
+    /**
+     * Show Lorem Ipsum generator
+     */
+    showLorem() {
+        Modal.open(
+            '<i class="fas fa-paragraph"></i> Lorem Ipsum Generator',
+            `
+                <div class="form-group">
+                    <label class="form-label">Number of Paragraphs</label>
+                    <input type="number" id="loremParagraphs" class="form-input" value="3" min="1" max="20">
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="AdvancedTools.generateLorem()">Generate</button>
+            `
+        );
+    },
+
+    /**
+     * Generate Lorem Ipsum
+     */
+    generateLorem() {
+        const paragraphs = parseInt(document.getElementById('loremParagraphs').value) || 3;
+        const loremText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
+
+        const result = Array(paragraphs).fill(loremText).join('\n\n');
+        Editor.textarea.value = result;
+        Editor.handleInput();
+        Modal.close();
+        Toast.show('Generated', `${paragraphs} paragraph(s) generated`, 'success');
+    },
+
+    /**
+     * Show hash generator
+     */
+    async showHash() {
+        const text = Editor.textarea.value;
+        if (!text) {
+            Toast.show('Error', 'Please enter text to hash', 'error');
+            return;
+        }
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+
+        // Generate hashes
+        const sha256 = await crypto.subtle.digest('SHA-256', data);
+        const sha256Hash = Array.from(new Uint8Array(sha256)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        const sha512 = await crypto.subtle.digest('SHA-512', data);
+        const sha512Hash = Array.from(new Uint8Array(sha512)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        Modal.open(
+            '<i class="fas fa-hashtag"></i> Hash Generator',
+            `
+                <div class="form-group">
+                    <label class="form-label">SHA-256</label>
+                    <input type="text" class="form-input" value="${sha256Hash}" readonly onclick="this.select()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SHA-512</label>
+                    <input type="text" class="form-input" value="${sha512Hash}" readonly onclick="this.select()">
+                </div>
+            `,
+            '<button class="btn btn-primary" onclick="Modal.close()">Close</button>'
+        );
+    },
+
+    /**
+     * Show diff tool
+     */
+    showDiff() {
+        Modal.open(
+            '<i class="fas fa-code-compare"></i> Text Comparison',
+            `
+                <div class="form-group">
+                    <label class="form-label">Original Text</label>
+                    <textarea id="diffOriginal" class="form-textarea" placeholder="Enter original text"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Modified Text</label>
+                    <textarea id="diffModified" class="form-textarea" placeholder="Enter modified text"></textarea>
+                </div>
+                <div id="diffResult"></div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="AdvancedTools.performDiff()">Compare</button>
+            `
+        );
+    },
+
+    /**
+     * Perform diff
+     */
+    performDiff() {
+        const original = document.getElementById('diffOriginal').value;
+        const modified = document.getElementById('diffModified').value;
+
+        const origLines = original.split('\n');
+        const modLines = modified.split('\n');
+
+        let result = '<h4>Comparison Results:</h4>';
+        result += `<p>Original: ${origLines.length} lines | Modified: ${modLines.length} lines</p>`;
+
+        // Simple line-by-line comparison
+        const maxLines = Math.max(origLines.length, modLines.length);
+        let differences = 0;
+
+        for (let i = 0; i < maxLines; i++) {
+            if (origLines[i] !== modLines[i]) {
+                differences++;
+            }
+        }
+
+        result += `<p><strong>${differences}</strong> line(s) differ</p>`;
+        document.getElementById('diffResult').innerHTML = result;
+    },
+
+    /**
+     * Show regex tester
+     */
+    showRegex() {
+        Modal.open(
+            '<i class="fas fa-asterisk"></i> Regex Tester',
+            `
+                <div class="form-group">
+                    <label class="form-label">Regular Expression</label>
+                    <input type="text" id="regexPattern" class="form-input" placeholder="\\w+@\\w+\\.\\w+">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Flags</label>
+                    <input type="text" id="regexFlags" class="form-input" placeholder="gi" value="g">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Test Text</label>
+                    <textarea id="regexText" class="form-textarea" placeholder="Enter text to test">${Editor.textarea.value}</textarea>
+                </div>
+                <div id="regexResult"></div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="AdvancedTools.testRegex()">Test</button>
+            `
+        );
+    },
+
+    /**
+     * Test regex
+     */
+    testRegex() {
+        const pattern = document.getElementById('regexPattern').value;
+        const flags = document.getElementById('regexFlags').value;
+        const text = document.getElementById('regexText').value;
+
+        try {
+            const regex = new RegExp(pattern, flags);
+            const matches = text.match(regex);
+
+            let result = '<h4>Results:</h4>';
+            if (matches) {
+                result += `<p><strong>${matches.length}</strong> match(es) found:</p>`;
+                result += '<ul>' + matches.slice(0, 10).map(m => `<li>${m}</li>`).join('') + '</ul>';
+                if (matches.length > 10) result += `<p>... and ${matches.length - 10} more</p>`;
+            } else {
+                result += '<p>No matches found</p>';
+            }
+
+            document.getElementById('regexResult').innerHTML = result;
+        } catch (error) {
+            document.getElementById('regexResult').innerHTML = `<p style="color: var(--color-danger)">Error: ${error.message}</p>`;
+        }
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        document.getElementById('loremBtn')?.addEventListener('click', () => this.showLorem());
+        document.getElementById('hashToolBtn')?.addEventListener('click', () => this.showHash());
+        document.getElementById('diffToolBtn')?.addEventListener('click', () => this.showDiff());
+        document.getElementById('regexToolBtn')?.addEventListener('click', () => this.showRegex());
+    }
+};
+
+// ============================================================================
+// Keyboard Shortcuts Manager
+// ============================================================================
+
+const KeyboardShortcuts = {
+    shortcuts: [
+        { keys: 'Ctrl+K', description: 'Open Command Palette' },
+        { keys: 'Ctrl+N', description: 'New Text' },
+        { keys: 'Ctrl+S', description: 'Save Text' },
+        { keys: 'Ctrl+F', description: 'Find & Replace' },
+        { keys: 'Ctrl+Z', description: 'Undo' },
+        { keys: 'Ctrl+Y', description: 'Redo' },
+        { keys: 'Ctrl+X', description: 'Cut' },
+        { keys: 'Ctrl+C', description: 'Copy' },
+        { keys: 'Ctrl+V', description: 'Paste' },
+        { keys: 'Ctrl+A', description: 'Select All' },
+        { keys: 'Ctrl+P', description: 'Print' },
+        { keys: 'Esc', description: 'Close Dialogs' }
+    ],
+
+    /**
+     * Show shortcuts modal
+     */
+    show() {
+        const shortcutsHTML = this.shortcuts.map(s => `
+            <div class="analytics-row">
+                <span class="analytics-label">${s.description}</span>
+                <span class="analytics-value" style="font-family: var(--font-family-mono);">${s.keys}</span>
+            </div>
+        `).join('');
+
+        Modal.open(
+            '<i class="fas fa-keyboard"></i> Keyboard Shortcuts',
+            `<div class="analytics-mini">${shortcutsHTML}</div>`,
+            '<button class="btn btn-primary" onclick="Modal.close()">Close</button>'
+        );
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        document.getElementById('keyboardShortcutsBtn')?.addEventListener('click', () => this.show());
+
+        // Register global shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K - Command Palette
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                CommandPalette.open();
+            }
+
+            // Ctrl+N - New Text
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                CommandPalette.newText();
+            }
+
+            // Ctrl+P - Print
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+
+            // Escape - Close overlays
+            if (e.key === 'Escape') {
+                if (APP_STATE.commandPalette.isOpen) {
+                    CommandPalette.close();
+                }
+            }
+        });
+    }
+};
+
+// ============================================================================
+// Cursor Position Tracker
+// ============================================================================
+
+const CursorTracker = {
+    /**
+     * Update cursor position
+     */
+    update() {
+        const textarea = Editor.textarea;
+        const text = textarea.value.substring(0, textarea.selectionStart);
+        const lines = text.split('\n');
+        const line = lines.length;
+        const col = lines[lines.length - 1].length + 1;
+
+        document.getElementById('cursorPosition').textContent = `Ln ${line}, Col ${col}`;
+
+        // Update selected count
+        const selection = Editor.getSelection();
+        const selectedEl = document.getElementById('selectedCount');
+        if (selection.text) {
+            selectedEl.textContent = `${selection.text.length} selected`;
+            selectedEl.removeAttribute('hidden');
+        } else {
+            selectedEl.setAttribute('hidden', '');
+        }
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        Editor.textarea.addEventListener('keyup', () => this.update());
+        Editor.textarea.addEventListener('mouseup', () => this.update());
+        Editor.textarea.addEventListener('select', () => this.update());
+        this.update();
+    }
+};
+
+// ============================================================================
+// Help System
+// ============================================================================
+
+const HelpSystem = {
+    /**
+     * Show help modal
+     */
+    show() {
+        Modal.open(
+            '<i class="fas fa-question-circle"></i> Help & About',
+            `
+                <h3>Welcome to textMan v${APP_CONFIG.version}</h3>
+                <p>A powerful text manipulation tool with advanced features.</p>
+
+                <h4 class="mt-3">Features</h4>
+                <ul>
+                    <li>50+ text manipulation tools</li>
+                    <li>Advanced find & replace with regex</li>
+                    <li>Text analytics and statistics</li>
+                    <li>Import/Export in multiple formats</li>
+                    <li>Local storage - all data stays on your device</li>
+                    <li>Light & Dark themes</li>
+                    <li>Completely offline capable</li>
+                </ul>
+
+                <h4 class="mt-3">Quick Start</h4>
+                <ul>
+                    <li>Press <code>Ctrl+K</code> to open Command Palette</li>
+                    <li>Drag & drop files directly into editor</li>
+                    <li>Use right-click for quick actions</li>
+                    <li>All changes are auto-saved locally</li>
+                </ul>
+
+                <h4 class="mt-3">Privacy</h4>
+                <p>textMan runs entirely in your browser. No data is sent to any server. Everything is stored locally using localStorage.</p>
+            `,
+            '<button class="btn btn-primary" onclick="Modal.close()">Got it!</button>'
+        );
+    },
+
+    /**
+     * Initialize
+     */
+    init() {
+        document.getElementById('helpBtn')?.addEventListener('click', () => this.show());
+    }
+};
+
+// ============================================================================
 // Application Initialization
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log(`%c🚀 textMan v${APP_CONFIG.version}`, 'font-size: 20px; font-weight: bold; color: #10b981;');
+
+    // Show loading tips
+    LoadingTips.init();
 
     // Initialize all modules
     ThemeManager.init();
@@ -1629,6 +2499,16 @@ document.addEventListener('DOMContentLoaded', () => {
     ToolsManager.init();
     SidebarManager.init();
     ContextMenu.init();
+
+    // Initialize new features
+    CommandPalette.init();
+    DragDrop.init();
+    ClipboardHistory.init();
+    Templates.init();
+    AdvancedTools.init();
+    KeyboardShortcuts.init();
+    CursorTracker.init();
+    HelpSystem.init();
 
     // Hide loading screen
     setTimeout(() => {
