@@ -1,0 +1,123 @@
+/* ============================================================================
+   Command Palette
+   ========================================================================= */
+
+.command-palette-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-overlay);
+    z-index: var(--z-modal-backdrop);
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    padding-top: 100px;
+    animation: fadeIn var(--transition-base);
+}
+
+.command-palette-overlay[hidden] {
+    display: none;
+}
+
+.command-palette {
+    background-color: var(--bg-elevated);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    width: 100%;
+    max-width: 640px;
+    animation: modalSlideIn var(--transition-slow);
+    overflow: hidden;
+}
+
+.command-input-wrapper {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.command-input {
+    width: 100%;
+    padding: var(--spacing-md);
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.command-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.command-results {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.command-item {
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-left: 3px solid transparent;
+}
+
+.command-item:hover,
+.command-item.selected {
+    background-color: var(--bg-secondary);
+    border-left-color: var(--color-primary);
+}
+
+.command-item-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.command-item:hover .command-item-icon,
+.command-item.selected .command-item-icon {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.command-item-content {
+    flex: 1;
+}
+
+.command-item-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.command-item-description {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.command-item-shortcut {
+    font-family: var(--font-family-mono);
+    font-size: 0.75rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    color: var(--text-tertiary);
+}
+
+.command-empty {
+    padding: var(--spacing-2xl);
+    text-align: center;
+    color: var(--text-tertiary);
+}

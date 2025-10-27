@@ -628,8 +628,24 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/scripts.js" type="module"></script>
+    <!-- Scripts - Load Order Matters! -->
+    <!-- Core Modules -->
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/utils.js"></script>
+
+    <!-- Storage -->
+    <script src="js/storage/storage.js"></script>
+
+    <!-- UI Managers -->
+    <script src="js/ui/theme.js"></script>
+    <script src="js/ui/toast.js"></script>
+
+    <!-- All Other Modules (Modal, Editor, TextTools, Managers, etc.) -->
+    <script src="js/modules.js"></script>
+
+    <!-- Application Initialization -->
+    <script src="js/scripts.js"></script>
 
     <!-- Fallback for no JavaScript -->
     <noscript>

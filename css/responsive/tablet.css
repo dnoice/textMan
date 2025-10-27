@@ -1,0 +1,42 @@
+/* ============================================================================
+   Tablet Styles (max-width: 1024px)
+   ========================================================================= */
+
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 240px;
+    }
+
+    .header {
+        padding: 0 var(--spacing-md);
+    }
+
+    .brand-name {
+        font-size: 1.25rem;
+    }
+
+    .header-nav {
+        gap: var(--spacing-xs);
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+    }
+
+    .tool-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions {
+        display: none;
+    }
+
+    .toolbar-stats {
+        gap: var(--spacing-xs);
+    }
+
+    .stat-badge {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.75rem;
+    }
+}

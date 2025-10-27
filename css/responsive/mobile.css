@@ -1,0 +1,197 @@
+/* ============================================================================
+   Mobile Styles (max-width: 768px and 480px)
+   ========================================================================= */
+
+@media (max-width: 768px) {
+    :root {
+        --header-height: 60px;
+        --sidebar-width: 100%;
+        --toolbar-height: 48px;
+    }
+
+    .header {
+        padding: 0 var(--spacing-sm);
+        height: var(--header-height);
+    }
+
+    .brand-logo {
+        width: 28px;
+        height: 28px;
+    }
+
+    .brand-name {
+        font-size: 1.125rem;
+    }
+
+    .brand-version {
+        display: none;
+    }
+
+    .header-controls {
+        gap: var(--spacing-xs);
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    /* Sidebars become overlays on mobile */
+    .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        bottom: 0;
+        width: 280px;
+        z-index: var(--z-modal);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .sidebar-left {
+        left: 0;
+    }
+
+    .sidebar-right {
+        right: 0;
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-right.collapsed {
+        transform: translateX(100%);
+    }
+
+    /* Hide floating toggles on mobile - use header buttons instead */
+    .sidebar-float-toggle {
+        display: none;
+    }
+
+    .editor-toolbar {
+        overflow-x: auto;
+        padding: 0 var(--spacing-sm);
+    }
+
+    .toolbar-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+    }
+
+    .toolbar-stats {
+        flex-wrap: wrap;
+    }
+
+    .main-editor {
+        padding: var(--spacing-md);
+        font-size: 0.9375rem;
+    }
+
+    .editor-footer {
+        padding: 0 var(--spacing-md);
+        font-size: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    /* Modal adjustments */
+    .modal {
+        max-width: calc(100% - var(--spacing-lg) * 2);
+        max-height: 80vh;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: var(--spacing-md);
+    }
+
+    /* Toast adjustments */
+    .toast-container {
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        left: var(--spacing-sm);
+    }
+
+    .toast {
+        min-width: auto;
+    }
+
+    /* Command palette adjustments */
+    .command-palette {
+        max-width: calc(100% - var(--spacing-md) * 2);
+    }
+
+    /* Search overlay adjustments */
+    .search-panel {
+        max-width: calc(100% - var(--spacing-md) * 2);
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        gap: var(--spacing-sm);
+    }
+
+    .brand-name {
+        font-size: 1rem;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .toolbar-group {
+        flex-wrap: nowrap;
+    }
+
+    .toolbar-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .main-editor {
+        padding: var(--spacing-sm);
+        font-size: 0.875rem;
+    }
+
+    .stat-badge {
+        padding: var(--spacing-xs);
+        font-size: 0.6875rem;
+    }
+
+    .stat-badge i {
+        display: none;
+    }
+
+    /* Adjust button sizes */
+    .btn {
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: 0.8125rem;
+    }
+
+    .tool-btn {
+        padding: var(--spacing-sm);
+        font-size: 0.75rem;
+        min-height: 36px;
+    }
+
+    /* Modal on very small screens */
+    .modal-backdrop {
+        padding: var(--spacing-sm);
+    }
+
+    .modal {
+        border-radius: var(--radius-md);
+    }
+
+    /* Command palette */
+    .command-palette-overlay {
+        padding-top: 20px;
+    }
+}
