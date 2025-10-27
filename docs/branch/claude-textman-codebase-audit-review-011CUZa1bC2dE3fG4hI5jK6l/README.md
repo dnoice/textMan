@@ -31,9 +31,9 @@ Conduct a comprehensive, production-quality audit of the entire textMan codebase
 ## Key Deliverables
 
 ### 📋 Audit & Review Documents (4)
-- ✅ `docs/CODEBASE_AUDIT_2025-10-27.md` (22KB, 28 issues identified)
-- ✅ `docs/DOCUMENTATION_REVIEW_2025-10-27.md` (11KB, 11 issues identified)
-- ✅ `docs/DOCUMENTATION_PRIORITIES.md` (13KB, 11 docs planned)
+- ✅ `docs/audits/2025-10-27/CODEBASE_AUDIT.md` (22KB, 28 issues identified)
+- ✅ `docs/audits/2025-10-27/DOCUMENTATION_REVIEW.md` (11KB, 11 issues identified)
+- ✅ `docs/audits/2025-10-27/DOCUMENTATION_PRIORITIES.md` (13KB, 11 docs planned)
 - ✅ `docs/CONTINUATION.md` (updated with dev environment)
 
 ### 📄 Project Artifacts (3)
@@ -91,11 +91,13 @@ Conduct a comprehensive, production-quality audit of the entire textMan codebase
 
 **Total:** 8 new files + 1 modified
 
-### New Files (8):
+### New Files (9):
 ```
-docs/CODEBASE_AUDIT_2025-10-27.md
-docs/DOCUMENTATION_REVIEW_2025-10-27.md
-docs/DOCUMENTATION_PRIORITIES.md
+docs/audits/2025-10-27/CODEBASE_AUDIT.md
+docs/audits/2025-10-27/DOCUMENTATION_REVIEW.md
+docs/audits/2025-10-27/DOCUMENTATION_PRIORITIES.md
+docs/audits/2025-10-27/README.md
+docs/audits/README.md
 docs/branch/claude-textman-codebase-audit-review-011CUZa1bC2dE3fG4hI5jK6l/README.md
 docs/branch/claude-textman-codebase-audit-review-011CUZa1bC2dE3fG4hI5jK6l/BRANCH_SUMMARY.md
 docs/branch/claude-textman-codebase-audit-review-011CUZa1bC2dE3fG4hI5jK6l/PR_DESCRIPTION.md
@@ -137,8 +139,8 @@ docs/CONTINUATION.md (+Dev Environment section)
 
 1. **Read the audit reports:**
    ```bash
-   cat docs/CODEBASE_AUDIT_2025-10-27.md
-   cat docs/DOCUMENTATION_REVIEW_2025-10-27.md
+   cat docs/audits/2025-10-27/CODEBASE_AUDIT.md
+   cat docs/audits/2025-10-27/DOCUMENTATION_REVIEW.md
    ```
 
 2. **Check new project files:**
@@ -156,7 +158,7 @@ docs/CONTINUATION.md (+Dev Environment section)
 
 4. **Verify documentation priorities:**
    ```bash
-   cat docs/DOCUMENTATION_PRIORITIES.md
+   cat docs/audits/2025-10-27/DOCUMENTATION_PRIORITIES.md
    ```
 
 ---
@@ -188,9 +190,11 @@ docs/CONTINUATION.md (+Dev Environment section)
 
 ## Related Documentation
 
-- [Codebase Audit](../../CODEBASE_AUDIT_2025-10-27.md)
-- [Documentation Review](../../DOCUMENTATION_REVIEW_2025-10-27.md)
-- [Documentation Priorities](../../DOCUMENTATION_PRIORITIES.md)
+- [Audit Summary](../../audits/2025-10-27/README.md)
+- [Codebase Audit](../../audits/2025-10-27/CODEBASE_AUDIT.md)
+- [Documentation Review](../../audits/2025-10-27/DOCUMENTATION_REVIEW.md)
+- [Documentation Priorities](../../audits/2025-10-27/DOCUMENTATION_PRIORITIES.md)
+- [Audit Archive](../../audits/README.md)
 - [Session Handoff System](../../CONTINUATION.md)
 - [Project README](../../../README.md)
 

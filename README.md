@@ -468,13 +468,12 @@ See [Contributors](https://github.com/dnoice/textMan/graphs/contributors) for a 
 
 ## 📚 Additional Documentation
 
-- [API Reference](docs/API.md)
-- [Architecture Overview](docs/ARCHITECTURE.md)
-- [Contributing Guidelines](docs/CONTRIBUTING.md)
+- [API Reference](docs/API.md) *(to be created)*
+- [Architecture Overview](docs/ARCHITECTURE.md) *(to be created)*
+- [Contributing Guidelines](docs/CONTRIBUTING.md) *(to be created)*
 - [Session Handoff System](docs/CONTINUATION.md)
-- [Security Audit Report](docs/CODEBASE_AUDIT_2025-10-27.md)
-- [Documentation Priorities](docs/DOCUMENTATION_PRIORITIES.md)
-- [Documentation Review](docs/DOCUMENTATION_REVIEW_2025-10-27.md)
+- [Audit Archive](docs/audits/) - All codebase and documentation audits
+- [Latest Audit (2025-10-27)](docs/audits/2025-10-27/) - Security, A11Y, Performance findings
 
 ---
 
