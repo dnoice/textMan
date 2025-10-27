@@ -10,11 +10,13 @@
 
 const APP_CONFIG = {
     name: 'textMan',
-    version: '2.0.0',
+    version: '2.1a.0',
     maxHistory: 50,
     maxSaved: 100,
+    maxFileSize: 10 * 1024 * 1024, // 10MB
     autoSaveDelay: 2000,
-    toastDuration: 3000
+    toastDuration: 3000,
+    debounceDelay: 300
 };
 
 const APP_STATE = {
@@ -37,6 +39,92 @@ const APP_STATE = {
     commandPalette: {
         isOpen: false,
         selectedIndex: 0
+    }
+};
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+const Utils = {
+    /**
+     * Debounce function to limit function calls
+     */
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+
+    /**
+     * Sanitize HTML to prevent XSS
+     */
+    sanitizeHTML(html) {
+        const div = document.createElement('div');
+        div.textContent = html;
+        return div.innerHTML;
+    },
+
+    /**
+     * Escape HTML entities
+     */
+    escapeHTML(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            '/': '&#x2F;'
+        };
+        return text.replace(/[&<>"'/]/g, (char) => map[char]);
+    },
+
+    /**
+     * Check storage quota
+     */
+    async checkStorageQuota() {
+        if ('storage' in navigator && 'estimate' in navigator.storage) {
+            try {
+                const estimate = await navigator.storage.estimate();
+                const percentUsed = (estimate.usage / estimate.quota) * 100;
+                return {
+                    usage: estimate.usage,
+                    quota: estimate.quota,
+                    percentUsed: percentUsed.toFixed(2),
+                    available: estimate.quota - estimate.usage
+                };
+            } catch (error) {
+                console.error('Storage quota check failed:', error);
+                return null;
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Format bytes to human readable
+     */
+    formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    },
+
+    /**
+     * Validate file size
+     */
+    validateFileSize(file) {
+        return file.size <= APP_CONFIG.maxFileSize;
     }
 };
 
@@ -1264,14 +1352,30 @@ const ImportExport = {
     importFile(file) {
         if (!file) return;
 
+        // Validate file size
+        if (!Utils.validateFileSize(file)) {
+            Toast.show(
+                'File Too Large',
+                `Maximum file size is ${Utils.formatBytes(APP_CONFIG.maxFileSize)}. Your file is ${Utils.formatBytes(file.size)}.`,
+                'error'
+            );
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
-            Editor.textarea.value = e.target.result;
-            Editor.handleInput();
-            Toast.show('Imported', `File "${file.name}" imported`, 'success');
+            try {
+                Editor.textarea.value = e.target.result;
+                Editor.handleInput();
+                Toast.show('Imported', `File "${Utils.escapeHTML(file.name)}" imported successfully`, 'success');
+            } catch (error) {
+                console.error('Import error:', error);
+                Toast.show('Error', 'Failed to process imported file', 'error');
+            }
         };
-        reader.onerror = () => {
-            Toast.show('Error', 'Failed to import file', 'error');
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            Toast.show('Error', 'Failed to read file', 'error');
         };
         reader.readAsText(file);
     },
@@ -1593,7 +1697,7 @@ const SidebarManager = {
      * Initialize sidebars
      */
     init() {
-        // Sidebar toggles
+        // Sidebar header toggles
         document.querySelectorAll('.sidebar-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
                 const sidebarType = btn.getAttribute('data-sidebar');
@@ -1602,10 +1706,27 @@ const SidebarManager = {
             });
         });
 
-        // Panel section toggles
+        // Floating sidebar toggles
+        document.querySelectorAll('.sidebar-float-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sidebarType = btn.getAttribute('data-sidebar');
+                const sidebar = document.getElementById(sidebarType === 'left' ? 'leftSidebar' : 'rightSidebar');
+                sidebar.classList.toggle('collapsed');
+            });
+        });
+
+        // Panel section toggles (left sidebar)
         document.querySelectorAll('.panel-header').forEach(header => {
             header.addEventListener('click', () => {
                 const section = header.closest('.panel-section');
+                section.classList.toggle('collapsed');
+            });
+        });
+
+        // Tool section toggles (right sidebar)
+        document.querySelectorAll('.tool-section-title').forEach(title => {
+            title.addEventListener('click', () => {
+                const section = title.closest('.tool-section');
                 section.classList.toggle('collapsed');
             });
         });
@@ -1959,13 +2080,29 @@ const DragDrop = {
             return;
         }
 
+        // Validate file size
+        if (!Utils.validateFileSize(file)) {
+            Toast.show(
+                'File Too Large',
+                `Maximum file size is ${Utils.formatBytes(APP_CONFIG.maxFileSize)}. Your file is ${Utils.formatBytes(file.size)}.`,
+                'error'
+            );
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
-            Editor.textarea.value = e.target.result;
-            Editor.handleInput();
-            Toast.show('File Loaded', `"${file.name}" imported successfully`, 'success');
+            try {
+                Editor.textarea.value = e.target.result;
+                Editor.handleInput();
+                Toast.show('File Loaded', `"${Utils.escapeHTML(file.name)}" imported successfully`, 'success');
+            } catch (error) {
+                console.error('File load error:', error);
+                Toast.show('Error', 'Failed to process file', 'error');
+            }
         };
-        reader.onerror = () => {
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
             Toast.show('Error', 'Failed to read file', 'error');
         };
         reader.readAsText(file);

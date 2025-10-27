@@ -1,0 +1,54 @@
+{
+  "name": "textMan - Advanced Text Manipulation Tool",
+  "short_name": "textMan",
+  "description": "Professional text manipulation tool with advanced editing, transformation, analytics, and export features",
+  "version": "2.1a.0",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%2310b981'/><path fill='white' d='M96 48c-8 0-14 6-14 14v68c0 8 6 14 14 14s14-6 14-14V62c0-8-6-14-14-14zm-40 28c-8 0-14 6-14 14v32c0 8 6 14 14 14s14-6 14-14V90c0-8-6-14-14-14zm80 0c-8 0-14 6-14 14v32c0 8 6 14 14 14s14-6 14-14V90c0-8-6-14-14-14z'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%2310b981'/><path fill='white' d='M256 128c-21 0-37 16-37 37v182c0 21 16 37 37 37s37-16 37-37V165c0-21-16-37-37-37zm-106 75c-21 0-37 16-37 37v85c0 21 16 37 37 37s37-16 37-37v-85c0-21-16-37-37-37zm212 0c-21 0-37 16-37 37v85c0 21 16 37 37 37s37-16 37-37v-85c0-21-16-37-37-37z'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "New Text",
+      "short_name": "New",
+      "description": "Start with a new blank text",
+      "url": "/?action=new",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%2310b981'/><path fill='white' d='M48 24c-2 0-4 2-4 4v16H28c-2 0-4 2-4 4s2 4 4 4h16v16c0 2 2 4 4 4s4-2 4-4V52h16c2 0 4-2 4-4s-2-4-4-4H52V28c0-2-2-4-4-4z'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View text analytics",
+      "url": "/?action=analytics",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%2310b981'/><path fill='white' d='M32 56c-2 0-4 2-4 4v12c0 2 2 4 4 4s4-2 4-4V60c0-2-2-4-4-4zm16-16c-2 0-4 2-4 4v28c0 2 2 4 4 4s4-2 4-4V44c0-2-2-4-4-4zm16-16c-2 0-4 2-4 4v44c0 2 2 4 4 4s4-2 4-4V28c0-2-2-4-4-4z'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
