@@ -131,24 +131,24 @@
         <div class="main-container">
             <!-- Left Sidebar -->
             <aside class="sidebar sidebar-left" id="leftSidebar">
-                <div class="sidebar-float-toggle" data-sidebar="left" title="Toggle sidebar">
+                <div class="sidebar-float-toggle" data-sidebar="left" title="Toggle Workspace sidebar" aria-label="Toggle workspace sidebar">
                     <i class="fas fa-chevron-left"></i>
                 </div>
                 <div class="sidebar-header">
                     <h2><i class="fas fa-folder-open"></i> Workspace</h2>
-                    <button class="sidebar-toggle" data-sidebar="left" title="Toggle sidebar">
+                    <button class="sidebar-toggle" data-sidebar="left" title="Toggle sidebar" aria-label="Toggle workspace sidebar">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                 </div>
                 <div class="sidebar-content">
                     <!-- History Section -->
-                    <div class="panel-section" id="historySection">
-                        <div class="panel-header" data-toggle="history">
+                    <div class="panel-section" id="historySection" data-section="history">
+                        <div class="panel-header" data-toggle="history" role="button" tabindex="0" aria-expanded="true" aria-controls="historyContent">
                             <i class="fas fa-history"></i>
                             <span>History</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                         </div>
-                        <div class="panel-content" id="historyContent">
+                        <div class="panel-content" id="historyContent" role="region" aria-labelledby="historySection">
                             <div class="empty-state">
                                 <i class="fas fa-history"></i>
                                 <p>No history yet</p>
@@ -157,25 +157,25 @@
                     </div>
 
                     <!-- Templates Section -->
-                    <div class="panel-section" id="templatesSection">
-                        <div class="panel-header" data-toggle="templates">
+                    <div class="panel-section" id="templatesSection" data-section="templates">
+                        <div class="panel-header" data-toggle="templates" role="button" tabindex="0" aria-expanded="true" aria-controls="templatesContent">
                             <i class="fas fa-file-alt"></i>
                             <span>Templates</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                         </div>
-                        <div class="panel-content" id="templatesContent">
+                        <div class="panel-content" id="templatesContent" role="region" aria-labelledby="templatesSection">
                             <!-- Template buttons will be injected here -->
                         </div>
                     </div>
 
                     <!-- Saved Texts Section -->
-                    <div class="panel-section" id="savedSection">
-                        <div class="panel-header" data-toggle="saved">
+                    <div class="panel-section" id="savedSection" data-section="saved">
+                        <div class="panel-header" data-toggle="saved" role="button" tabindex="0" aria-expanded="true" aria-controls="savedContent">
                             <i class="fas fa-bookmark"></i>
                             <span>Saved Texts</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                         </div>
-                        <div class="panel-content" id="savedContent">
+                        <div class="panel-content" id="savedContent" role="region" aria-labelledby="savedSection">
                             <div class="empty-state">
                                 <i class="fas fa-bookmark"></i>
                                 <p>No saved texts</p>
@@ -184,13 +184,13 @@
                     </div>
 
                     <!-- Clipboard History Section -->
-                    <div class="panel-section" id="clipboardSection">
-                        <div class="panel-header" data-toggle="clipboard">
+                    <div class="panel-section" id="clipboardSection" data-section="clipboard">
+                        <div class="panel-header" data-toggle="clipboard" role="button" tabindex="0" aria-expanded="true" aria-controls="clipboardContent">
                             <i class="fas fa-clipboard-list"></i>
                             <span>Clipboard</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                         </div>
-                        <div class="panel-content" id="clipboardContent">
+                        <div class="panel-content" id="clipboardContent" role="region" aria-labelledby="clipboardSection">
                             <div class="empty-state">
                                 <i class="fas fa-clipboard-list"></i>
                                 <p>No clipboard history</p>
@@ -310,109 +310,195 @@
 
             <!-- Right Sidebar -->
             <aside class="sidebar sidebar-right" id="rightSidebar">
-                <div class="sidebar-float-toggle" data-sidebar="right" title="Toggle sidebar">
+                <div class="sidebar-float-toggle" data-sidebar="right" title="Toggle Tools sidebar" aria-label="Toggle tools sidebar">
                     <i class="fas fa-chevron-right"></i>
                 </div>
                 <div class="sidebar-header">
                     <h2><i class="fas fa-toolbox"></i> Tools</h2>
-                    <button class="sidebar-toggle" data-sidebar="right" title="Toggle sidebar">
+                    <button class="sidebar-toggle" data-sidebar="right" title="Toggle sidebar" aria-label="Toggle tools sidebar">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
                 <div class="sidebar-content">
                     <!-- Analytics Section -->
-                    <div class="tool-section">
-                        <h3 class="tool-section-title">
-                            <i class="fas fa-chart-bar"></i> <span>Analytics</span>
+                    <div class="panel-section tool-section" id="analyticsSection" data-section="analytics">
+                        <div class="panel-header tool-section-title" data-toggle="analytics" role="button" tabindex="0" aria-expanded="true" aria-controls="analyticsContent">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Analytics</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
-                        </h3>
-                        <div class="tool-section-content">
+                        </div>
+                        <div class="panel-content tool-section-content" id="analyticsContent" role="region" aria-labelledby="analyticsSection">
                             <div class="analytics-mini" id="analyticsMini">
                                 <!-- Mini analytics will be injected here -->
                             </div>
-                            <button class="tool-btn tool-btn-primary" id="fullAnalyticsBtn">
+                            <button class="tool-btn tool-btn-primary" id="fullAnalyticsBtn" aria-label="Show full analytics">
                                 <i class="fas fa-chart-line"></i> Full Analysis
                             </button>
                         </div>
                     </div>
 
                     <!-- Text Transform Section -->
-                    <div class="tool-section">
-                        <h3 class="tool-section-title">
-                            <i class="fas fa-font"></i> <span>Text Transform</span>
+                    <div class="panel-section tool-section" id="transformSection" data-section="transform">
+                        <div class="panel-header tool-section-title" data-toggle="transform" role="button" tabindex="0" aria-expanded="true" aria-controls="transformContent">
+                            <i class="fas fa-font"></i>
+                            <span>Text Transform</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
-                        </h3>
-                        <div class="tool-section-content">
+                        </div>
+                        <div class="panel-content tool-section-content" id="transformContent" role="region" aria-labelledby="transformSection">
                             <div class="tool-grid" id="transformTools">
-                                <!-- Transform tools will be injected here -->
+                                <button class="tool-btn" id="uppercaseBtn" data-action="uppercase" aria-label="Convert to uppercase">
+                                    <i class="fas fa-arrow-up"></i> UPPERCASE
+                                </button>
+                                <button class="tool-btn" id="lowercaseBtn" data-action="lowercase" aria-label="Convert to lowercase">
+                                    <i class="fas fa-arrow-down"></i> lowercase
+                                </button>
+                                <button class="tool-btn" id="titlecaseBtn" data-action="titlecase" aria-label="Convert to title case">
+                                    <i class="fas fa-heading"></i> Title Case
+                                </button>
+                                <button class="tool-btn" id="sentencecaseBtn" data-action="sentencecase" aria-label="Convert to sentence case">
+                                    <i class="fas fa-align-left"></i> Sentence case
+                                </button>
+                                <button class="tool-btn" id="camelcaseBtn" data-action="camelcase" aria-label="Convert to camelCase">
+                                    <i class="fas fa-code"></i> camelCase
+                                </button>
+                                <button class="tool-btn" id="snakecaseBtn" data-action="snakecase" aria-label="Convert to snake_case">
+                                    <i class="fas fa-link"></i> snake_case
+                                </button>
+                                <button class="tool-btn" id="kebabcaseBtn" data-action="kebabcase" aria-label="Convert to kebab-case">
+                                    <i class="fas fa-minus"></i> kebab-case
+                                </button>
+                                <button class="tool-btn" id="reverseBtn" data-action="reverse" aria-label="Reverse text">
+                                    <i class="fas fa-exchange-alt"></i> Reverse
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Format & Clean Section -->
-                    <div class="tool-section">
-                        <h3 class="tool-section-title">
-                            <i class="fas fa-magic"></i> <span>Format & Clean</span>
+                    <div class="panel-section tool-section" id="formatSection" data-section="format">
+                        <div class="panel-header tool-section-title" data-toggle="format" role="button" tabindex="0" aria-expanded="true" aria-controls="formatContent">
+                            <i class="fas fa-magic"></i>
+                            <span>Format & Clean</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
-                        </h3>
-                        <div class="tool-section-content">
+                        </div>
+                        <div class="panel-content tool-section-content" id="formatContent" role="region" aria-labelledby="formatSection">
                             <div class="tool-grid" id="formatTools">
-                                <!-- Format tools will be injected here -->
+                                <button class="tool-btn" id="trimBtn" data-action="trim" aria-label="Trim whitespace">
+                                    <i class="fas fa-crop"></i> Trim
+                                </button>
+                                <button class="tool-btn" id="removeExtraSpacesBtn" data-action="removeSpaces" aria-label="Remove extra spaces">
+                                    <i class="fas fa-compress"></i> Remove Spaces
+                                </button>
+                                <button class="tool-btn" id="removeLineBreaksBtn" data-action="removeBreaks" aria-label="Remove line breaks">
+                                    <i class="fas fa-minus-circle"></i> Remove Breaks
+                                </button>
+                                <button class="tool-btn" id="removeNumbersBtn" data-action="removeNumbers" aria-label="Remove numbers">
+                                    <i class="fas fa-hashtag"></i> Remove Numbers
+                                </button>
+                                <button class="tool-btn" id="removePunctuationBtn" data-action="removePunctuation" aria-label="Remove punctuation">
+                                    <i class="fas fa-exclamation-circle"></i> Remove Punct.
+                                </button>
+                                <button class="tool-btn" id="removeDuplicatesBtn" data-action="removeDuplicates" aria-label="Remove duplicate lines">
+                                    <i class="fas fa-copy"></i> Remove Dupes
+                                </button>
+                                <button class="tool-btn" id="sortLinesBtn" data-action="sortLines" aria-label="Sort lines">
+                                    <i class="fas fa-sort-alpha-down"></i> Sort Lines
+                                </button>
+                                <button class="tool-btn" id="shuffleLinesBtn" data-action="shuffleLines" aria-label="Shuffle lines">
+                                    <i class="fas fa-random"></i> Shuffle
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Encode/Decode Section -->
-                    <div class="tool-section">
-                        <h3 class="tool-section-title">
-                            <i class="fas fa-code"></i> <span>Encode/Decode</span>
+                    <div class="panel-section tool-section" id="encodeSection" data-section="encode">
+                        <div class="panel-header tool-section-title" data-toggle="encode" role="button" tabindex="0" aria-expanded="true" aria-controls="encodeContent">
+                            <i class="fas fa-code"></i>
+                            <span>Encode/Decode</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
-                        </h3>
-                        <div class="tool-section-content">
+                        </div>
+                        <div class="panel-content tool-section-content" id="encodeContent" role="region" aria-labelledby="encodeSection">
                             <div class="tool-grid" id="encodeTools">
-                                <!-- Encode tools will be injected here -->
+                                <button class="tool-btn" id="base64EncodeBtn" data-action="base64Encode" aria-label="Encode to Base64">
+                                    <i class="fas fa-lock"></i> Base64 Encode
+                                </button>
+                                <button class="tool-btn" id="base64DecodeBtn" data-action="base64Decode" aria-label="Decode from Base64">
+                                    <i class="fas fa-unlock"></i> Base64 Decode
+                                </button>
+                                <button class="tool-btn" id="urlEncodeBtn" data-action="urlEncode" aria-label="URL Encode">
+                                    <i class="fas fa-link"></i> URL Encode
+                                </button>
+                                <button class="tool-btn" id="urlDecodeBtn" data-action="urlDecode" aria-label="URL Decode">
+                                    <i class="fas fa-unlink"></i> URL Decode
+                                </button>
+                                <button class="tool-btn" id="htmlEncodeBtn" data-action="htmlEncode" aria-label="HTML Encode">
+                                    <i class="fas fa-code"></i> HTML Encode
+                                </button>
+                                <button class="tool-btn" id="htmlDecodeBtn" data-action="htmlDecode" aria-label="HTML Decode">
+                                    <i class="fas fa-file-code"></i> HTML Decode
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Advanced Tools Section -->
-                    <div class="tool-section">
-                        <h3 class="tool-section-title">
-                            <i class="fas fa-tools"></i> <span>Advanced</span>
+                    <div class="panel-section tool-section" id="advancedSection" data-section="advanced">
+                        <div class="panel-header tool-section-title" data-toggle="advanced" role="button" tabindex="0" aria-expanded="true" aria-controls="advancedContent">
+                            <i class="fas fa-tools"></i>
+                            <span>Advanced</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
-                        </h3>
-                        <div class="tool-section-content">
+                        </div>
+                        <div class="panel-content tool-section-content" id="advancedContent" role="region" aria-labelledby="advancedSection">
                             <div class="tool-grid">
-                                <button class="tool-btn" id="diffToolBtn">
+                                <button class="tool-btn" id="diffToolBtn" data-action="diff" aria-label="Compare texts">
                                     <i class="fas fa-code-compare"></i> Diff/Compare
                                 </button>
-                                <button class="tool-btn" id="hashToolBtn">
+                                <button class="tool-btn" id="hashToolBtn" data-action="hash" aria-label="Generate hash">
                                     <i class="fas fa-hashtag"></i> Hash Generator
                                 </button>
-                                <button class="tool-btn" id="loremBtn">
+                                <button class="tool-btn" id="loremBtn" data-action="lorem" aria-label="Generate Lorem Ipsum">
                                     <i class="fas fa-paragraph"></i> Lorem Ipsum
                                 </button>
-                                <button class="tool-btn" id="regexToolBtn">
+                                <button class="tool-btn" id="regexToolBtn" data-action="regex" aria-label="Test regular expressions">
                                     <i class="fas fa-regular-expression"></i> Regex Tester
+                                </button>
+                                <button class="tool-btn" id="wordWrapBtn" data-action="wordwrap" aria-label="Word wrap">
+                                    <i class="fas fa-align-justify"></i> Word Wrap
+                                </button>
+                                <button class="tool-btn" id="indentBtn" data-action="indent" aria-label="Indent text">
+                                    <i class="fas fa-indent"></i> Indent
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Import/Export Section -->
-                    <div class="tool-section">
-                        <h3 class="tool-section-title">
-                            <i class="fas fa-file-export"></i> <span>Import/Export</span>
+                    <div class="panel-section tool-section" id="importExportSection" data-section="importexport">
+                        <div class="panel-header tool-section-title" data-toggle="importexport" role="button" tabindex="0" aria-expanded="true" aria-controls="importExportContent">
+                            <i class="fas fa-file-export"></i>
+                            <span>Import/Export</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
-                        </h3>
-                        <div class="tool-section-content">
+                        </div>
+                        <div class="panel-content tool-section-content" id="importExportContent" role="region" aria-labelledby="importExportSection">
                             <div class="import-export-section">
-                                <input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.html" hidden>
-                                <button class="tool-btn" id="importBtn">
+                                <input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.html" hidden aria-label="File input">
+                                <button class="tool-btn" id="importBtn" aria-label="Import file">
                                     <i class="fas fa-file-import"></i> Import File
                                 </button>
                                 <div class="export-options" id="exportOptions">
-                                    <!-- Export options will be injected here -->
+                                    <button class="tool-btn" id="exportTxtBtn" data-format="txt" aria-label="Export as TXT">
+                                        <i class="fas fa-file-alt"></i> Export TXT
+                                    </button>
+                                    <button class="tool-btn" id="exportMdBtn" data-format="md" aria-label="Export as Markdown">
+                                        <i class="fas fa-markdown"></i> Export MD
+                                    </button>
+                                    <button class="tool-btn" id="exportJsonBtn" data-format="json" aria-label="Export as JSON">
+                                        <i class="fas fa-file-code"></i> Export JSON
+                                    </button>
+                                    <button class="tool-btn" id="exportHtmlBtn" data-format="html" aria-label="Export as HTML">
+                                        <i class="fas fa-file-code"></i> Export HTML
+                                    </button>
                                 </div>
                             </div>
                         </div>
