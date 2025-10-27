@@ -563,7 +563,10 @@ body {
     cursor: pointer;
     user-select: none;
     transition: all var(--transition-fast);
+    font-size: 0.875rem; /* Explicit size for h3 elements */
     font-weight: 500;
+    line-height: 1.5; /* Consistent line height */
+    margin: 0; /* Ensure h3 margin is reset */
     color: var(--text-primary);
     outline: none;
 }
@@ -813,8 +816,9 @@ body {
 .tool-section-title {
     font-size: 0.8125rem;
     font-weight: 600;
+    line-height: 1.5; /* Consistent line height */
     color: var(--text-primary);
-    margin-bottom: 0;
+    margin: 0; /* Ensure h3 margin is fully reset */
     padding: var(--spacing-sm) var(--spacing-md);
     display: flex;
     align-items: center;
