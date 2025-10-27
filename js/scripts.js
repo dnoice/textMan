@@ -794,6 +794,184 @@ const TextTools = {
         } catch (error) {
             Toast.show('Error', 'Failed to decode URL', 'error');
         }
+    },
+
+    /**
+     * HTML Encode
+     */
+    encodeHTML() {
+        const htmlEncode = (str) => {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        };
+
+        Editor.textarea.value = htmlEncode(Editor.textarea.value);
+        Editor.handleInput();
+        Toast.show('Encoded', 'Text HTML encoded', 'success');
+    },
+
+    /**
+     * HTML Decode
+     */
+    decodeHTML() {
+        const htmlDecode = (str) => {
+            const div = document.createElement('div');
+            div.innerHTML = str;
+            return div.textContent;
+        };
+
+        Editor.textarea.value = htmlDecode(Editor.textarea.value);
+        Editor.handleInput();
+        Toast.show('Decoded', 'Text HTML decoded', 'success');
+    },
+
+    /**
+     * Transform to camelCase
+     */
+    toCamelCase() {
+        const camelCase = (str) => {
+            return str.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, (match, index) => {
+                if (+match === 0) return '';
+                return index === 0 ? match.toLowerCase() : match.toUpperCase();
+            });
+        };
+
+        const selection = Editor.getSelection();
+        if (selection.text) {
+            Editor.replaceSelection(camelCase(selection.text));
+        } else {
+            Editor.textarea.value = camelCase(Editor.textarea.value);
+            Editor.handleInput();
+        }
+        Toast.show('Transformed', 'Text converted to camelCase', 'success');
+    },
+
+    /**
+     * Transform to snake_case
+     */
+    toSnakeCase() {
+        const snakeCase = (str) => {
+            return str.replace(/\W+/g, ' ')
+                .split(/ |\B(?=[A-Z])/)
+                .map(word => word.toLowerCase())
+                .join('_');
+        };
+
+        const selection = Editor.getSelection();
+        if (selection.text) {
+            Editor.replaceSelection(snakeCase(selection.text));
+        } else {
+            Editor.textarea.value = snakeCase(Editor.textarea.value);
+            Editor.handleInput();
+        }
+        Toast.show('Transformed', 'Text converted to snake_case', 'success');
+    },
+
+    /**
+     * Transform to kebab-case
+     */
+    toKebabCase() {
+        const kebabCase = (str) => {
+            return str.replace(/\W+/g, ' ')
+                .split(/ |\B(?=[A-Z])/)
+                .map(word => word.toLowerCase())
+                .join('-');
+        };
+
+        const selection = Editor.getSelection();
+        if (selection.text) {
+            Editor.replaceSelection(kebabCase(selection.text));
+        } else {
+            Editor.textarea.value = kebabCase(Editor.textarea.value);
+            Editor.handleInput();
+        }
+        Toast.show('Transformed', 'Text converted to kebab-case', 'success');
+    },
+
+    /**
+     * Trim whitespace
+     */
+    trim() {
+        const lines = Editor.textarea.value.split('\n');
+        Editor.textarea.value = lines.map(line => line.trim()).join('\n');
+        Editor.handleInput();
+        Toast.show('Cleaned', 'Whitespace trimmed', 'success');
+    },
+
+    /**
+     * Remove numbers
+     */
+    removeNumbers() {
+        Editor.textarea.value = Editor.textarea.value.replace(/\d/g, '');
+        Editor.handleInput();
+        Toast.show('Cleaned', 'Numbers removed', 'success');
+    },
+
+    /**
+     * Remove punctuation
+     */
+    removePunctuation() {
+        Editor.textarea.value = Editor.textarea.value.replace(/[^\w\s]|_/g, '');
+        Editor.handleInput();
+        Toast.show('Cleaned', 'Punctuation removed', 'success');
+    },
+
+    /**
+     * Shuffle lines
+     */
+    shuffleLines() {
+        const lines = Editor.textarea.value.split('\n');
+        for (let i = lines.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [lines[i], lines[j]] = [lines[j], lines[i]];
+        }
+        Editor.textarea.value = lines.join('\n');
+        Editor.handleInput();
+        Toast.show('Shuffled', 'Lines shuffled randomly', 'success');
+    },
+
+    /**
+     * Word wrap at specified column
+     */
+    wordWrap(columns = 80) {
+        const lines = Editor.textarea.value.split('\n');
+        const wrapped = [];
+
+        lines.forEach(line => {
+            if (line.length <= columns) {
+                wrapped.push(line);
+            } else {
+                const words = line.split(' ');
+                let currentLine = '';
+
+                words.forEach(word => {
+                    if ((currentLine + word).length <= columns) {
+                        currentLine += (currentLine ? ' ' : '') + word;
+                    } else {
+                        if (currentLine) wrapped.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+
+                if (currentLine) wrapped.push(currentLine);
+            }
+        });
+
+        Editor.textarea.value = wrapped.join('\n');
+        Editor.handleInput();
+        Toast.show('Formatted', `Text wrapped at ${columns} columns`, 'success');
+    },
+
+    /**
+     * Indent text
+     */
+    indent(spaces = 4) {
+        const lines = Editor.textarea.value.split('\n');
+        const indent = ' '.repeat(spaces);
+        Editor.textarea.value = lines.map(line => indent + line).join('\n');
+        Editor.handleInput();
+        Toast.show('Formatted', `Text indented by ${spaces} spaces`, 'success');
     }
 };
 
@@ -1381,11 +1559,28 @@ const ImportExport = {
     },
 
     /**
-     * Export as text file
+     * Export as text file (or route to other formats)
      */
-    exportText() {
-        const blob = new Blob([Editor.textarea.value], { type: 'text/plain' });
-        this.download(blob, 'textman-export.txt');
+    exportText(format = 'txt') {
+        switch (format) {
+            case 'txt':
+                const blob = new Blob([Editor.textarea.value], { type: 'text/plain' });
+                this.download(blob, 'textman-export.txt');
+                break;
+            case 'md':
+                const mdBlob = new Blob([Editor.textarea.value], { type: 'text/markdown' });
+                this.download(mdBlob, 'textman-export.md');
+                break;
+            case 'json':
+                this.exportJSON();
+                break;
+            case 'html':
+                this.exportHTML();
+                break;
+            default:
+                const defaultBlob = new Blob([Editor.textarea.value], { type: 'text/plain' });
+                this.download(defaultBlob, 'textman-export.txt');
+        }
     },
 
     /**
@@ -1495,19 +1690,29 @@ const ToolsManager = {
         document.getElementById('compareBtn')?.addEventListener('click', () => AdvancedTools.showDiff());
 
         // Header buttons
-        document.getElementById('fullAnalyticsBtn').addEventListener('click', () => Analytics.showFull());
+        document.getElementById('fullAnalyticsBtn')?.addEventListener('click', () => Analytics.showFull());
         document.getElementById('themeToggle').addEventListener('click', () => ThemeManager.toggle());
         document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
         document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
 
-        // Transform tools
-        this.renderTransformTools();
+        // Attach tool button listeners using event delegation
+        this.attachToolListeners();
 
-        // Format tools
-        this.renderFormatTools();
+        // Initialize export buttons
+        this.initExportButtons();
+    },
 
-        // Encode tools
-        this.renderEncodeTools();
+    /**
+     * Initialize export buttons
+     */
+    initExportButtons() {
+        const exportButtons = document.querySelectorAll('.export-options .tool-btn[data-format]');
+        exportButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const format = btn.getAttribute('data-format');
+                ImportExport.exportText(format);
+            });
+        });
     },
 
     /**
@@ -1619,73 +1824,68 @@ const ToolsManager = {
     },
 
     /**
-     * Render transform tools
+     * Attach tool button event listeners using event delegation
      */
-    renderTransformTools() {
-        const container = document.getElementById('transformTools');
-        container.innerHTML = `
-            <button class="tool-btn" onclick="TextTools.toUpperCase()">
-                <i class="fas fa-arrow-up"></i> UPPERCASE
-            </button>
-            <button class="tool-btn" onclick="TextTools.toLowerCase()">
-                <i class="fas fa-arrow-down"></i> lowercase
-            </button>
-            <button class="tool-btn" onclick="TextTools.toTitleCase()">
-                <i class="fas fa-heading"></i> Title Case
-            </button>
-            <button class="tool-btn" onclick="TextTools.toSentenceCase()">
-                <i class="fas fa-paragraph"></i> Sentence case
-            </button>
-            <button class="tool-btn" onclick="TextTools.reverse()">
-                <i class="fas fa-exchange-alt"></i> Reverse
-            </button>
-            <button class="tool-btn" onclick="TextTools.sortLines()">
-                <i class="fas fa-sort-alpha-down"></i> Sort Lines
-            </button>
-        `;
+    attachToolListeners() {
+        // Event delegation for all tool buttons
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.tool-btn[data-action]');
+            if (!btn) return;
+
+            const action = btn.getAttribute('data-action');
+            this.handleToolAction(action);
+        });
     },
 
     /**
-     * Render format tools
+     * Handle tool button actions
      */
-    renderFormatTools() {
-        const container = document.getElementById('formatTools');
-        container.innerHTML = `
-            <button class="tool-btn" onclick="TextTools.removeExtraSpaces()">
-                <i class="fas fa-compress"></i> Trim Spaces
-            </button>
-            <button class="tool-btn" onclick="TextTools.removeLineBreaks()">
-                <i class="fas fa-minus"></i> Remove Breaks
-            </button>
-            <button class="tool-btn" onclick="TextTools.addLineNumbers()">
-                <i class="fas fa-list-ol"></i> Line Numbers
-            </button>
-            <button class="tool-btn" onclick="TextTools.removeDuplicates()">
-                <i class="fas fa-clone"></i> Remove Dupes
-            </button>
-        `;
-    },
+    handleToolAction(action) {
+        const actionMap = {
+            // Transform tools
+            'uppercase': () => TextTools.toUpperCase(),
+            'lowercase': () => TextTools.toLowerCase(),
+            'titlecase': () => TextTools.toTitleCase(),
+            'sentencecase': () => TextTools.toSentenceCase(),
+            'camelcase': () => TextTools.toCamelCase(),
+            'snakecase': () => TextTools.toSnakeCase(),
+            'kebabcase': () => TextTools.toKebabCase(),
+            'reverse': () => TextTools.reverse(),
 
-    /**
-     * Render encode tools
-     */
-    renderEncodeTools() {
-        const container = document.getElementById('encodeTools');
-        container.innerHTML = `
-            <button class="tool-btn" onclick="TextTools.encodeBase64()">
-                <i class="fas fa-lock"></i> Base64 Encode
-            </button>
-            <button class="tool-btn" onclick="TextTools.decodeBase64()">
-                <i class="fas fa-unlock"></i> Base64 Decode
-            </button>
-            <button class="tool-btn" onclick="TextTools.encodeURL()">
-                <i class="fas fa-link"></i> URL Encode
-            </button>
-            <button class="tool-btn" onclick="TextTools.decodeURL()">
-                <i class="fas fa-unlink"></i> URL Decode
-            </button>
-        `;
+            // Format tools
+            'trim': () => TextTools.trim(),
+            'removeSpaces': () => TextTools.removeExtraSpaces(),
+            'removeBreaks': () => TextTools.removeLineBreaks(),
+            'removeNumbers': () => TextTools.removeNumbers(),
+            'removePunctuation': () => TextTools.removePunctuation(),
+            'removeDuplicates': () => TextTools.removeDuplicates(),
+            'sortLines': () => TextTools.sortLines(),
+            'shuffleLines': () => TextTools.shuffleLines(),
+
+            // Encode/Decode tools
+            'base64Encode': () => TextTools.encodeBase64(),
+            'base64Decode': () => TextTools.decodeBase64(),
+            'urlEncode': () => TextTools.encodeURL(),
+            'urlDecode': () => TextTools.decodeURL(),
+            'htmlEncode': () => TextTools.encodeHTML(),
+            'htmlDecode': () => TextTools.decodeHTML(),
+
+            // Advanced tools
+            'diff': () => AdvancedTools.showDiff(),
+            'hash': () => AdvancedTools.showHash(),
+            'lorem': () => AdvancedTools.showLorem(),
+            'regex': () => AdvancedTools.showRegex(),
+            'wordwrap': () => TextTools.wordWrap(),
+            'indent': () => TextTools.indent()
+        };
+
+        if (actionMap[action]) {
+            actionMap[action]();
+        } else {
+            console.warn('Unknown tool action:', action);
+        }
     }
+}
 };
 
 // ============================================================================
@@ -1702,7 +1902,7 @@ const SidebarManager = {
             btn.addEventListener('click', () => {
                 const sidebarType = btn.getAttribute('data-sidebar');
                 const sidebar = document.getElementById(sidebarType === 'left' ? 'leftSidebar' : 'rightSidebar');
-                sidebar.classList.toggle('collapsed');
+                this.toggleSidebar(sidebar);
             });
         });
 
@@ -1711,24 +1911,101 @@ const SidebarManager = {
             btn.addEventListener('click', () => {
                 const sidebarType = btn.getAttribute('data-sidebar');
                 const sidebar = document.getElementById(sidebarType === 'left' ? 'leftSidebar' : 'rightSidebar');
-                sidebar.classList.toggle('collapsed');
+                this.toggleSidebar(sidebar);
             });
         });
 
-        // Panel section toggles (left sidebar)
+        // Panel section toggles (left sidebar) - with keyboard support
         document.querySelectorAll('.panel-header').forEach(header => {
+            // Click handler
             header.addEventListener('click', () => {
-                const section = header.closest('.panel-section');
-                section.classList.toggle('collapsed');
+                this.toggleSection(header);
+            });
+
+            // Keyboard handler (Enter and Space)
+            header.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.toggleSection(header);
+                }
             });
         });
 
-        // Tool section toggles (right sidebar)
+        // Tool section toggles (right sidebar) - with keyboard support
         document.querySelectorAll('.tool-section-title').forEach(title => {
+            // Click handler
             title.addEventListener('click', () => {
-                const section = title.closest('.tool-section');
-                section.classList.toggle('collapsed');
+                this.toggleSection(title);
             });
+
+            // Keyboard handler (Enter and Space)
+            title.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.toggleSection(title);
+                }
+            });
+        });
+    },
+
+    /**
+     * Toggle sidebar collapsed state
+     */
+    toggleSidebar(sidebar) {
+        sidebar.classList.toggle('collapsed');
+
+        // Save sidebar state to local storage
+        const sidebarId = sidebar.id;
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        Storage.save(`sidebar_${sidebarId}`, isCollapsed);
+    },
+
+    /**
+     * Toggle section collapsed state (works for both panel-section and tool-section)
+     */
+    toggleSection(header) {
+        const section = header.closest('.panel-section, .tool-section');
+        if (!section) return;
+
+        const isCollapsed = section.classList.contains('collapsed');
+        section.classList.toggle('collapsed');
+
+        // Update aria-expanded attribute
+        header.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
+
+        // Save section state to local storage
+        const sectionId = section.id;
+        if (sectionId) {
+            Storage.save(`section_${sectionId}`, !isCollapsed);
+        }
+    },
+
+    /**
+     * Restore saved sidebar and section states
+     */
+    restoreStates() {
+        // Restore sidebar states
+        ['leftSidebar', 'rightSidebar'].forEach(sidebarId => {
+            const sidebar = document.getElementById(sidebarId);
+            const savedState = Storage.load(`sidebar_${sidebarId}`);
+            if (savedState === true) {
+                sidebar.classList.add('collapsed');
+            }
+        });
+
+        // Restore section states
+        document.querySelectorAll('.panel-section, .tool-section').forEach(section => {
+            const sectionId = section.id;
+            if (sectionId) {
+                const savedState = Storage.load(`section_${sectionId}`);
+                if (savedState === true) {
+                    section.classList.add('collapsed');
+                    const header = section.querySelector('.panel-header, .tool-section-title');
+                    if (header) {
+                        header.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            }
         });
     }
 };
@@ -2699,6 +2976,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ImportExport.init();
     ToolsManager.init();
     SidebarManager.init();
+    SidebarManager.restoreStates(); // Restore saved sidebar/section states
     ContextMenu.init();
 
     // Initialize new features

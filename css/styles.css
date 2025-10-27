@@ -362,6 +362,8 @@ body {
     flex: 1;
     display: flex;
     overflow: hidden;
+    min-height: 0; /* Critical for proper flexbox overflow handling */
+    position: relative;
 }
 
 /* ============================================================================
@@ -389,13 +391,13 @@ body {
     min-width: 0;
 }
 
-/* Floating sidebar toggle buttons */
+/* Floating sidebar toggle buttons - Enhanced for better visibility */
 .sidebar-float-toggle {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 32px;
-    height: 64px;
+    width: 36px;
+    height: 72px;
     background-color: var(--bg-elevated);
     border: 1px solid var(--border-color);
     display: flex;
@@ -403,56 +405,75 @@ body {
     justify-content: center;
     cursor: pointer;
     z-index: var(--z-sticky);
-    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
-    box-shadow: var(--shadow-md);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-lg);
     will-change: transform, background-color;
+    color: var(--text-secondary);
+    font-size: 1rem;
 }
 
+/* Position when sidebar is open */
 .sidebar-left .sidebar-float-toggle {
-    right: -32px;
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    right: -36px;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
     border-left: none;
 }
 
 .sidebar-right .sidebar-float-toggle {
-    left: -32px;
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    left: -36px;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
     border-right: none;
 }
 
+/* Hover state */
 .sidebar-float-toggle:hover {
     background-color: var(--color-primary);
     color: white;
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: var(--shadow-xl);
 }
 
+.sidebar-float-toggle:active {
+    transform: translateY(-50%) scale(0.98);
+}
+
+/* Position when sidebar is collapsed - CRITICAL */
 .sidebar.collapsed .sidebar-float-toggle {
     position: fixed;
     z-index: var(--z-fixed);
+    top: 50%;
 }
 
 .sidebar-left.collapsed .sidebar-float-toggle {
     left: 0;
     right: auto;
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    border-left: none;
 }
 
 .sidebar-right.collapsed .sidebar-float-toggle {
     right: 0;
     left: auto;
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    border-right: none;
 }
 
+/* Icon transitions */
 .sidebar-float-toggle i {
     transition: transform var(--transition-base);
-    color: var(--text-secondary);
+    color: currentColor;
 }
 
 .sidebar-float-toggle:hover i {
     color: white;
 }
 
-.sidebar.collapsed .sidebar-float-toggle i {
+/* Rotate icon when sidebar is collapsed */
+.sidebar-left.collapsed .sidebar-float-toggle i {
+    transform: rotate(180deg);
+}
+
+.sidebar-right.collapsed .sidebar-float-toggle i {
     transform: rotate(180deg);
 }
 
@@ -498,6 +519,10 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: var(--spacing-md);
+    min-height: 0; /* Critical for proper flexbox scrolling */
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 /* Custom Scrollbar */
@@ -523,7 +548,9 @@ body {
    ========================================================================= */
 
 .panel-section {
-    margin-bottom: var(--spacing-lg);
+    flex-shrink: 0; /* Prevent sections from shrinking */
+    display: flex;
+    flex-direction: column;
 }
 
 .panel-header {
@@ -536,20 +563,36 @@ body {
     cursor: pointer;
     user-select: none;
     transition: all var(--transition-fast);
+    font-size: 0.875rem; /* Explicit size for h3 elements */
     font-weight: 500;
+    line-height: 1.5; /* Consistent line height */
+    margin: 0; /* Ensure h3 margin is reset */
     color: var(--text-primary);
+    outline: none;
 }
 
 .panel-header:hover {
     background-color: var(--border-color);
+    transform: translateX(2px);
+}
+
+.panel-header:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.panel-header:active {
+    transform: translateX(0);
 }
 
 .panel-header i:first-child {
     color: var(--color-primary);
+    flex-shrink: 0;
 }
 
 .panel-header span {
     flex: 1;
+    font-size: 0.875rem;
 }
 
 .toggle-icon {
@@ -564,10 +607,11 @@ body {
 .panel-content {
     margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
-    transition: max-height var(--transition-base), opacity var(--transition-base), padding var(--transition-base), margin var(--transition-base);
-    max-height: 400px;
+    transition: max-height var(--transition-slow), opacity var(--transition-base), padding var(--transition-base), margin var(--transition-base);
+    max-height: 600px; /* Increased for better content visibility */
     overflow-y: auto;
     overflow-x: hidden;
+    will-change: max-height, opacity; /* Optimize animations */
 }
 
 .panel-section.collapsed .panel-content {
@@ -576,6 +620,7 @@ body {
     padding: 0;
     margin: 0;
     overflow: hidden;
+    visibility: hidden; /* Better accessibility */
 }
 
 /* Custom scrollbar for panel content */
@@ -622,6 +667,8 @@ body {
     flex-direction: column;
     background-color: var(--bg-primary);
     overflow: hidden;
+    min-width: 0; /* Critical for proper flexbox overflow */
+    min-height: 0; /* Critical for proper flexbox overflow */
 }
 
 .editor-toolbar {
@@ -757,18 +804,21 @@ body {
 }
 
 /* ============================================================================
-   Tool Sections
+   Tool Sections (Right Sidebar - matches Panel Sections behavior)
    ========================================================================= */
 
 .tool-section {
-    margin-bottom: var(--spacing-lg);
+    flex-shrink: 0; /* Prevent sections from shrinking */
+    display: flex;
+    flex-direction: column;
 }
 
 .tool-section-title {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
+    line-height: 1.5; /* Consistent line height */
     color: var(--text-primary);
-    margin-bottom: 0;
+    margin: 0; /* Ensure h3 margin is fully reset */
     padding: var(--spacing-sm) var(--spacing-md);
     display: flex;
     align-items: center;
@@ -781,14 +831,26 @@ body {
     user-select: none;
     transition: all var(--transition-fast);
     position: relative;
+    outline: none;
 }
 
 .tool-section-title:hover {
     background-color: var(--border-color);
+    transform: translateX(2px);
+}
+
+.tool-section-title:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.tool-section-title:active {
+    transform: translateX(0);
 }
 
 .tool-section-title i:first-child {
     color: var(--color-primary);
+    flex-shrink: 0;
 }
 
 .tool-section-title span {
@@ -806,39 +868,85 @@ body {
 }
 
 .tool-section-content {
-    transition: max-height var(--transition-base), opacity var(--transition-base), margin var(--transition-base);
-    max-height: 800px;
-    overflow: hidden;
+    transition: max-height var(--transition-slow), opacity var(--transition-base), margin var(--transition-base), padding var(--transition-base);
+    max-height: 800px; /* Larger than panel-content for tool grids */
+    overflow-y: auto;
+    overflow-x: hidden;
     margin-top: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+    will-change: max-height, opacity; /* Optimize animations */
 }
 
 .tool-section.collapsed .tool-section-content {
     max-height: 0;
     opacity: 0;
     margin-top: 0;
+    padding: 0;
+    overflow: hidden;
+    visibility: hidden; /* Better accessibility */
+}
+
+/* Custom scrollbar for tool section content */
+.tool-section-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tool-section-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tool-section-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+}
+
+.tool-section-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
 }
 
 .tool-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-sm);
+    padding: 0 var(--spacing-xs);
 }
 
 .tool-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-sm);
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     color: var(--text-primary);
     cursor: pointer;
     transition: all var(--transition-fast);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     justify-content: center;
     text-align: center;
+    white-space: nowrap;
+    min-height: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Add subtle hover effect */
+.tool-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, var(--color-primary) 100%);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.tool-btn:hover::before {
+    opacity: 0.1;
 }
 
 .tool-btn:hover {
@@ -846,10 +954,22 @@ body {
     border-color: var(--color-primary);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+    color: var(--color-primary);
 }
 
 .tool-btn:active {
     transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.tool-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.tool-btn i {
+    flex-shrink: 0;
+    font-size: 1rem;
 }
 
 .tool-btn-primary {
@@ -857,11 +977,39 @@ body {
     color: white;
     border-color: var(--color-primary);
     width: 100%;
+    font-weight: 600;
 }
 
 .tool-btn-primary:hover {
     background-color: var(--color-primary-dark);
     border-color: var(--color-primary-dark);
+    color: white;
+}
+
+.tool-btn-primary:hover::before {
+    opacity: 0;
+}
+
+/* ============================================================================
+   Import/Export Section
+   ========================================================================= */
+
+.import-export-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-xs);
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.export-options .tool-btn {
+    width: 100%;
+    justify-content: flex-start;
 }
 
 /* ============================================================================
@@ -1533,11 +1681,12 @@ body {
 @media (max-width: 768px) {
     :root {
         --header-height: 60px;
-        --sidebar-width: 260px;
+        --sidebar-width: 280px;
     }
 
     .header {
         padding: 0 var(--spacing-md);
+        gap: var(--spacing-sm);
     }
 
     .brand-name {
@@ -1559,15 +1708,32 @@ body {
 
     /* Larger touch targets on mobile */
     .icon-btn,
-    .toolbar-btn,
-    .tool-btn {
+    .toolbar-btn {
         min-width: 44px;
         min-height: 44px;
     }
 
+    .tool-btn {
+        min-height: 48px;
+        font-size: 0.875rem;
+        padding: var(--spacing-sm);
+    }
+
     .sidebar-float-toggle {
-        width: 40px;
-        height: 80px;
+        width: 44px;
+        height: 88px;
+        font-size: 1.125rem;
+    }
+
+    /* Ensure sidebars are full width on mobile when open */
+    .sidebar-left.collapsed,
+    .sidebar-right.collapsed {
+        width: 0;
+    }
+
+    /* Single column tool grid on mobile */
+    .tool-grid {
+        grid-template-columns: 1fr;
     }
 }
 
