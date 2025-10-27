@@ -119,12 +119,11 @@ git branch --merged main
 - [ ] Update LAST UPDATED timestamp
 - [ ] Add any notes or blockers
 
-### Step 6: Create Branch Documentation (If Code Changes)
+### Step 6: Create Branch Documentation
 - [ ] Create `docs/branch/[branch-name]/` directory
-- [ ] Create README.md (index)
-- [ ] Create PR_DESCRIPTION.md (ready for PR)
-- [ ] Create BRANCH_SUMMARY.md (technical details)
-- [ ] Create AUDIT_REPORT.md (if code changes)
+- [ ] Create required documents (see BRANCH DOCUMENTATION SYSTEM below)
+- [ ] Create conditional documents based on session type
+- [ ] Verify all documents using validation checklist
 
 ### Step 7: Provide Session Summary to User
 - [ ] Summarize accomplishments
@@ -150,7 +149,7 @@ git branch --merged main
 **Started:** 2025-10-27
 **Status:** 🟡 READY TO MERGE
 **Branch:** `claude/review-continuation-docs-011CUXGJW2YPRFzYD9Dxzjjt`
-**Focus:** Enhance continuation documentation with bulletproof session handoff system
+**Focus:** Enhance continuation documentation with bulletproof session handoff and branch documentation systems
 
 **Scope:**
 - Comprehensive branch naming convention with validation checklist
@@ -158,6 +157,7 @@ git branch --merged main
 - Session best practices guide
 - Lessons learned from past sessions
 - Bulletproof session management system with zero ambiguity
+- Standardized branch documentation system with templates
 
 **Completed:**
 - ✅ Enhanced branch naming section with 5 rules, examples, and validation checklist
@@ -178,11 +178,22 @@ git branch --merged main
 - ✅ Documented 10 anti-patterns with solutions
 - ✅ Created Session Management Quick Reference
 - ✅ Created Bulletproof System Components table
+- ✅ Built BRANCH DOCUMENTATION SYSTEM (4 required + 10 conditional + 5 optional)
+- ✅ Created Document Decision Matrix (8 session types)
+- ✅ Created 5 comprehensive document templates (README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY, AUDIT_REPORT)
+- ✅ Added Documentation Validation Checklist
+- ✅ Updated END PROTOCOL Step 6 to reference doc system
+- ✅ Updated File Organization in Best Practices
+- ✅ Updated Bulletproof System Components table
 
-**Commits:** 2
-**Files Changed:** `docs/CONTINUATION.md` (+818 lines, grew from 976 to 1,400+ lines)
-**Impact:** Zero-ambiguity session handoff system ensuring no session gets lost
-**Next Steps:** Review with user, create PR if approved, merge to main
+**Commits:** 3 (in progress)
+**Files Changed:** `docs/CONTINUATION.md` (+1,200+ lines, grew from 976 to 2,100+ lines)
+**Impact:**
+- Zero-ambiguity session handoff system ensuring no session gets lost
+- Standardized branch documentation across all future sessions
+- Templates prevent missing documentation
+- Decision matrix removes ambiguity about which docs to create
+**Next Steps:** Review with user, create branch documentation for this session, create PR if approved, merge to main
 
 ---
 
@@ -211,6 +222,342 @@ git branch --merged main
 **Commits:** 10
 **Files Changed:** `index.html`, `css/styles.css`, `js/scripts.js`, 5 documentation files
 **Documentation:** Complete (5 files in `docs/branch/textman-ui-improvements-011CUX91zuZkfD4P3s8vvBtc/`)
+
+---
+
+## 📚 BRANCH DOCUMENTATION SYSTEM
+
+**Every branch MUST have documentation in `docs/branch/[branch-name]/` directory.**
+
+### Documentation Categories
+
+**REQUIRED (Every Branch):**
+- ✅ **README.md** - Index and overview of branch
+- ✅ **BRANCH_SUMMARY.md** - Technical details and changes
+- ✅ **PR_DESCRIPTION.md** - Ready-to-use PR description
+- ✅ **BRANCH_MERGE_SUMMARY.md** - Merge instructions and checklist
+
+**CONDITIONAL (Based on Session Type):**
+- 🔧 **AUDIT_REPORT.md** - If code changes (HTML/CSS/JS/etc.)
+- 🧪 **TESTING.md** - If testing was performed or is required
+- 📊 **PERFORMANCE.md** - If performance changes or optimizations
+- 🔒 **SECURITY.md** - If security implications or changes
+- ♿ **ACCESSIBILITY.md** - If accessibility changes (WCAG compliance)
+- 🚀 **MIGRATION.md** - If breaking changes or migration needed
+- 📦 **DEPENDENCIES.md** - If new dependencies added
+- 🔄 **ROLLBACK.md** - If rollback procedure is needed
+- 📝 **LESSONS_LEARNED.md** - If significant insights gained
+- 📅 **SESSION_LOG.md** - If complex multi-session work
+
+**OPTIONAL (As Needed):**
+- 🎨 **DESIGN_DECISIONS.md** - Architectural or design rationale
+- 🐛 **KNOWN_ISSUES.md** - Issues deferred or remaining
+- 📖 **API_CHANGES.md** - If API modified
+- 🌐 **BROWSER_COMPATIBILITY.md** - If browser-specific changes
+- 📱 **MOBILE_CONSIDERATIONS.md** - If mobile-specific work
+
+---
+
+### Document Decision Matrix
+
+| Session Type | Required Docs | Conditional Docs |
+|--------------|---------------|------------------|
+| **Code Changes** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, ACCESSIBILITY |
+| **Documentation Only** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | LESSONS_LEARNED |
+| **Bug Fix** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, ROLLBACK |
+| **New Feature** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, MIGRATION, DEPENDENCIES |
+| **Refactoring** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, PERFORMANCE |
+| **Performance** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, PERFORMANCE |
+| **Security** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, SECURITY |
+| **Accessibility** | README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY | AUDIT_REPORT, TESTING, ACCESSIBILITY |
+
+---
+
+### Document Templates
+
+#### README.md Template
+```markdown
+# Branch: [branch-name]
+
+## Overview
+[One-paragraph description of what this branch does]
+
+## Session Info
+- **Session ID:** [session-id]
+- **Started:** YYYY-MM-DD
+- **Status:** [Status]
+- **Type:** [Code/Docs/Bug Fix/Feature/Refactor/etc.]
+
+## Quick Links
+- [Branch Summary](./BRANCH_SUMMARY.md) - Technical details
+- [PR Description](./PR_DESCRIPTION.md) - Ready for PR
+- [Merge Summary](./BRANCH_MERGE_SUMMARY.md) - How to merge
+[Add links to conditional docs if they exist]
+
+## Changes Summary
+- [Major change 1]
+- [Major change 2]
+- [Major change 3]
+
+## Files Modified
+- `file1.ext` - [what changed]
+- `file2.ext` - [what changed]
+
+## Testing
+[How to test these changes, or link to TESTING.md]
+
+## Notes
+[Any important notes or context]
+```
+
+#### BRANCH_SUMMARY.md Template
+```markdown
+# Technical Summary: [branch-name]
+
+## Session Information
+- **Session ID:** [session-id]
+- **Branch:** `[branch-name]`
+- **Started:** YYYY-MM-DD
+- **Status:** [Status]
+
+## Objectives
+[What we set out to accomplish]
+
+## Technical Changes
+
+### Files Modified
+| File | Lines Changed | Purpose |
+|------|---------------|---------|
+| file1 | +X, -Y | [Purpose] |
+| file2 | +X, -Y | [Purpose] |
+
+### Key Implementations
+1. **[Feature/Change 1]**
+   - Location: `file:line`
+   - Description: [Details]
+   - Rationale: [Why]
+
+2. **[Feature/Change 2]**
+   - Location: `file:line`
+   - Description: [Details]
+   - Rationale: [Why]
+
+## Technical Decisions
+[Important architectural or technical decisions made]
+
+## Dependencies
+[Any new dependencies or version updates]
+
+## Breaking Changes
+[Any breaking changes, or "None"]
+
+## Performance Impact
+[Performance considerations, or "None"]
+
+## Security Considerations
+[Security implications, or "None"]
+
+## Accessibility Impact
+[WCAG compliance notes, or "None"]
+
+## Future Work
+[Follow-up tasks or improvements needed]
+```
+
+#### PR_DESCRIPTION.md Template
+```markdown
+# [Title: Brief description of changes]
+
+## Summary
+[1-3 sentence summary of what this PR does]
+
+## Changes
+- [Change 1]
+- [Change 2]
+- [Change 3]
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactoring
+- [ ] Documentation
+- [ ] Performance improvement
+- [ ] Security enhancement
+- [ ] Accessibility improvement
+
+## Testing
+[How these changes were tested]
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex code
+- [ ] Documentation updated
+- [ ] No new warnings generated
+- [ ] Tests added/updated (if applicable)
+- [ ] Accessibility verified (WCAG 2.1 Level AA)
+
+## Screenshots (if applicable)
+[Add screenshots for UI changes]
+
+## Related Issues
+[Link to related issues or "None"]
+
+## Additional Notes
+[Any additional context]
+
+---
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+#### BRANCH_MERGE_SUMMARY.md Template
+```markdown
+# Merge Summary: [branch-name]
+
+## Pre-Merge Checklist
+- [ ] All commits pushed to remote
+- [ ] All tests passing
+- [ ] No merge conflicts with main
+- [ ] Documentation complete
+- [ ] Code reviewed (if applicable)
+- [ ] User approved merge
+
+## Merge Instructions
+
+### Step 1: Verify Branch State
+\`\`\`bash
+git checkout [branch-name]
+git status
+git log --oneline -5
+\`\`\`
+
+### Step 2: Update from Main
+\`\`\`bash
+git fetch origin main
+git merge origin/main
+# Resolve any conflicts if needed
+\`\`\`
+
+### Step 3: Create Pull Request
+\`\`\`bash
+# Use PR_DESCRIPTION.md for PR content
+gh pr create --title "[Title]" --body-file PR_DESCRIPTION.md
+\`\`\`
+
+### Step 4: Merge (After Approval)
+\`\`\`bash
+# Typically done via GitHub UI
+# Or: gh pr merge [pr-number] --squash
+\`\`\`
+
+### Step 5: Post-Merge Cleanup
+\`\`\`bash
+git checkout main
+git pull origin main
+git branch -d [branch-name]
+git push origin --delete [branch-name]
+\`\`\`
+
+## Post-Merge Tasks
+- [ ] Update CONTINUATION.md session status to ✅ MERGED
+- [ ] Delete local branch
+- [ ] Delete remote branch
+- [ ] Update any related documentation
+- [ ] Notify team (if applicable)
+
+## Rollback Plan (If Needed)
+[How to rollback if issues discovered after merge]
+```
+
+#### AUDIT_REPORT.md Template (Conditional)
+```markdown
+# Audit Report: [branch-name]
+
+**Date:** YYYY-MM-DD
+**Session:** [session-id]
+**Auditor:** Claude Code
+
+## Audit Scope
+[What was audited - HTML, CSS, JS, etc.]
+
+## Standards Checked
+- [ ] WCAG 2.1 Level AA Accessibility
+- [ ] Semantic HTML
+- [ ] Code quality and maintainability
+- [ ] Performance considerations
+- [ ] Security best practices
+- [ ] Browser compatibility
+
+## Audit Results
+
+### HTML Audit
+**Status:** [✅ PASS | ⚠️ ISSUES | ❌ FAIL]
+
+[Findings]
+
+### CSS Audit
+**Status:** [✅ PASS | ⚠️ ISSUES | ❌ FAIL]
+
+[Findings]
+
+### JavaScript Audit
+**Status:** [✅ PASS | ⚠️ ISSUES | ❌ FAIL]
+
+[Findings]
+
+### Accessibility Audit
+**Status:** [✅ PASS | ⚠️ ISSUES | ❌ FAIL]
+
+**WCAG 2.1 Level AA Compliance:**
+- [ ] Perceivable
+- [ ] Operable
+- [ ] Understandable
+- [ ] Robust
+
+[Findings]
+
+### Performance Audit
+**Status:** [✅ PASS | ⚠️ ISSUES | ❌ FAIL]
+
+[Findings]
+
+## Issues Found
+[List of issues with severity: CRITICAL, HIGH, MEDIUM, LOW]
+
+## Recommendations
+[Suggested improvements]
+
+## Overall Assessment
+**Status:** [✅ APPROVED | ⚠️ APPROVED WITH NOTES | ❌ NEEDS WORK]
+
+[Summary]
+```
+
+---
+
+### Documentation Validation Checklist
+
+**Before marking session END PROTOCOL Step 6 complete:**
+
+- [ ] Branch directory created: `docs/branch/[branch-name]/`
+- [ ] README.md created and complete
+- [ ] BRANCH_SUMMARY.md created and complete
+- [ ] PR_DESCRIPTION.md created and complete
+- [ ] BRANCH_MERGE_SUMMARY.md created and complete
+- [ ] Conditional docs created based on session type
+- [ ] All templates filled out completely (no placeholders)
+- [ ] All links between docs work correctly
+- [ ] Files committed and pushed with branch
+
+**Common Mistakes to Avoid:**
+- ❌ Leaving template placeholders like [branch-name] unfilled
+- ❌ Creating docs but not committing them
+- ❌ Skipping conditional docs when they're needed
+- ❌ Creating unnecessary docs that don't apply
+- ❌ Not linking between documents
 
 ---
 
@@ -305,19 +652,22 @@ This document ensures zero ambiguity across sessions. The session management sys
 | Component | Purpose | When to Use | Location |
 |-----------|---------|-------------|----------|
 | **ACTIVE SESSION STATUS** | Current session state at a glance | Every session start/end | Top of document |
-| **SESSION START PROTOCOL** | Mandatory steps when beginning | Every new session | Section above |
-| **SESSION END PROTOCOL** | Mandatory steps when finishing | Every session completion | Section above |
-| **SESSION REGISTRY** | Complete history of all sessions | Add entry at start, update at end | Below protocols |
-| **SESSION ENTRY TEMPLATE** | Standardized format for registry | Creating new session entry | Below registry |
-| **SESSION HANDOFF CHECKLIST** | Validation for transitions | Start and end of sessions | Below template |
-| **SESSION LIFECYCLE FLOWCHART** | Visual guide to session flow | Reference when unsure of process | Below checklist |
-| **ANTI-PATTERNS** | What NOT to do | Review to avoid mistakes | Below flowchart |
-| **Quick Reference** | Condensed checklist | Quick verification during session | Below anti-patterns |
+| **SESSION START PROTOCOL** | Mandatory steps when beginning | Every new session | After STATUS block |
+| **SESSION END PROTOCOL** | Mandatory steps when finishing | Every session completion | After START protocol |
+| **SESSION REGISTRY** | Complete history of all sessions | Add entry at start, update at end | After END protocol |
+| **BRANCH DOCUMENTATION SYSTEM** | Standardized branch docs with templates | Creating branch documentation | After REGISTRY |
+| **SESSION ENTRY TEMPLATE** | Standardized format for registry | Creating new session entry | After DOCS system |
+| **SESSION HANDOFF CHECKLIST** | Validation for transitions | Start and end of sessions | After template |
+| **SESSION LIFECYCLE FLOWCHART** | Visual guide to session flow | Reference when unsure of process | After checklist |
+| **ANTI-PATTERNS** | What NOT to do | Review to avoid mistakes | After flowchart |
+| **Quick Reference** | Condensed checklist | Quick verification during session | After anti-patterns |
 
 **System Guarantees:**
 - ✅ Zero ambiguity about current session state
 - ✅ Clear handoff between sessions
 - ✅ Complete history of all work
+- ✅ Standardized branch documentation (4 required + conditional)
+- ✅ Templates for all document types
 - ✅ Validation at every transition point
 - ✅ Red flags to catch mistakes early
 - ✅ Standardized process for consistency
@@ -1045,20 +1395,27 @@ When you start a new session with Claude:
 
 ### File Organization
 
-**Branch Documentation:**
+**Branch Documentation Structure:**
 ```
 docs/branch/[branch-name]/
-├── README.md                    (Index/overview)
-├── PR_DESCRIPTION.md            (Ready for PR)
-├── BRANCH_SUMMARY.md            (Technical details)
-├── AUDIT_REPORT.md              (If code changes)
-└── [other relevant docs]
+├── README.md                    (Required - Index/overview)
+├── BRANCH_SUMMARY.md            (Required - Technical details)
+├── PR_DESCRIPTION.md            (Required - Ready for PR)
+├── BRANCH_MERGE_SUMMARY.md      (Required - Merge instructions)
+├── AUDIT_REPORT.md              (Conditional - If code changes)
+├── TESTING.md                   (Conditional - If testing done)
+├── ACCESSIBILITY.md             (Conditional - If A11y changes)
+├── PERFORMANCE.md               (Conditional - If perf changes)
+├── LESSONS_LEARNED.md           (Conditional - If insights gained)
+└── [other conditional docs]     (See BRANCH DOCUMENTATION SYSTEM)
 ```
 
 **Always create at end of session:**
-1. Branch documentation folder
-2. All 4 core documentation files
-3. Update CONTINUATION.md with session info
+1. Branch documentation folder: `docs/branch/[branch-name]/`
+2. All 4 required docs (README, BRANCH_SUMMARY, PR_DESCRIPTION, MERGE_SUMMARY)
+3. Conditional docs based on session type (see Document Decision Matrix)
+4. Update CONTINUATION.md with session info
+5. Use templates from BRANCH DOCUMENTATION SYSTEM section
 
 ### Git Workflow
 
