@@ -121,6 +121,9 @@
         <div class="main-container">
             <!-- Left Sidebar -->
             <aside class="sidebar sidebar-left" id="leftSidebar">
+                <div class="sidebar-float-toggle" data-sidebar="left" title="Toggle sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
                 <div class="sidebar-header">
                     <h2><i class="fas fa-folder-open"></i> Workspace</h2>
                     <button class="sidebar-toggle" data-sidebar="left" title="Toggle sidebar">
@@ -297,6 +300,9 @@
 
             <!-- Right Sidebar -->
             <aside class="sidebar sidebar-right" id="rightSidebar">
+                <div class="sidebar-float-toggle" data-sidebar="right" title="Toggle sidebar">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
                 <div class="sidebar-header">
                     <h2><i class="fas fa-toolbox"></i> Tools</h2>
                     <button class="sidebar-toggle" data-sidebar="right" title="Toggle sidebar">
@@ -307,79 +313,97 @@
                     <!-- Analytics Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
-                            <i class="fas fa-chart-bar"></i> Analytics
+                            <i class="fas fa-chart-bar"></i> <span>Analytics</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
                         </h3>
-                        <div class="analytics-mini" id="analyticsMini">
-                            <!-- Mini analytics will be injected here -->
+                        <div class="tool-section-content">
+                            <div class="analytics-mini" id="analyticsMini">
+                                <!-- Mini analytics will be injected here -->
+                            </div>
+                            <button class="tool-btn tool-btn-primary" id="fullAnalyticsBtn">
+                                <i class="fas fa-chart-line"></i> Full Analysis
+                            </button>
                         </div>
-                        <button class="tool-btn tool-btn-primary" id="fullAnalyticsBtn">
-                            <i class="fas fa-chart-line"></i> Full Analysis
-                        </button>
                     </div>
 
                     <!-- Text Transform Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
-                            <i class="fas fa-font"></i> Text Transform
+                            <i class="fas fa-font"></i> <span>Text Transform</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
                         </h3>
-                        <div class="tool-grid" id="transformTools">
-                            <!-- Transform tools will be injected here -->
+                        <div class="tool-section-content">
+                            <div class="tool-grid" id="transformTools">
+                                <!-- Transform tools will be injected here -->
+                            </div>
                         </div>
                     </div>
 
                     <!-- Format & Clean Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
-                            <i class="fas fa-magic"></i> Format & Clean
+                            <i class="fas fa-magic"></i> <span>Format & Clean</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
                         </h3>
-                        <div class="tool-grid" id="formatTools">
-                            <!-- Format tools will be injected here -->
+                        <div class="tool-section-content">
+                            <div class="tool-grid" id="formatTools">
+                                <!-- Format tools will be injected here -->
+                            </div>
                         </div>
                     </div>
 
                     <!-- Encode/Decode Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
-                            <i class="fas fa-code"></i> Encode/Decode
+                            <i class="fas fa-code"></i> <span>Encode/Decode</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
                         </h3>
-                        <div class="tool-grid" id="encodeTools">
-                            <!-- Encode tools will be injected here -->
+                        <div class="tool-section-content">
+                            <div class="tool-grid" id="encodeTools">
+                                <!-- Encode tools will be injected here -->
+                            </div>
                         </div>
                     </div>
 
                     <!-- Advanced Tools Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
-                            <i class="fas fa-tools"></i> Advanced
+                            <i class="fas fa-tools"></i> <span>Advanced</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
                         </h3>
-                        <div class="tool-grid">
-                            <button class="tool-btn" id="diffToolBtn">
-                                <i class="fas fa-code-compare"></i> Diff/Compare
-                            </button>
-                            <button class="tool-btn" id="hashToolBtn">
-                                <i class="fas fa-hashtag"></i> Hash Generator
-                            </button>
-                            <button class="tool-btn" id="loremBtn">
-                                <i class="fas fa-paragraph"></i> Lorem Ipsum
-                            </button>
-                            <button class="tool-btn" id="regexToolBtn">
-                                <i class="fas fa-regular-expression"></i> Regex Tester
-                            </button>
+                        <div class="tool-section-content">
+                            <div class="tool-grid">
+                                <button class="tool-btn" id="diffToolBtn">
+                                    <i class="fas fa-code-compare"></i> Diff/Compare
+                                </button>
+                                <button class="tool-btn" id="hashToolBtn">
+                                    <i class="fas fa-hashtag"></i> Hash Generator
+                                </button>
+                                <button class="tool-btn" id="loremBtn">
+                                    <i class="fas fa-paragraph"></i> Lorem Ipsum
+                                </button>
+                                <button class="tool-btn" id="regexToolBtn">
+                                    <i class="fas fa-regular-expression"></i> Regex Tester
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Import/Export Section -->
                     <div class="tool-section">
                         <h3 class="tool-section-title">
-                            <i class="fas fa-file-export"></i> Import/Export
+                            <i class="fas fa-file-export"></i> <span>Import/Export</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
                         </h3>
-                        <div class="import-export-section">
-                            <input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.html" hidden>
-                            <button class="tool-btn" id="importBtn">
-                                <i class="fas fa-file-import"></i> Import File
-                            </button>
-                            <div class="export-options" id="exportOptions">
-                                <!-- Export options will be injected here -->
+                        <div class="tool-section-content">
+                            <div class="import-export-section">
+                                <input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.html" hidden>
+                                <button class="tool-btn" id="importBtn">
+                                    <i class="fas fa-file-import"></i> Import File
+                                </button>
+                                <div class="export-options" id="exportOptions">
+                                    <!-- Export options will be injected here -->
+                                </div>
                             </div>
                         </div>
                     </div>

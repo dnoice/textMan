@@ -1593,7 +1593,7 @@ const SidebarManager = {
      * Initialize sidebars
      */
     init() {
-        // Sidebar toggles
+        // Sidebar header toggles
         document.querySelectorAll('.sidebar-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
                 const sidebarType = btn.getAttribute('data-sidebar');
@@ -1602,10 +1602,27 @@ const SidebarManager = {
             });
         });
 
-        // Panel section toggles
+        // Floating sidebar toggles
+        document.querySelectorAll('.sidebar-float-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sidebarType = btn.getAttribute('data-sidebar');
+                const sidebar = document.getElementById(sidebarType === 'left' ? 'leftSidebar' : 'rightSidebar');
+                sidebar.classList.toggle('collapsed');
+            });
+        });
+
+        // Panel section toggles (left sidebar)
         document.querySelectorAll('.panel-header').forEach(header => {
             header.addEventListener('click', () => {
                 const section = header.closest('.panel-section');
+                section.classList.toggle('collapsed');
+            });
+        });
+
+        // Tool section toggles (right sidebar)
+        document.querySelectorAll('.tool-section-title').forEach(title => {
+            title.addEventListener('click', () => {
+                const section = title.closest('.tool-section');
                 section.classList.toggle('collapsed');
             });
         });

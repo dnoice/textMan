@@ -376,6 +376,7 @@ body {
     flex-direction: column;
     overflow: hidden;
     transition: all var(--transition-base);
+    position: relative;
 }
 
 .sidebar-right {
@@ -386,6 +387,72 @@ body {
 .sidebar.collapsed {
     width: 0;
     min-width: 0;
+}
+
+/* Floating sidebar toggle buttons */
+.sidebar-float-toggle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 64px;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: var(--z-sticky);
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-md);
+}
+
+.sidebar-left .sidebar-float-toggle {
+    right: -32px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    border-left: none;
+}
+
+.sidebar-right .sidebar-float-toggle {
+    left: -32px;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    border-right: none;
+}
+
+.sidebar-float-toggle:hover {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.sidebar.collapsed .sidebar-float-toggle {
+    position: fixed;
+    z-index: var(--z-fixed);
+}
+
+.sidebar-left.collapsed .sidebar-float-toggle {
+    left: 0;
+    right: auto;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.sidebar-right.collapsed .sidebar-float-toggle {
+    right: 0;
+    left: auto;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.sidebar-float-toggle i {
+    transition: transform var(--transition-base);
+    color: var(--text-secondary);
+}
+
+.sidebar-float-toggle:hover i {
+    color: white;
+}
+
+.sidebar.collapsed .sidebar-float-toggle i {
+    transform: rotate(180deg);
 }
 
 .sidebar-header {
@@ -496,9 +563,10 @@ body {
 .panel-content {
     margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
-    transition: all var(--transition-base);
-    max-height: 500px;
+    transition: max-height var(--transition-base), opacity var(--transition-base), padding var(--transition-base), margin var(--transition-base);
+    max-height: 400px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .panel-section.collapsed .panel-content {
@@ -507,6 +575,24 @@ body {
     padding: 0;
     margin: 0;
     overflow: hidden;
+}
+
+/* Custom scrollbar for panel content */
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
 }
 
 .empty-state {
@@ -674,23 +760,61 @@ body {
    ========================================================================= */
 
 .tool-section {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
 }
 
 .tool-section-title {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 0;
+    padding: var(--spacing-sm) var(--spacing-md);
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition-fast);
+    position: relative;
 }
 
-.tool-section-title i {
+.tool-section-title:hover {
+    background-color: var(--border-color);
+}
+
+.tool-section-title i:first-child {
     color: var(--color-primary);
+}
+
+.tool-section-title span {
+    flex: 1;
+}
+
+.tool-section-title .toggle-icon {
+    transition: transform var(--transition-base);
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+}
+
+.tool-section.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.tool-section-content {
+    transition: max-height var(--transition-base), opacity var(--transition-base), margin var(--transition-base);
+    max-height: 800px;
+    overflow: hidden;
+    margin-top: var(--spacing-sm);
+}
+
+.tool-section.collapsed .tool-section-content {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
 }
 
 .tool-grid {
