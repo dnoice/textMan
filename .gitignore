@@ -1,0 +1,237 @@
+# textMan .gitignore
+# Generated: 2025-10-27
+
+# ============================================================================
+# Dependencies
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ============================================================================
+# Environment Variables
+# ============================================================================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# ============================================================================
+# Build Outputs
+# ============================================================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+*.min.js
+*.min.css
+*.map
+
+# ============================================================================
+# IDE and Editors
+# ============================================================================
+
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================================================
+# Operating System Files
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# Logs
+# ============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ============================================================================
+# Testing
+# ============================================================================
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+cypress/videos/
+cypress/screenshots/
+
+# Jest
+jest-cache/
+
+# ============================================================================
+# Temporary Files
+# ============================================================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+
+# ============================================================================
+# Python (if using Python tools)
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================================================
+# Archives
+# ============================================================================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ============================================================================
+# Sensitive Data (IMPORTANT)
+# ============================================================================
+secrets/
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
+credentials.json
+auth.json
+config.local.*
+
+# ============================================================================
+# Project-Specific
+# ============================================================================
+
+# Don't ignore these important files
+!.gitignore
+!.gitattributes
+!.editorconfig
+
+# Ignore draft/work-in-progress docs
+docs/drafts/
+docs/wip/
+*.draft.md
+
+# Ignore local testing files
+test-local/
+experiments/
+
+# Ignore user data (if any)
+user-data/
+local-storage-backup/
+
+# ============================================================================
+# Optional: Static Site Generators
+# ============================================================================
+.jekyll-cache/
+_site/
+.hugo_build.lock
+public/
+
+# ============================================================================
+# Optional: Package Managers
+# ============================================================================
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# ============================================================================
+# Optional: Misc
+# ============================================================================
+.eslintcache
+.stylelintcache
+.parcel-cache
+.turbo
+.docusaurus
