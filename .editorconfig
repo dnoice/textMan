@@ -65,25 +65,9 @@ indent_size = 2
 # Configuration Files
 # ============================================================================
 
-# .env files
-[.env*]
-insert_final_newline = false
-
 # .gitignore, .gitattributes
 [.git*]
 insert_final_newline = true
-
-# ============================================================================
-# Firebase Configuration (for upcoming Firebase integration)
-# ============================================================================
-[firebase.json]
-indent_size = 2
-
-[firestore.rules]
-indent_size = 2
-
-[firestore.indexes.json]
-indent_size = 2
 
 # ============================================================================
 # Notes

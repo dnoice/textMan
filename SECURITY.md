@@ -270,7 +270,7 @@ Before submitting a PR, ensure:
 
 ✅ **Local Storage Only**
 - Data stays on your device
-- No cloud storage (until Firebase integration)
+- No cloud storage
 - Same-origin policy protection
 
 ✅ **No Tracking**
@@ -321,16 +321,14 @@ Before submitting a PR, ensure:
 - Add automated security testing (SAST)
 
 ### Medium-term (v2.3.0 - Target: 2025-12-15)
-- Firebase security rules (when Firebase is integrated)
 - Penetration testing
 - Bug bounty program
 - Security.txt file
 
 ### Long-term (v3.0.0 - Target: 2026-Q1)
-- End-to-end encryption for cloud sync
-- Multi-factor authentication
 - Security audit by professional firm
-- SOC 2 compliance (if applicable)
+- Advanced cryptography research
+- Enhanced data integrity verification
 
 ---
 

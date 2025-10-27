@@ -101,11 +101,6 @@ A powerful, privacy-focused text manipulation tool with 50+ transformation utili
 
 That's it! No build step, no dependencies, no installation required.
 
-**Note:** For Firebase integration (coming soon), you'll need to:
-1. Copy `.env.example` to `.env`
-2. Add your Firebase credentials
-3. See [Firebase Setup Guide](#) *(to be created)*
-
 ---
 
 ## 💻 Browser Support
@@ -411,11 +406,6 @@ We aim to respond within 48 hours.
 - [ ] Add Content Security Policy
 
 ### Planned 📋
-- [ ] **Firebase Integration** (Next Priority!) ☁️
-  - User authentication and accounts
-  - Cloud sync across devices
-  - Real-time collaboration (future)
-  - Backup and restore
 - [ ] Progressive Web App (PWA) support
 - [ ] Browser extension versions
 - [ ] Plugin/extension API
@@ -423,7 +413,6 @@ We aim to respond within 48 hours.
 - [ ] Code syntax highlighting
 - [ ] Multi-file tabs
 - [ ] Advanced diff visualization
-- [ ] Mobile app (React Native / Capacitor)
 
 ---
 
