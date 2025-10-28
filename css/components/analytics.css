@@ -1,0 +1,57 @@
+/* ============================================================================
+   Analytics
+   ========================================================================= */
+
+.analytics-mini {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+}
+
+.analytics-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+    font-size: 0.8125rem;
+}
+
+.analytics-label {
+    color: var(--text-secondary);
+}
+
+.analytics-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-family-mono);
+}
+
+.analytics-full {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.analytics-full h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: var(--spacing-md);
+}
+
+.analytics-full h4:first-child {
+    margin-top: 0;
+}
+
+.analytics-full .analytics-row {
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.analytics-full .analytics-row:last-child {
+    border-bottom: none;
+}
+
+.mt-3 {
+    margin-top: var(--spacing-lg);
+}

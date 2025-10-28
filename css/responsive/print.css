@@ -1,0 +1,57 @@
+/* ============================================================================
+   Print Styles
+   ========================================================================= */
+
+@media print {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .header,
+    .sidebar,
+    .sidebar-left,
+    .sidebar-right,
+    .editor-toolbar,
+    .editor-footer,
+    .toast-container,
+    .modal-backdrop,
+    .search-overlay,
+    .command-palette-overlay,
+    .context-menu,
+    .drop-zone-overlay,
+    .loading-screen,
+    .sidebar-float-toggle {
+        display: none !important;
+    }
+
+    .main-container {
+        display: block;
+    }
+
+    .editor-area {
+        width: 100%;
+        height: auto;
+    }
+
+    .main-editor {
+        width: 100%;
+        height: auto;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        color: black;
+        background: white;
+        font-size: 12pt;
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    @page {
+        margin: 2cm;
+    }
+}

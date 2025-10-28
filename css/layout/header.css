@@ -1,0 +1,70 @@
+/* ============================================================================
+   Header
+   ========================================================================= */
+
+.header {
+    height: var(--header-height);
+    background-color: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-lg);
+    gap: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    transition: all var(--transition-base);
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    user-select: none;
+}
+
+.brand-logo {
+    width: 36px;
+    height: 36px;
+    color: var(--color-primary);
+    transition: transform var(--transition-base);
+}
+
+.brand-logo:hover {
+    transform: rotate(5deg) scale(1.05);
+}
+
+.brand-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.brand-version {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    vertical-align: super;
+}
+
+.header-nav {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.quick-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}

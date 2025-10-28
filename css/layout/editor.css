@@ -1,0 +1,140 @@
+/* ============================================================================
+   Editor Area
+   ========================================================================= */
+
+.editor-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    overflow: hidden;
+    min-width: 0; /* Critical for proper flexbox overflow */
+    min-height: 0; /* Critical for proper flexbox overflow */
+}
+
+.editor-toolbar {
+    height: var(--toolbar-height);
+    background-color: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-md);
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: var(--spacing-xs);
+    padding-right: var(--spacing-sm);
+    border-right: 1px solid var(--border-color);
+}
+
+.toolbar-group:last-of-type {
+    border-right: none;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+.toolbar-stats {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.stat-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-family: var(--font-family-mono);
+}
+
+.stat-badge i {
+    color: var(--color-primary);
+}
+
+/* ============================================================================
+   Editor
+   ========================================================================= */
+
+.editor-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.main-editor {
+    width: 100%;
+    height: 100%;
+    padding: var(--spacing-xl);
+    border: none;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family-mono);
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.main-editor::placeholder {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+.editor-footer {
+    height: var(--footer-height);
+    background-color: var(--bg-elevated);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-lg);
+    font-size: 0.875rem;
+}
+
+.status-message {
+    color: var(--text-secondary);
+}
+
+.auto-save-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-tertiary);
+}
+
+.auto-save-indicator i {
+    color: var(--color-success);
+}
+
+/* Footer Enhancements */
+.separator {
+    color: var(--text-tertiary);
+    margin: 0 var(--spacing-sm);
+    user-select: none;
+}
+
+.cursor-position {
+    font-family: var(--font-family-mono);
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.selected-count {
+    font-family: var(--font-family-mono);
+    font-size: 0.8125rem;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.selected-count[hidden] {
+    display: none;
+}

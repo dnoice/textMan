@@ -1,0 +1,14 @@
+/* ============================================================================
+   Import/Export Panels
+   ========================================================================= */
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+}
+
+.export-options .tool-btn {
+    justify-content: flex-start;
+}

@@ -1,0 +1,398 @@
+/* ============================================================================
+   Sidebars
+   ========================================================================= */
+
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all var(--transition-base);
+    position: relative;
+}
+
+.sidebar-right {
+    border-right: none;
+    border-left: 1px solid var(--border-color);
+}
+
+.sidebar.collapsed {
+    width: 0;
+    min-width: 0;
+}
+
+/* Floating sidebar toggle buttons - Enhanced for better visibility */
+.sidebar-float-toggle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 72px;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: var(--z-sticky);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-lg);
+    will-change: transform, background-color;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* Position when sidebar is open */
+.sidebar-left .sidebar-float-toggle {
+    right: -36px;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    border-left: none;
+}
+
+.sidebar-right .sidebar-float-toggle {
+    left: -36px;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    border-right: none;
+}
+
+/* Hover state */
+.sidebar-float-toggle:hover {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: var(--shadow-xl);
+}
+
+.sidebar-float-toggle:active {
+    transform: translateY(-50%) scale(0.98);
+}
+
+/* Position when sidebar is collapsed - CRITICAL */
+.sidebar.collapsed .sidebar-float-toggle {
+    position: fixed;
+    z-index: var(--z-fixed);
+    top: 50%;
+}
+
+.sidebar-left.collapsed .sidebar-float-toggle {
+    left: 0;
+    right: auto;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    border-left: none;
+}
+
+.sidebar-right.collapsed .sidebar-float-toggle {
+    right: 0;
+    left: auto;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    border-right: none;
+}
+
+/* Icon transitions */
+.sidebar-float-toggle i {
+    transition: transform var(--transition-base);
+    color: currentColor;
+}
+
+.sidebar-float-toggle:hover i {
+    color: white;
+}
+
+/* Rotate icon when sidebar is collapsed */
+.sidebar-left.collapsed .sidebar-float-toggle i {
+    transform: rotate(180deg);
+}
+
+.sidebar-right.collapsed .sidebar-float-toggle i {
+    transform: rotate(180deg);
+}
+
+.sidebar-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-elevated);
+}
+
+.sidebar-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.sidebar-toggle {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sidebar-toggle:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--spacing-md);
+    min-height: 0; /* Critical for proper flexbox scrolling */
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+/* Custom Scrollbar */
+.sidebar-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+/* ============================================================================
+   Panel Sections (Left Sidebar)
+   ========================================================================= */
+
+.panel-section {
+    flex-shrink: 0; /* Prevent sections from shrinking */
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition-fast);
+    font-size: 0.875rem; /* Explicit size for h3 elements */
+    font-weight: 500;
+    line-height: 1.5; /* Consistent line height */
+    margin: 0; /* Ensure h3 margin is reset */
+    color: var(--text-primary);
+    outline: none;
+}
+
+.panel-header:hover {
+    background-color: var(--border-color);
+    transform: translateX(2px);
+}
+
+.panel-header:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.panel-header:active {
+    transform: translateX(0);
+}
+
+.panel-header i:first-child {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.panel-header span {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+.toggle-icon {
+    transition: transform var(--transition-base);
+    color: var(--text-tertiary);
+}
+
+.panel-section.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.panel-content {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    transition: max-height var(--transition-slow), opacity var(--transition-base), padding var(--transition-base), margin var(--transition-base);
+    max-height: 600px; /* Increased for better content visibility */
+    overflow-y: auto;
+    overflow-x: hidden;
+    will-change: max-height, opacity; /* Optimize animations */
+}
+
+.panel-section.collapsed .panel-content {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    visibility: hidden; /* Better accessibility */
+}
+
+/* Custom scrollbar for panel content */
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+.empty-state {
+    padding: var(--spacing-xl) var(--spacing-md);
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 0.875rem;
+}
+
+/* ============================================================================
+   Tool Sections (Right Sidebar - matches Panel Sections behavior)
+   ========================================================================= */
+
+.tool-section {
+    flex-shrink: 0; /* Prevent sections from shrinking */
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-section-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.5; /* Consistent line height */
+    color: var(--text-primary);
+    margin: 0; /* Ensure h3 margin is fully reset */
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition-fast);
+    position: relative;
+    outline: none;
+}
+
+.tool-section-title:hover {
+    background-color: var(--border-color);
+    transform: translateX(2px);
+}
+
+.tool-section-title:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.tool-section-title:active {
+    transform: translateX(0);
+}
+
+.tool-section-title i:first-child {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.tool-section-title span {
+    flex: 1;
+}
+
+.tool-section-title .toggle-icon {
+    transition: transform var(--transition-base);
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+}
+
+.tool-section.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.tool-section-content {
+    transition: max-height var(--transition-slow), opacity var(--transition-base), margin var(--transition-base), padding var(--transition-base);
+    max-height: 800px; /* Larger than panel-content for tool grids */
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+    will-change: max-height, opacity; /* Optimize animations */
+}
+
+.tool-section.collapsed .tool-section-content {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    padding: 0;
+    overflow: hidden;
+    visibility: hidden; /* Better accessibility */
+}
+
+/* Custom scrollbar for tool section content */
+.tool-section-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tool-section-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tool-section-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+}
+
+.tool-section-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+.tool-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+    padding: 0 var(--spacing-xs);
+}
