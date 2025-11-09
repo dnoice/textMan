@@ -37,6 +37,7 @@
 @import url('./components/history.css');
 @import url('./components/command-palette.css');
 @import url('./components/drop-zone.css');
+@import url('./components/templates.css');
 
 /* ============================================================================
    4. Utilities - Helpers & Effects

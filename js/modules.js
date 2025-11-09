@@ -2238,11 +2238,38 @@ const ClipboardHistory = {
 
 const Templates = {
     defaultTemplates: [
-        { name: 'Email Template', content: 'Dear [Name],\n\n[Your message here]\n\nBest regards,\n[Your name]' },
-        { name: 'Meeting Notes', content: '# Meeting Notes\n\nDate: [Date]\nAttendees: [Names]\n\n## Agenda\n- \n\n## Discussion\n- \n\n## Action Items\n- ' },
-        { name: 'TODO List', content: '# TODO List\n\n## Today\n- [ ] \n\n## This Week\n- [ ] \n\n## This Month\n- [ ] ' },
-        { name: 'Bug Report', content: '# Bug Report\n\n## Description\n[Describe the bug]\n\n## Steps to Reproduce\n1. \n\n## Expected Behavior\n[What should happen]\n\n## Actual Behavior\n[What actually happens]\n\n## Environment\n- Browser: \n- OS: ' },
-        { name: 'Code Review', content: '# Code Review\n\n## Summary\n[Brief overview]\n\n## Positives\n- \n\n## Suggestions\n- \n\n## Issues\n- \n\n## Conclusion\n[Overall assessment]' }
+        {
+            name: '📧 Professional Email',
+            content: 'Subject: [Email Subject]\n\nDear [Recipient Name],\n\nI hope this email finds you well.\n\n[Introduction - State purpose]\n\n[Main content - Detail your message]\n• Key point 1\n• Key point 2\n• Key point 3\n\n[Call to action or next steps]\n\nPlease let me know if you have any questions or need any clarification.\n\nBest regards,\n[Your Name]\n[Your Title]\n[Contact Information]'
+        },
+        {
+            name: '📝 Meeting Notes',
+            content: '# Meeting Notes\n\n**Date:** [MM/DD/YYYY]\n**Time:** [Start - End]\n**Location/Platform:** [Room/Zoom/Teams]\n**Attendees:** [Names]\n**Facilitator:** [Name]\n\n## Objectives\n• [Objective 1]\n• [Objective 2]\n\n## Agenda\n1. [Topic 1] - [Time allocation]\n2. [Topic 2] - [Time allocation]\n3. [Topic 3] - [Time allocation]\n\n## Discussion Summary\n### [Topic 1]\n• Key points discussed\n• Decisions made\n• Questions raised\n\n### [Topic 2]\n• Key points discussed\n• Decisions made\n• Questions raised\n\n## Action Items\n- [ ] [Task 1] - Assigned to: [Name] - Due: [Date]\n- [ ] [Task 2] - Assigned to: [Name] - Due: [Date]\n- [ ] [Task 3] - Assigned to: [Name] - Due: [Date]\n\n## Next Meeting\n**Date:** [MM/DD/YYYY]\n**Topics:** [List topics]\n\n## Notes\n[Additional notes or observations]'
+        },
+        {
+            name: '✅ Project TODO List',
+            content: '# Project TODO List\n\n**Project:** [Project Name]\n**Last Updated:** [Date]\n**Owner:** [Your Name]\n\n## 🔴 High Priority (Due Soon)\n- [ ] [Urgent task 1] - Due: [Date]\n- [ ] [Urgent task 2] - Due: [Date]\n\n## 🟡 Medium Priority (This Week)\n- [ ] [Task 1] - Due: [Date]\n- [ ] [Task 2] - Due: [Date]\n- [ ] [Task 3] - Due: [Date]\n\n## 🟢 Low Priority (This Month)\n- [ ] [Task 1]\n- [ ] [Task 2]\n- [ ] [Task 3]\n\n## ✅ Completed\n- [x] [Completed task 1] - Completed: [Date]\n- [x] [Completed task 2] - Completed: [Date]\n\n## 💡 Ideas/Future Tasks\n• [Idea 1]\n• [Idea 2]\n\n## 📌 Notes\n[Additional context or notes]'
+        },
+        {
+            name: '🐛 Bug Report',
+            content: '# Bug Report\n\n**Report ID:** #[Number]\n**Date:** [MM/DD/YYYY]\n**Reporter:** [Your Name]\n**Priority:** [Critical/High/Medium/Low]\n**Status:** [New/In Progress/Resolved]\n\n## Summary\n[Brief, clear description of the bug]\n\n## Environment\n• **Browser/App:** [Chrome 120, Firefox 121, etc.]\n• **OS:** [Windows 11, macOS 14, iOS 17, etc.]\n• **Device:** [Desktop, Mobile, Tablet]\n• **Version:** [App/Website version]\n• **Screen Resolution:** [1920x1080, etc.]\n\n## Steps to Reproduce\n1. [Step 1]\n2. [Step 2]\n3. [Step 3]\n4. [Step that triggers the bug]\n\n## Expected Behavior\n[Describe what should happen]\n\n## Actual Behavior\n[Describe what actually happens]\n\n## Screenshots/Video\n[Attach screenshots or video if available]\n\n## Error Messages\n```\n[Paste any error messages or console output]\n```\n\n## Additional Context\n• Does this happen consistently? [Yes/No]\n• Did this work before? [Yes/No]\n• Related issues: [Link to related bugs]\n\n## Workaround\n[Temporary solution if any]\n\n## Severity Impact\n[How does this affect users?]'
+        },
+        {
+            name: '💻 Code Review',
+            content: '# Code Review\n\n**PR/MR:** #[Number]\n**Author:** [Developer Name]\n**Reviewer:** [Your Name]\n**Date:** [MM/DD/YYYY]\n**Branch:** [feature/branch-name]\n\n## Summary\n[Brief overview of changes]\n\n## Changes Overview\n• [File/Module 1] - [What changed]\n• [File/Module 2] - [What changed]\n• [File/Module 3] - [What changed]\n\n## ✅ Positives\n• Well-structured code\n• Good test coverage\n• Clear documentation\n• [Other positive aspects]\n\n## 💡 Suggestions for Improvement\n### Major\n• [Suggestion 1 with code reference]\n• [Suggestion 2 with code reference]\n\n### Minor\n• [Suggestion 1]\n• [Suggestion 2]\n\n## 🔧 Code Quality\n- [ ] Code follows style guidelines\n- [ ] Functions are properly documented\n- [ ] Error handling is appropriate\n- [ ] No console.logs or debug code\n- [ ] Variables are well-named\n\n## 🧪 Testing\n- [ ] Unit tests included\n- [ ] Tests pass locally\n- [ ] Edge cases covered\n- [ ] Manual testing completed\n\n## 🔒 Security\n- [ ] No sensitive data exposed\n- [ ] Input validation present\n- [ ] No SQL injection vulnerabilities\n- [ ] XSS protection in place\n\n## 📝 Specific Issues\n### Issue 1\n**File:** [filename:line]\n**Problem:** [Description]\n**Suggestion:** [How to fix]\n\n### Issue 2\n**File:** [filename:line]\n**Problem:** [Description]\n**Suggestion:** [How to fix]\n\n## 📚 Documentation\n- [ ] README updated if needed\n- [ ] API docs updated if needed\n- [ ] Comments explain complex logic\n\n## Conclusion\n**Approval Status:** [Approved/Needs Changes/Rejected]\n\n[Overall assessment and next steps]'
+        },
+        {
+            name: '📋 Project Plan',
+            content: '# Project Plan\n\n**Project Name:** [Name]\n**Project Manager:** [Name]\n**Start Date:** [MM/DD/YYYY]\n**Target Completion:** [MM/DD/YYYY]\n**Status:** [Planning/In Progress/On Hold/Completed]\n\n## Executive Summary\n[2-3 sentence project overview]\n\n## Objectives\n• [Objective 1]\n• [Objective 2]\n• [Objective 3]\n\n## Scope\n### In Scope\n• [Item 1]\n• [Item 2]\n\n### Out of Scope\n• [Item 1]\n• [Item 2]\n\n## Deliverables\n1. [Deliverable 1] - Due: [Date]\n2. [Deliverable 2] - Due: [Date]\n3. [Deliverable 3] - Due: [Date]\n\n## Timeline\n### Phase 1: [Name] ([Dates])\n• [Milestone 1]\n• [Milestone 2]\n\n### Phase 2: [Name] ([Dates])\n• [Milestone 1]\n• [Milestone 2]\n\n### Phase 3: [Name] ([Dates])\n• [Milestone 1]\n• [Milestone 2]\n\n## Team & Responsibilities\n• **[Role 1]:** [Name] - [Responsibilities]\n• **[Role 2]:** [Name] - [Responsibilities]\n• **[Role 3]:** [Name] - [Responsibilities]\n\n## Budget\n• **Total Budget:** $[Amount]\n• **Allocated:** $[Amount]\n• **Remaining:** $[Amount]\n\n## Risks & Mitigation\n1. **Risk:** [Description]\n   **Impact:** [High/Medium/Low]\n   **Mitigation:** [Strategy]\n\n## Success Metrics\n• [Metric 1]: [Target]\n• [Metric 2]: [Target]\n• [Metric 3]: [Target]\n\n## Communication Plan\n• **Status Updates:** [Frequency]\n• **Stakeholder Meetings:** [Schedule]\n• **Reporting:** [Method and frequency]'
+        },
+        {
+            name: '📊 Daily Standup',
+            content: '# Daily Standup\n\n**Date:** [MM/DD/YYYY]\n**Team:** [Team Name]\n**Sprint:** [Sprint Number]\n\n## Team Member: [Your Name]\n\n### ✅ Yesterday\n• [What I completed]\n• [What I completed]\n\n### 🎯 Today\n• [What I plan to do]\n• [What I plan to do]\n\n### 🚧 Blockers\n• [Any blockers or issues]\n• [Help needed from team]\n\n---\n\n## Team Member: [Name 2]\n\n### ✅ Yesterday\n• [What they completed]\n\n### 🎯 Today\n• [What they plan to do]\n\n### 🚧 Blockers\n• [Any blockers]\n\n---\n\n## Action Items\n- [ ] [Action from standup]\n- [ ] [Action from standup]\n\n## Notes\n[Additional team discussions or decisions]'
+        },
+        {
+            name: '📖 Documentation',
+            content: '# [Feature/Component Name]\n\n## Overview\n[Brief description of what this is and why it exists]\n\n## Table of Contents\n1. [Installation](#installation)\n2. [Configuration](#configuration)\n3. [Usage](#usage)\n4. [API Reference](#api-reference)\n5. [Examples](#examples)\n6. [Troubleshooting](#troubleshooting)\n\n## Installation\n\n```bash\n# Installation command\nnpm install [package-name]\n```\n\n## Configuration\n\n```javascript\n// Configuration example\nconst config = {\n  option1: \'value1\',\n  option2: \'value2\'\n};\n```\n\n## Usage\n\n### Basic Usage\n```javascript\n// Basic example\nimport { Feature } from \'package\';\n\nconst instance = new Feature(config);\ninstance.doSomething();\n```\n\n### Advanced Usage\n```javascript\n// Advanced example with options\n```\n\n## API Reference\n\n### `methodName(param1, param2)`\n**Description:** [What this method does]\n\n**Parameters:**\n• `param1` (type) - [Description]\n• `param2` (type) - [Description]\n\n**Returns:** [Return type and description]\n\n**Example:**\n```javascript\nconst result = instance.methodName(\'value1\', \'value2\');\n```\n\n## Examples\n\n### Example 1: [Use Case]\n```javascript\n// Code example\n```\n\n### Example 2: [Use Case]\n```javascript\n// Code example\n```\n\n## Troubleshooting\n\n### Issue: [Common problem]\n**Solution:** [How to fix it]\n\n### Issue: [Common problem]\n**Solution:** [How to fix it]\n\n## Contributing\n[Guidelines for contributing]\n\n## License\n[License information]\n\n## Changelog\n### v1.0.0 ([Date])\n• [Change 1]\n• [Change 2]'
+        }
     ],
 
     /**
@@ -2318,10 +2345,17 @@ const Templates = {
         }
 
         container.innerHTML = allTemplates.map((template, index) => `
-            <button class="tool-btn" onclick="Templates.load(${JSON.stringify(template).replace(/"/g, '&quot;')})">
-                <i class="fas fa-file-alt"></i> ${template.name}
-            </button>
-            ${template.custom ? `<button class="item-btn" onclick="Templates.delete(${template.id})"><i class="fas fa-trash"></i></button>` : ''}
+            <div class="template-item">
+                <button class="template-btn" onclick="Templates.load(${JSON.stringify(template).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="template-name">${template.name}</span>
+                </button>
+                ${template.custom ? `
+                    <button class="template-delete-btn" onclick="Templates.delete(${template.id})" title="Delete template">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
         `).join('');
     },
 
