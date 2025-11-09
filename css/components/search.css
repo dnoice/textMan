@@ -21,6 +21,17 @@
     display: none;
 }
 
+.search-box {
+    background-color: var(--bg-elevated);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 600px;
+    animation: modalSlideIn var(--transition-slow);
+    overflow: hidden;
+}
+
 .search-panel {
     background-color: var(--bg-elevated);
     border-radius: var(--radius-lg);
@@ -35,7 +46,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
 }
 
 .search-header h3 {
@@ -68,6 +81,40 @@
 .search-close:hover {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
+    transform: rotate(90deg);
+}
+
+.search-content {
+    padding: var(--spacing-lg);
+}
+
+.search-field {
+    margin-bottom: var(--spacing-md);
+}
+
+.search-field label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.search-field input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all var(--transition-fast);
+}
+
+.search-field input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--bg-elevated);
 }
 
 .search-inputs {
@@ -78,8 +125,8 @@
 
 .search-options {
     display: flex;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-md);
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md) 0;
 }
 
 .search-option {
@@ -89,10 +136,18 @@
     cursor: pointer;
 }
 
+.search-results {
+    padding: var(--spacing-sm) 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
 .search-actions {
     display: flex;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--spacing-md);
 }
 
 .search-actions .btn {

@@ -1,4 +1,33 @@
 /* ============================================================================
+   Theme Transitions
+   ========================================================================= */
+
+/* Smooth transitions for theme changes */
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Transition all elements that use theme colors */
+*,
+*::before,
+*::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+}
+
+/* Prevent transitions on elements that should change instantly */
+.loading-screen,
+.toast,
+.modal,
+[class*="animation"],
+[class*="animate"] {
+    transition: none !important;
+}
+
+/* ============================================================================
    Dark Theme Overrides
    ========================================================================= */
 
