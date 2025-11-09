@@ -46,6 +46,7 @@
 @import url('./utilities/scrollbars.css');
 @import url('./utilities/focus.css');
 @import url('./utilities/effects.css');
+@import url('./utilities/glassmorphism.css');
 
 /* ============================================================================
    5. Responsive - Media Queries
