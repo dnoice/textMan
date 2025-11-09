@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>textMan Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        .log { margin: 5px 0; padding: 5px; background: #2a2a2a; border-left: 3px solid #10b981; }
+        .error { border-left-color: #ef4444; }
+        button { margin: 10px 5px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h1>textMan Debug Console</h1>
+    <div id="output"></div>
+
+    <h2>Test Buttons</h2>
+    <button onclick="testButton()">Test Click</button>
+    <button class="tool-btn" data-action="uppercase">Test Tool Button</button>
+    <h3 class="panel-header" data-toggle="test">Test Panel Toggle</h3>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'log' + (isError ? ' error' : '');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        function testButton() {
+            log('Button clicked successfully!');
+        }
+
+        // Override console.error to capture errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            log('ERROR: ' + args.join(' '), true);
+            originalError.apply(console, args);
+        };
+
+        // Capture all errors
+        window.onerror = function(msg, url, line, col, error) {
+            log(`ERROR at ${url}:${line}:${col} - ${msg}`, true);
+            return false;
+        };
+
+        log('Debug page loaded, now loading textMan scripts...');
+    </script>
+
+    <!-- Load textMan scripts in order -->
+    <script src="js/core/config.js"></script>
+    <script>log('✓ config.js loaded');</script>
+
+    <script src="js/core/state.js"></script>
+    <script>log('✓ state.js loaded');</script>
+
+    <script src="js/core/utils.js"></script>
+    <script>log('✓ utils.js loaded');</script>
+
+    <script src="js/storage/storage.js"></script>
+    <script>log('✓ storage.js loaded');</script>
+
+    <script src="js/ui/theme.js"></script>
+    <script>log('✓ theme.js loaded');</script>
+
+    <script src="js/ui/toast.js"></script>
+    <script>log('✓ toast.js loaded');</script>
+
+    <script src="js/modules.js"></script>
+    <script>log('✓ modules.js loaded');</script>
+
+    <script src="js/scripts.js"></script>
+    <script>log('✓ scripts.js loaded');</script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            log('DOMContentLoaded fired!');
+
+            // Check if managers exist
+            log('Checking if managers are defined...');
+            log('ThemeManager: ' + (typeof ThemeManager !== 'undefined' ? 'EXISTS' : 'MISSING'), typeof ThemeManager === 'undefined');
+            log('SidebarManager: ' + (typeof SidebarManager !== 'undefined' ? 'EXISTS' : 'MISSING'), typeof SidebarManager === 'undefined');
+            log('ToolsManager: ' + (typeof ToolsManager !== 'undefined' ? 'EXISTS' : 'MISSING'), typeof ToolsManager === 'undefined');
+            log('Modal: ' + (typeof Modal !== 'undefined' ? 'EXISTS' : 'MISSING'), typeof Modal === 'undefined');
+            log('Editor: ' + (typeof Editor !== 'undefined' ? 'EXISTS' : 'MISSING'), typeof Editor === 'undefined');
+
+            // Test event delegation
+            log('Testing event delegation for tool buttons...');
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('.tool-btn[data-action]');
+                if (btn) {
+                    const action = btn.getAttribute('data-action');
+                    log(`Tool button clicked! Action: ${action}`);
+                }
+            });
+
+            // Test panel header click
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.panel-header')) {
+                    log('Panel header clicked!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1578,9 +1578,14 @@ const SidebarManager = {
      * Initialize sidebars
      */
     init() {
+        console.log('[SidebarManager] Initializing...');
+
         // Sidebar header toggles
-        document.querySelectorAll('.sidebar-toggle').forEach(btn => {
+        const sidebarToggles = document.querySelectorAll('.sidebar-toggle');
+        console.log(`[SidebarManager] Found ${sidebarToggles.length} sidebar-toggle buttons`);
+        sidebarToggles.forEach(btn => {
             btn.addEventListener('click', () => {
+                console.log('[SidebarManager] Sidebar toggle clicked');
                 const sidebarType = btn.getAttribute('data-sidebar');
                 const sidebar = document.getElementById(sidebarType === 'left' ? 'leftSidebar' : 'rightSidebar');
                 this.toggleSidebar(sidebar);
@@ -1588,8 +1593,11 @@ const SidebarManager = {
         });
 
         // Floating sidebar toggles
-        document.querySelectorAll('.sidebar-float-toggle').forEach(btn => {
+        const floatToggles = document.querySelectorAll('.sidebar-float-toggle');
+        console.log(`[SidebarManager] Found ${floatToggles.length} sidebar-float-toggle buttons`);
+        floatToggles.forEach(btn => {
             btn.addEventListener('click', () => {
+                console.log('[SidebarManager] Float toggle clicked');
                 const sidebarType = btn.getAttribute('data-sidebar');
                 const sidebar = document.getElementById(sidebarType === 'left' ? 'leftSidebar' : 'rightSidebar');
                 this.toggleSidebar(sidebar);
@@ -1597,9 +1605,12 @@ const SidebarManager = {
         });
 
         // Panel section toggles (left sidebar) - with keyboard support
-        document.querySelectorAll('.panel-header').forEach(header => {
+        const panelHeaders = document.querySelectorAll('.panel-header');
+        console.log(`[SidebarManager] Found ${panelHeaders.length} panel-header elements`);
+        panelHeaders.forEach(header => {
             // Click handler
             header.addEventListener('click', () => {
+                console.log('[SidebarManager] Panel header clicked');
                 this.toggleSection(header);
             });
 
@@ -1607,15 +1618,19 @@ const SidebarManager = {
             header.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    console.log('[SidebarManager] Panel header keyboard activated');
                     this.toggleSection(header);
                 }
             });
         });
 
         // Tool section toggles (right sidebar) - with keyboard support
-        document.querySelectorAll('.tool-section-title').forEach(title => {
+        const toolTitles = document.querySelectorAll('.tool-section-title');
+        console.log(`[SidebarManager] Found ${toolTitles.length} tool-section-title elements`);
+        toolTitles.forEach(title => {
             // Click handler
             title.addEventListener('click', () => {
+                console.log('[SidebarManager] Tool section title clicked');
                 this.toggleSection(title);
             });
 
@@ -1623,21 +1638,26 @@ const SidebarManager = {
             title.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    console.log('[SidebarManager] Tool section keyboard activated');
                     this.toggleSection(title);
                 }
             });
         });
+
+        console.log('[SidebarManager] Initialization complete');
     },
 
     /**
      * Toggle sidebar collapsed state
      */
     toggleSidebar(sidebar) {
+        console.log('[SidebarManager] toggleSidebar called for:', sidebar.id);
         sidebar.classList.toggle('collapsed');
 
         // Save sidebar state to local storage
         const sidebarId = sidebar.id;
         const isCollapsed = sidebar.classList.contains('collapsed');
+        console.log('[SidebarManager] Sidebar toggled, collapsed:', isCollapsed);
         Storage.save(`sidebar_${sidebarId}`, isCollapsed);
     },
 
@@ -1645,11 +1665,17 @@ const SidebarManager = {
      * Toggle section collapsed state (works for both panel-section and tool-section)
      */
     toggleSection(header) {
+        console.log('[SidebarManager] toggleSection called for:', header);
         const section = header.closest('.panel-section, .tool-section');
-        if (!section) return;
+        if (!section) {
+            console.warn('[SidebarManager] No section found for header:', header);
+            return;
+        }
 
+        console.log('[SidebarManager] Found section:', section.id);
         const isCollapsed = section.classList.contains('collapsed');
         section.classList.toggle('collapsed');
+        console.log('[SidebarManager] Section toggled, was collapsed:', isCollapsed, 'now collapsed:', !isCollapsed);
 
         // Update aria-expanded attribute
         header.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
