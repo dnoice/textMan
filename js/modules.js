@@ -1567,7 +1567,6 @@ const ToolsManager = {
             console.warn('Unknown tool action:', action);
         }
     }
-}
 };
 
 // ============================================================================
@@ -2637,47 +2636,3 @@ const HelpSystem = {
         document.getElementById('helpBtn')?.addEventListener('click', () => this.show());
     }
 };
-
-// ============================================================================
-// Application Initialization
-// ============================================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log(`%c🚀 textMan v${APP_CONFIG.version}`, 'font-size: 20px; font-weight: bold; color: #10b981;');
-
-    // Show loading tips
-    LoadingTips.init();
-
-    // Initialize all modules
-    ThemeManager.init();
-    Modal.init();
-    Editor.init();
-    SearchManager.init();
-    HistoryManager.init();
-    SavedTexts.init();
-    ImportExport.init();
-    ToolsManager.init();
-    SidebarManager.init();
-    SidebarManager.restoreStates(); // Restore saved sidebar/section states
-    ContextMenu.init();
-
-    // Initialize new features
-    CommandPalette.init();
-    DragDrop.init();
-    ClipboardHistory.init();
-    Templates.init();
-    AdvancedTools.init();
-    KeyboardShortcuts.init();
-    CursorTracker.init();
-    HelpSystem.init();
-
-    // Hide loading screen
-    setTimeout(() => {
-        document.getElementById('loadingScreen').style.display = 'none';
-    }, 2000);
-
-    console.log('✅ textMan initialized successfully!');
-});
-
-// ============================================================================
-// Expose Global API
