@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>textMan Mobile Debug</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 10px;
+            font-size: 14px;
+        }
+        h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #10b981;
+        }
+        #debugLog {
+            background: #2a2a2a;
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 3px 0;
+            padding: 5px;
+            background: #333;
+            border-left: 3px solid #10b981;
+            border-radius: 3px;
+            word-wrap: break-word;
+        }
+        .log-error { border-left-color: #ef4444; color: #fca5a5; }
+        .log-success { border-left-color: #10b981; color: #6ee7b7; }
+        .log-info { border-left-color: #3b82f6; color: #93c5fd; }
+
+        .test-section {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .test-section h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #10b981;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            touch-action: manipulation;
+            min-height: 44px; /* iOS recommended touch target */
+        }
+        button:active {
+            background: #059669;
+        }
+        .clear-btn {
+            background: #ef4444;
+            float: right;
+        }
+        .panel-header-test {
+            background: #374151;
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-header-test:active {
+            background: #4b5563;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-ok { background: #10b981; }
+        .status-fail { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>🔧 textMan Mobile Debug</h1>
+
+    <div id="debugLog">
+        <button class="clear-btn" onclick="clearLog()">Clear</button>
+        <div style="clear: both;"></div>
+        <div id="logEntries"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>JavaScript Loading Test</h2>
+        <div id="loadStatus">Testing...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Button Click Test</h2>
+        <button onclick="testBasicClick()">Test Basic Click</button>
+        <button class="tool-btn" data-action="test">Test Tool Button</button>
+        <div id="clickStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Panel Toggle Test</h2>
+        <div class="panel-header-test" onclick="testPanelClick(this)">
+            <span>Click to Toggle</span>
+            <span id="toggleCount">Clicks: 0</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Manager Objects Test</h2>
+        <div id="managerStatus"></div>
+    </div>
+
+    <script>
+        const logEntries = document.getElementById('logEntries');
+        let clickCount = 0;
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logEntries.appendChild(entry);
+            logEntries.parentElement.scrollTop = logEntries.parentElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logEntries.innerHTML = '';
+            addLog('Log cleared', 'info');
+        }
+
+        function testBasicClick() {
+            clickCount++;
+            addLog(`Basic button clicked! Count: ${clickCount}`, 'success');
+            document.getElementById('clickStatus').innerHTML =
+                `<span class="status status-ok">✓ Clicks working: ${clickCount}</span>`;
+        }
+
+        function testPanelClick(element) {
+            const countSpan = document.getElementById('toggleCount');
+            const currentCount = parseInt(countSpan.textContent.split(': ')[1]) + 1;
+            countSpan.textContent = `Clicks: ${currentCount}`;
+            element.style.background = element.style.background === 'rgb(16, 185, 129)' ? '#374151' : '#10b981';
+            addLog(`Panel clicked! Count: ${currentCount}`, 'success');
+        }
+
+        // Intercept console.log
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('ERROR: ' + args.join(' '), 'error');
+        };
+
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog('WARN: ' + args.join(' '), 'error');
+        };
+
+        window.onerror = function(msg, url, line, col, error) {
+            addLog(`ERROR at line ${line}: ${msg}`, 'error');
+            return false;
+        };
+
+        addLog('Debug page loaded', 'success');
+        addLog('Loading textMan scripts...', 'info');
+    </script>
+
+    <!-- Load textMan scripts -->
+    <script src="js/core/config.js" onerror="addLog('Failed to load config.js', 'error')"></script>
+    <script>if (typeof APP_CONFIG !== 'undefined') addLog('✓ config.js loaded', 'success'); else addLog('✗ config.js failed', 'error');</script>
+
+    <script src="js/core/state.js" onerror="addLog('Failed to load state.js', 'error')"></script>
+    <script>if (typeof APP_STATE !== 'undefined') addLog('✓ state.js loaded', 'success'); else addLog('✗ state.js failed', 'error');</script>
+
+    <script src="js/core/utils.js" onerror="addLog('Failed to load utils.js', 'error')"></script>
+    <script>if (typeof Utils !== 'undefined') addLog('✓ utils.js loaded', 'success'); else addLog('✗ utils.js failed', 'error');</script>
+
+    <script src="js/storage/storage.js" onerror="addLog('Failed to load storage.js', 'error')"></script>
+    <script>if (typeof Storage !== 'undefined') addLog('✓ storage.js loaded', 'success'); else addLog('✗ storage.js failed', 'error');</script>
+
+    <script src="js/ui/theme.js" onerror="addLog('Failed to load theme.js', 'error')"></script>
+    <script>if (typeof ThemeManager !== 'undefined') addLog('✓ theme.js loaded', 'success'); else addLog('✗ theme.js failed', 'error');</script>
+
+    <script src="js/ui/toast.js" onerror="addLog('Failed to load toast.js', 'error')"></script>
+    <script>if (typeof Toast !== 'undefined') addLog('✓ toast.js loaded', 'success'); else addLog('✗ toast.js failed', 'error');</script>
+
+    <script src="js/modules.js" onerror="addLog('Failed to load modules.js', 'error')"></script>
+    <script>
+        if (typeof SidebarManager !== 'undefined') addLog('✓ modules.js loaded', 'success');
+        else addLog('✗ modules.js failed', 'error');
+    </script>
+
+    <script src="js/scripts.js" onerror="addLog('Failed to load scripts.js', 'error')"></script>
+
+    <script>
+        // Wait for DOM to be ready
+        setTimeout(() => {
+            addLog('Checking loaded managers...', 'info');
+
+            const managers = {
+                'APP_CONFIG': typeof APP_CONFIG !== 'undefined',
+                'APP_STATE': typeof APP_STATE !== 'undefined',
+                'ThemeManager': typeof ThemeManager !== 'undefined',
+                'Modal': typeof Modal !== 'undefined',
+                'Editor': typeof Editor !== 'undefined',
+                'SidebarManager': typeof SidebarManager !== 'undefined',
+                'ToolsManager': typeof ToolsManager !== 'undefined',
+                'TextTools': typeof TextTools !== 'undefined'
+            };
+
+            let statusHTML = '';
+            let allOk = true;
+            for (const [name, exists] of Object.entries(managers)) {
+                const status = exists ? 'status-ok' : 'status-fail';
+                const symbol = exists ? '✓' : '✗';
+                statusHTML += `<div style="margin: 5px 0;"><span class="status ${status}">${symbol} ${name}</span></div>`;
+                if (!exists) {
+                    allOk = false;
+                    addLog(`Missing: ${name}`, 'error');
+                }
+            }
+
+            document.getElementById('managerStatus').innerHTML = statusHTML;
+
+            if (allOk) {
+                addLog('All managers loaded successfully!', 'success');
+            } else {
+                addLog('Some managers failed to load!', 'error');
+            }
+
+            // Test event delegation
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('.tool-btn[data-action]');
+                if (btn) {
+                    const action = btn.getAttribute('data-action');
+                    addLog(`Tool button clicked! Action: ${action}`, 'success');
+                }
+            });
+
+        }, 500);
+    </script>
+</body>
+</html>
