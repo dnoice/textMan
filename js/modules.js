@@ -62,6 +62,8 @@ const Modal = {
 const Editor = {
     textarea: null,
     autoSaveTimer: null,
+    historyTimer: null,
+    lastHistoryContent: '',
 
     /**
      * Initialize editor
@@ -77,6 +79,11 @@ const Editor = {
         // Add to history
         if (savedContent) {
             this.addToHistory(savedContent);
+            this.lastHistoryContent = savedContent;
+        } else {
+            // Initialize with empty content
+            this.addToHistory('');
+            this.lastHistoryContent = '';
         }
 
         // Event listeners
@@ -98,6 +105,9 @@ const Editor = {
     handleInput() {
         APP_STATE.editor.content = this.textarea.value;
         this.updateStats();
+
+        // Schedule history save (debounced)
+        this.scheduleHistorySave();
 
         if (APP_STATE.settings.autoSave) {
             this.scheduleAutoSave();
@@ -153,6 +163,21 @@ const Editor = {
     },
 
     /**
+     * Schedule history save (debounced to avoid excessive history entries)
+     */
+    scheduleHistorySave() {
+        clearTimeout(this.historyTimer);
+        this.historyTimer = setTimeout(() => {
+            const currentContent = this.textarea.value;
+            // Only add to history if content has actually changed
+            if (currentContent !== this.lastHistoryContent) {
+                this.addToHistory(currentContent);
+                this.lastHistoryContent = currentContent;
+            }
+        }, 1000); // 1 second delay after user stops typing
+    },
+
+    /**
      * Schedule auto-save
      */
     scheduleAutoSave() {
@@ -203,6 +228,7 @@ const Editor = {
             APP_STATE.editor.historyIndex--;
             this.textarea.value = APP_STATE.editor.history[APP_STATE.editor.historyIndex];
             APP_STATE.editor.content = this.textarea.value;
+            this.lastHistoryContent = this.textarea.value; // Update to prevent duplicate history entry
             this.updateStats();
             this.setStatus('Undone');
         }
@@ -216,6 +242,7 @@ const Editor = {
             APP_STATE.editor.historyIndex++;
             this.textarea.value = APP_STATE.editor.history[APP_STATE.editor.historyIndex];
             APP_STATE.editor.content = this.textarea.value;
+            this.lastHistoryContent = this.textarea.value; // Update to prevent duplicate history entry
             this.updateStats();
             this.setStatus('Redone');
         }
