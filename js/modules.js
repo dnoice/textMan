@@ -1219,9 +1219,9 @@ const ImportExport = {
      * Initialize
      */
     init() {
-        // Import button
+        // Import button - opens enhanced import modal
         document.getElementById('importBtn').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
+            this.showImportModal();
         });
 
         // File input handler
@@ -1234,7 +1234,72 @@ const ImportExport = {
     },
 
     /**
-     * Import file
+     * Show enhanced import modal
+     */
+    showImportModal() {
+        Modal.open(
+            '<i class="fas fa-file-import"></i> Import Text',
+            `
+                <div class="import-methods">
+                    <div class="import-method-card" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-file-upload"></i>
+                        <h4>Import from File</h4>
+                        <p>Upload TXT, MD, JSON, CSV, or HTML file</p>
+                    </div>
+                    <div class="import-method-card" onclick="ImportExport.showPasteImport()">
+                        <i class="fas fa-clipboard"></i>
+                        <h4>Paste Content</h4>
+                        <p>Paste text directly from clipboard</p>
+                    </div>
+                </div>
+                <div class="import-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Maximum file size: ${Utils.formatBytes(APP_CONFIG.maxFileSize)}</span>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+            `
+        );
+    },
+
+    /**
+     * Show paste import
+     */
+    showPasteImport() {
+        Modal.open(
+            '<i class="fas fa-clipboard"></i> Paste Content',
+            `
+                <div class="form-group">
+                    <label class="form-label">Paste your content below:</label>
+                    <textarea id="pasteContent" class="form-textarea" rows="10" placeholder="Paste your text here..." autofocus></textarea>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="ImportExport.confirmPaste()">Import</button>
+            `
+        );
+    },
+
+    /**
+     * Confirm paste import
+     */
+    confirmPaste() {
+        const content = document.getElementById('pasteContent').value;
+        if (!content.trim()) {
+            Toast.show('Error', 'Please paste some content first', 'error');
+            return;
+        }
+
+        Editor.textarea.value = content;
+        Editor.handleInput();
+        Modal.close();
+        Toast.show('Imported', 'Content pasted successfully', 'success');
+    },
+
+    /**
+     * Import file with preview
      */
     importFile(file) {
         if (!file) return;
@@ -1249,12 +1314,31 @@ const ImportExport = {
             return;
         }
 
+        // Detect file type and read accordingly
+        const fileExt = file.name.split('.').pop().toLowerCase();
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                Editor.textarea.value = e.target.result;
-                Editor.handleInput();
-                Toast.show('Imported', `File "${Utils.escapeHTML(file.name)}" imported successfully`, 'success');
+                let content = e.target.result;
+
+                // Parse based on file type
+                if (fileExt === 'json') {
+                    try {
+                        const json = JSON.parse(content);
+                        // If it's our format, extract text
+                        content = json.text || JSON.stringify(json, null, 2);
+                    } catch (err) {
+                        // If not valid JSON, use as-is
+                    }
+                } else if (fileExt === 'csv') {
+                    // Convert CSV to readable format
+                    content = this.formatCSV(content);
+                }
+
+                // Show preview before importing
+                this.showImportPreview(content, file.name, Utils.formatBytes(file.size));
+
             } catch (error) {
                 console.error('Import error:', error);
                 Toast.show('Error', 'Failed to process imported file', 'error');
@@ -1268,70 +1352,355 @@ const ImportExport = {
     },
 
     /**
-     * Export as text file (or route to other formats)
+     * Show import preview
      */
-    exportText(format = 'txt') {
+    showImportPreview(content, filename, filesize) {
+        const preview = content.length > 500 ? content.substring(0, 500) + '...' : content;
+        const stats = Utils.getTextStats(content);
+
+        Modal.open(
+            '<i class="fas fa-eye"></i> Import Preview',
+            `
+                <div class="import-preview">
+                    <div class="preview-info">
+                        <div class="preview-stat">
+                            <i class="fas fa-file"></i>
+                            <span>${Utils.escapeHTML(filename)}</span>
+                        </div>
+                        <div class="preview-stat">
+                            <i class="fas fa-hdd"></i>
+                            <span>${filesize}</span>
+                        </div>
+                        <div class="preview-stat">
+                            <i class="fas fa-align-left"></i>
+                            <span>${stats.chars.toLocaleString()} chars, ${stats.words.toLocaleString()} words, ${stats.lines.toLocaleString()} lines</span>
+                        </div>
+                    </div>
+                    <div class="preview-content">
+                        <pre>${Utils.escapeHTML(preview)}</pre>
+                    </div>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="ImportExport.confirmImport(\`${content.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">Import</button>
+            `
+        );
+    },
+
+    /**
+     * Confirm import
+     */
+    confirmImport(content) {
+        Editor.textarea.value = content;
+        Editor.handleInput();
+        Modal.close();
+        Toast.show('Imported', 'File imported successfully', 'success');
+    },
+
+    /**
+     * Format CSV for display
+     */
+    formatCSV(csv) {
+        const lines = csv.split('\n');
+        return lines.map(line => line.split(',').join(' | ')).join('\n');
+    },
+
+    /**
+     * Show export modal with options
+     */
+    showExportModal(format) {
+        const hasContent = Editor.textarea.value.trim().length > 0;
+
+        if (!hasContent) {
+            Toast.show('Error', 'No content to export', 'error');
+            return;
+        }
+
+        const stats = Utils.getTextStats(Editor.textarea.value);
+        const formatInfo = this.getFormatInfo(format);
+
+        Modal.open(
+            `<i class="${formatInfo.icon}"></i> Export as ${formatInfo.name}`,
+            `
+                <div class="export-options-modal">
+                    <div class="export-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-align-left"></i>
+                            <span>${stats.chars.toLocaleString()} characters</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-font"></i>
+                            <span>${stats.words.toLocaleString()} words</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-list-ol"></i>
+                            <span>${stats.lines.toLocaleString()} lines</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Filename</label>
+                        <input type="text" id="exportFilename" class="form-input" value="textman-export" placeholder="Enter filename">
+                    </div>
+
+                    ${format === 'html' ? `
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="includeStyle" checked>
+                                <span>Include styling</span>
+                            </label>
+                        </div>
+                    ` : ''}
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeMetadata" checked>
+                            <span>Include metadata (timestamp, statistics)</span>
+                        </label>
+                    </div>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="ImportExport.confirmExport('${format}')">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            `
+        );
+    },
+
+    /**
+     * Get format info
+     */
+    getFormatInfo(format) {
+        const formats = {
+            'txt': { name: 'Plain Text', icon: 'fas fa-file-alt', ext: 'txt', mime: 'text/plain' },
+            'md': { name: 'Markdown', icon: 'fab fa-markdown', ext: 'md', mime: 'text/markdown' },
+            'json': { name: 'JSON', icon: 'fas fa-file-code', ext: 'json', mime: 'application/json' },
+            'html': { name: 'HTML', icon: 'fab fa-html5', ext: 'html', mime: 'text/html' },
+            'csv': { name: 'CSV', icon: 'fas fa-table', ext: 'csv', mime: 'text/csv' }
+        };
+        return formats[format] || formats['txt'];
+    },
+
+    /**
+     * Confirm export
+     */
+    confirmExport(format) {
+        const filename = document.getElementById('exportFilename').value.trim() || 'textman-export';
+        const includeMetadata = document.getElementById('includeMetadata')?.checked ?? true;
+        const includeStyle = document.getElementById('includeStyle')?.checked ?? true;
+
+        Modal.close();
+
         switch (format) {
             case 'txt':
-                const blob = new Blob([Editor.textarea.value], { type: 'text/plain' });
-                this.download(blob, 'textman-export.txt');
+                this.exportText(filename, includeMetadata);
                 break;
             case 'md':
-                const mdBlob = new Blob([Editor.textarea.value], { type: 'text/markdown' });
-                this.download(mdBlob, 'textman-export.md');
+                this.exportMarkdown(filename, includeMetadata);
                 break;
             case 'json':
-                this.exportJSON();
+                this.exportJSON(filename, includeMetadata);
                 break;
             case 'html':
-                this.exportHTML();
+                this.exportHTML(filename, includeMetadata, includeStyle);
                 break;
-            default:
-                const defaultBlob = new Blob([Editor.textarea.value], { type: 'text/plain' });
-                this.download(defaultBlob, 'textman-export.txt');
+            case 'csv':
+                this.exportCSV(filename);
+                break;
         }
+    },
+
+    /**
+     * Export as plain text
+     */
+    exportText(filename, includeMetadata) {
+        let content = Editor.textarea.value;
+
+        if (includeMetadata) {
+            const stats = Utils.getTextStats(content);
+            const metadata = `
+================================================================================
+Exported from textMan v${APP_CONFIG.version}
+Date: ${new Date().toLocaleString()}
+Statistics: ${stats.chars} characters, ${stats.words} words, ${stats.lines} lines
+================================================================================
+
+`;
+            content = metadata + content;
+        }
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        this.download(blob, `${filename}.txt`);
+    },
+
+    /**
+     * Export as Markdown
+     */
+    exportMarkdown(filename, includeMetadata) {
+        let content = Editor.textarea.value;
+
+        if (includeMetadata) {
+            const stats = Utils.getTextStats(content);
+            const metadata = `---
+exported: ${new Date().toISOString()}
+version: ${APP_CONFIG.version}
+characters: ${stats.chars}
+words: ${stats.words}
+lines: ${stats.lines}
+---
+
+`;
+            content = metadata + content;
+        }
+
+        const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+        this.download(blob, `${filename}.md`);
     },
 
     /**
      * Export as JSON
      */
-    exportJSON() {
+    exportJSON(filename, includeMetadata) {
+        const stats = Utils.getTextStats(Editor.textarea.value);
         const data = {
             text: Editor.textarea.value,
-            metadata: {
-                exported: new Date().toISOString(),
-                version: APP_CONFIG.version
-            }
+            ...(includeMetadata && {
+                metadata: {
+                    exported: new Date().toISOString(),
+                    version: APP_CONFIG.version,
+                    statistics: {
+                        characters: stats.chars,
+                        words: stats.words,
+                        lines: stats.lines,
+                        readingTime: stats.readTime
+                    }
+                }
+            })
         };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        this.download(blob, 'textman-export.json');
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+        this.download(blob, `${filename}.json`);
     },
 
     /**
      * Export as HTML
      */
-    exportHTML() {
-        const html = `
-<!DOCTYPE html>
-<html>
+    exportHTML(filename, includeMetadata, includeStyle) {
+        const stats = Utils.getTextStats(Editor.textarea.value);
+        const content = Utils.escapeHTML(Editor.textarea.value);
+
+        const styles = includeStyle ? `
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                padding: 2rem;
+                max-width: 900px;
+                margin: 0 auto;
+                background: #f5f5f5;
+            }
+            .container {
+                background: white;
+                padding: 2rem;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            h1 {
+                color: #10b981;
+                margin-bottom: 0.5rem;
+                border-bottom: 3px solid #10b981;
+                padding-bottom: 0.5rem;
+            }
+            .metadata {
+                background: #f0f9ff;
+                border-left: 4px solid #3b82f6;
+                padding: 1rem;
+                margin: 1rem 0;
+                border-radius: 4px;
+                font-size: 0.9rem;
+                color: #1e40af;
+            }
+            .metadata strong { color: #1e3a8a; }
+            pre {
+                background: #1e293b;
+                color: #e2e8f0;
+                padding: 1.5rem;
+                border-radius: 8px;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                font-family: 'Courier New', monospace;
+                line-height: 1.5;
+            }
+            .footer {
+                margin-top: 2rem;
+                padding-top: 1rem;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+                color: #6b7280;
+                font-size: 0.875rem;
+            }
+            @media print {
+                body { background: white; }
+                .container { box-shadow: none; }
+            }
+        </style>` : '';
+
+        const metadata = includeMetadata ? `
+            <div class="metadata">
+                <strong>📅 Exported:</strong> ${new Date().toLocaleString()}<br>
+                <strong>🔢 Statistics:</strong> ${stats.chars.toLocaleString()} characters, ${stats.words.toLocaleString()} words, ${stats.lines.toLocaleString()} lines<br>
+                <strong>📖 Reading Time:</strong> ~${stats.readTime}<br>
+                <strong>⚡ Generated by:</strong> textMan v${APP_CONFIG.version}
+            </div>` : '';
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>textMan Export</title>
-    <style>
-        body { font-family: monospace; padding: 2rem; max-width: 800px; margin: 0 auto; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="textMan v${APP_CONFIG.version}">
+    <title>${filename}</title>${styles}
 </head>
 <body>
-    <h1>textMan Export</h1>
-    <p>Exported: ${new Date().toLocaleString()}</p>
-    <hr>
-    <pre>${Editor.textarea.value}</pre>
+    <div class="container">
+        <h1>📄 ${filename}</h1>
+        ${metadata}
+        <pre>${content}</pre>
+        <div class="footer">
+            <p>Generated by <strong>textMan</strong> — Professional Text Editor</p>
+        </div>
+    </div>
 </body>
-</html>
-        `;
-        const blob = new Blob([html], { type: 'text/html' });
-        this.download(blob, 'textman-export.html');
+</html>`;
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        this.download(blob, `${filename}.html`);
+    },
+
+    /**
+     * Export as CSV
+     */
+    exportCSV(filename) {
+        const lines = Editor.textarea.value.split('\n');
+
+        // Try to detect if it's already CSV-like or convert
+        const csvContent = lines.map(line => {
+            // If line contains tabs or pipes, convert to CSV
+            if (line.includes('\t')) {
+                return line.split('\t').map(cell => `"${cell.replace(/"/g, '""')}"`).join(',');
+            } else if (line.includes('|')) {
+                return line.split('|').map(cell => `"${cell.trim().replace(/"/g, '""')}"`).join(',');
+            }
+            return `"${line.replace(/"/g, '""')}"`;
+        }).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+        this.download(blob, `${filename}.csv`);
     },
 
     /**
@@ -1354,16 +1723,31 @@ const ImportExport = {
      */
     renderExportOptions() {
         const container = document.getElementById('exportOptions');
+        if (!container) return;
+
         container.innerHTML = `
-            <button class="tool-btn" onclick="ImportExport.exportText()">
-                <i class="fas fa-file-alt"></i> Export TXT
-            </button>
-            <button class="tool-btn" onclick="ImportExport.exportJSON()">
-                <i class="fas fa-file-code"></i> Export JSON
-            </button>
-            <button class="tool-btn" onclick="ImportExport.exportHTML()">
-                <i class="fas fa-file-code"></i> Export HTML
-            </button>
+            <div class="export-grid">
+                <button class="export-card" onclick="ImportExport.showExportModal('txt')" data-tooltip="Export as Plain Text">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Plain Text</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('md')" data-tooltip="Export as Markdown">
+                    <i class="fab fa-markdown"></i>
+                    <span>Markdown</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('json')" data-tooltip="Export as JSON">
+                    <i class="fas fa-file-code"></i>
+                    <span>JSON</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('html')" data-tooltip="Export as HTML">
+                    <i class="fab fa-html5"></i>
+                    <span>HTML</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('csv')" data-tooltip="Export as CSV">
+                    <i class="fas fa-table"></i>
+                    <span>CSV</span>
+                </button>
+            </div>
         `;
     }
 };
