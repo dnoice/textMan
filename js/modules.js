@@ -141,6 +141,11 @@ const Editor = {
             e.preventDefault();
             SearchManager.open();
         }
+
+        // ESC - Exit zen mode
+        if (e.key === 'Escape') {
+            this.exitZenMode();
+        }
     },
 
     /**
@@ -292,6 +297,89 @@ const Editor = {
     applySettings() {
         this.textarea.style.fontSize = `${APP_STATE.settings.fontSize}px`;
         this.textarea.style.lineHeight = APP_STATE.settings.lineHeight;
+
+        // Apply font size class
+        this.textarea.classList.remove('font-small', 'font-medium', 'font-large', 'font-xlarge');
+        const fontSize = APP_STATE.settings.fontSize;
+        if (fontSize <= 14) {
+            this.textarea.classList.add('font-small');
+        } else if (fontSize <= 16) {
+            this.textarea.classList.add('font-medium');
+        } else if (fontSize <= 18) {
+            this.textarea.classList.add('font-large');
+        } else {
+            this.textarea.classList.add('font-xlarge');
+        }
+    },
+
+    /**
+     * Increase font size
+     */
+    increaseFontSize() {
+        if (APP_STATE.settings.fontSize < 24) {
+            APP_STATE.settings.fontSize += 2;
+            this.applySettings();
+            Storage.save('settings', APP_STATE.settings);
+            Toast.show('Font Size', `Increased to ${APP_STATE.settings.fontSize}px`, 'success');
+        }
+    },
+
+    /**
+     * Decrease font size
+     */
+    decreaseFontSize() {
+        if (APP_STATE.settings.fontSize > 10) {
+            APP_STATE.settings.fontSize -= 2;
+            this.applySettings();
+            Storage.save('settings', APP_STATE.settings);
+            Toast.show('Font Size', `Decreased to ${APP_STATE.settings.fontSize}px`, 'success');
+        }
+    },
+
+    /**
+     * Toggle focus mode (dims sidebars)
+     */
+    toggleFocusMode() {
+        const body = document.body;
+        const isActive = body.classList.toggle('focus-mode');
+
+        // Can't have both focus and zen mode
+        if (isActive && body.classList.contains('zen-mode')) {
+            body.classList.remove('zen-mode');
+        }
+
+        Toast.show('Focus Mode', isActive ? 'Focus mode enabled' : 'Focus mode disabled', 'info');
+    },
+
+    /**
+     * Toggle zen mode (hides all UI)
+     */
+    toggleZenMode() {
+        const body = document.body;
+        const isActive = body.classList.toggle('zen-mode');
+
+        // Can't have both focus and zen mode
+        if (isActive && body.classList.contains('focus-mode')) {
+            body.classList.remove('focus-mode');
+        }
+
+        if (isActive) {
+            this.textarea.focus();
+            Toast.show('Zen Mode', 'Press ESC to exit zen mode', 'info');
+        } else {
+            Toast.show('Zen Mode', 'Zen mode disabled', 'info');
+        }
+    },
+
+    /**
+     * Exit zen mode
+     */
+    exitZenMode() {
+        const body = document.body;
+        if (body.classList.contains('zen-mode')) {
+            body.classList.remove('zen-mode');
+            Toast.show('Zen Mode', 'Zen mode disabled', 'info');
+        }
     },
 
     /**
@@ -1772,6 +1860,13 @@ const ToolsManager = {
         document.getElementById('downloadBtn').addEventListener('click', () => ImportExport.exportText());
         document.getElementById('printBtn').addEventListener('click', () => window.print());
         document.getElementById('clearBtn').addEventListener('click', () => Editor.clear());
+
+        // Editor enhancement buttons
+        document.getElementById('fontSizeDecBtn').addEventListener('click', () => Editor.decreaseFontSize());
+        document.getElementById('fontSizeIncBtn').addEventListener('click', () => Editor.increaseFontSize());
+        document.getElementById('focusModeBtn').addEventListener('click', () => Editor.toggleFocusMode());
+        document.getElementById('zenModeBtn').addEventListener('click', () => Editor.toggleZenMode());
+        document.getElementById('zenExitBtn').addEventListener('click', () => Editor.exitZenMode());
 
         // Text formatting buttons (markdown style)
         document.getElementById('boldBtn')?.addEventListener('click', () => this.wrapSelection('**', '**'));
