@@ -4,18 +4,21 @@
 
 .sidebar {
     width: var(--sidebar-width);
-    background-color: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     transition: all var(--transition-base);
     position: relative;
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
 .sidebar-right {
     border-right: none;
-    border-left: 1px solid var(--border-color);
+    border-left: 1px solid var(--glass-border);
 }
 
 .sidebar.collapsed {
@@ -111,11 +114,12 @@
 
 .sidebar-header {
     padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: var(--bg-elevated);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
 .sidebar-header h2 {
@@ -190,7 +194,10 @@
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    background-color: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-md);
     cursor: pointer;
     user-select: none;
@@ -201,11 +208,15 @@
     margin: 0; /* Ensure h3 margin is reset */
     color: var(--text-primary);
     outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .panel-header:hover {
-    background-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.08);
     transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .panel-header:focus-visible {
@@ -311,18 +322,25 @@
     gap: var(--spacing-sm);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background-color: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-md);
     cursor: pointer;
     user-select: none;
     transition: all var(--transition-fast);
     position: relative;
     outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .tool-section-title:hover {
-    background-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.08);
     transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .tool-section-title:focus-visible {

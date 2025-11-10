@@ -63,6 +63,7 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     font-size: 1rem;
+    position: relative;
 }
 
 .toolbar-btn:hover {

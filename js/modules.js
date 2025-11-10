@@ -62,6 +62,8 @@ const Modal = {
 const Editor = {
     textarea: null,
     autoSaveTimer: null,
+    historyTimer: null,
+    lastHistoryContent: '',
 
     /**
      * Initialize editor
@@ -77,6 +79,11 @@ const Editor = {
         // Add to history
         if (savedContent) {
             this.addToHistory(savedContent);
+            this.lastHistoryContent = savedContent;
+        } else {
+            // Initialize with empty content
+            this.addToHistory('');
+            this.lastHistoryContent = '';
         }
 
         // Event listeners
@@ -98,6 +105,9 @@ const Editor = {
     handleInput() {
         APP_STATE.editor.content = this.textarea.value;
         this.updateStats();
+
+        // Schedule history save (debounced)
+        this.scheduleHistorySave();
 
         if (APP_STATE.settings.autoSave) {
             this.scheduleAutoSave();
@@ -131,6 +141,11 @@ const Editor = {
             e.preventDefault();
             SearchManager.open();
         }
+
+        // ESC - Exit zen mode
+        if (e.key === 'Escape') {
+            this.exitZenMode();
+        }
     },
 
     /**
@@ -150,6 +165,21 @@ const Editor = {
 
         // Update analytics panel
         Analytics.updateMini({ chars, words, lines, readTime });
+    },
+
+    /**
+     * Schedule history save (debounced to avoid excessive history entries)
+     */
+    scheduleHistorySave() {
+        clearTimeout(this.historyTimer);
+        this.historyTimer = setTimeout(() => {
+            const currentContent = this.textarea.value;
+            // Only add to history if content has actually changed
+            if (currentContent !== this.lastHistoryContent) {
+                this.addToHistory(currentContent);
+                this.lastHistoryContent = currentContent;
+            }
+        }, 1000); // 1 second delay after user stops typing
     },
 
     /**
@@ -203,6 +233,7 @@ const Editor = {
             APP_STATE.editor.historyIndex--;
             this.textarea.value = APP_STATE.editor.history[APP_STATE.editor.historyIndex];
             APP_STATE.editor.content = this.textarea.value;
+            this.lastHistoryContent = this.textarea.value; // Update to prevent duplicate history entry
             this.updateStats();
             this.setStatus('Undone');
         }
@@ -216,6 +247,7 @@ const Editor = {
             APP_STATE.editor.historyIndex++;
             this.textarea.value = APP_STATE.editor.history[APP_STATE.editor.historyIndex];
             APP_STATE.editor.content = this.textarea.value;
+            this.lastHistoryContent = this.textarea.value; // Update to prevent duplicate history entry
             this.updateStats();
             this.setStatus('Redone');
         }
@@ -265,6 +297,89 @@ const Editor = {
     applySettings() {
         this.textarea.style.fontSize = `${APP_STATE.settings.fontSize}px`;
         this.textarea.style.lineHeight = APP_STATE.settings.lineHeight;
+
+        // Apply font size class
+        this.textarea.classList.remove('font-small', 'font-medium', 'font-large', 'font-xlarge');
+        const fontSize = APP_STATE.settings.fontSize;
+        if (fontSize <= 14) {
+            this.textarea.classList.add('font-small');
+        } else if (fontSize <= 16) {
+            this.textarea.classList.add('font-medium');
+        } else if (fontSize <= 18) {
+            this.textarea.classList.add('font-large');
+        } else {
+            this.textarea.classList.add('font-xlarge');
+        }
+    },
+
+    /**
+     * Increase font size
+     */
+    increaseFontSize() {
+        if (APP_STATE.settings.fontSize < 24) {
+            APP_STATE.settings.fontSize += 2;
+            this.applySettings();
+            Storage.save('settings', APP_STATE.settings);
+            Toast.show('Font Size', `Increased to ${APP_STATE.settings.fontSize}px`, 'success');
+        }
+    },
+
+    /**
+     * Decrease font size
+     */
+    decreaseFontSize() {
+        if (APP_STATE.settings.fontSize > 10) {
+            APP_STATE.settings.fontSize -= 2;
+            this.applySettings();
+            Storage.save('settings', APP_STATE.settings);
+            Toast.show('Font Size', `Decreased to ${APP_STATE.settings.fontSize}px`, 'success');
+        }
+    },
+
+    /**
+     * Toggle focus mode (dims sidebars)
+     */
+    toggleFocusMode() {
+        const body = document.body;
+        const isActive = body.classList.toggle('focus-mode');
+
+        // Can't have both focus and zen mode
+        if (isActive && body.classList.contains('zen-mode')) {
+            body.classList.remove('zen-mode');
+        }
+
+        Toast.show('Focus Mode', isActive ? 'Focus mode enabled' : 'Focus mode disabled', 'info');
+    },
+
+    /**
+     * Toggle zen mode (hides all UI)
+     */
+    toggleZenMode() {
+        const body = document.body;
+        const isActive = body.classList.toggle('zen-mode');
+
+        // Can't have both focus and zen mode
+        if (isActive && body.classList.contains('focus-mode')) {
+            body.classList.remove('focus-mode');
+        }
+
+        if (isActive) {
+            this.textarea.focus();
+            Toast.show('Zen Mode', 'Press ESC to exit zen mode', 'info');
+        } else {
+            Toast.show('Zen Mode', 'Zen mode disabled', 'info');
+        }
+    },
+
+    /**
+     * Exit zen mode
+     */
+    exitZenMode() {
+        const body = document.body;
+        if (body.classList.contains('zen-mode')) {
+            body.classList.remove('zen-mode');
+            Toast.show('Zen Mode', 'Zen mode disabled', 'info');
+        }
     },
 
     /**
@@ -1192,9 +1307,9 @@ const ImportExport = {
      * Initialize
      */
     init() {
-        // Import button
+        // Import button - opens enhanced import modal
         document.getElementById('importBtn').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
+            this.showImportModal();
         });
 
         // File input handler
@@ -1207,7 +1322,72 @@ const ImportExport = {
     },
 
     /**
-     * Import file
+     * Show enhanced import modal
+     */
+    showImportModal() {
+        Modal.open(
+            '<i class="fas fa-file-import"></i> Import Text',
+            `
+                <div class="import-methods">
+                    <div class="import-method-card" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-file-upload"></i>
+                        <h4>Import from File</h4>
+                        <p>Upload TXT, MD, JSON, CSV, or HTML file</p>
+                    </div>
+                    <div class="import-method-card" onclick="ImportExport.showPasteImport()">
+                        <i class="fas fa-clipboard"></i>
+                        <h4>Paste Content</h4>
+                        <p>Paste text directly from clipboard</p>
+                    </div>
+                </div>
+                <div class="import-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Maximum file size: ${Utils.formatBytes(APP_CONFIG.maxFileSize)}</span>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+            `
+        );
+    },
+
+    /**
+     * Show paste import
+     */
+    showPasteImport() {
+        Modal.open(
+            '<i class="fas fa-clipboard"></i> Paste Content',
+            `
+                <div class="form-group">
+                    <label class="form-label">Paste your content below:</label>
+                    <textarea id="pasteContent" class="form-textarea" rows="10" placeholder="Paste your text here..." autofocus></textarea>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="ImportExport.confirmPaste()">Import</button>
+            `
+        );
+    },
+
+    /**
+     * Confirm paste import
+     */
+    confirmPaste() {
+        const content = document.getElementById('pasteContent').value;
+        if (!content.trim()) {
+            Toast.show('Error', 'Please paste some content first', 'error');
+            return;
+        }
+
+        Editor.textarea.value = content;
+        Editor.handleInput();
+        Modal.close();
+        Toast.show('Imported', 'Content pasted successfully', 'success');
+    },
+
+    /**
+     * Import file with preview
      */
     importFile(file) {
         if (!file) return;
@@ -1222,12 +1402,31 @@ const ImportExport = {
             return;
         }
 
+        // Detect file type and read accordingly
+        const fileExt = file.name.split('.').pop().toLowerCase();
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                Editor.textarea.value = e.target.result;
-                Editor.handleInput();
-                Toast.show('Imported', `File "${Utils.escapeHTML(file.name)}" imported successfully`, 'success');
+                let content = e.target.result;
+
+                // Parse based on file type
+                if (fileExt === 'json') {
+                    try {
+                        const json = JSON.parse(content);
+                        // If it's our format, extract text
+                        content = json.text || JSON.stringify(json, null, 2);
+                    } catch (err) {
+                        // If not valid JSON, use as-is
+                    }
+                } else if (fileExt === 'csv') {
+                    // Convert CSV to readable format
+                    content = this.formatCSV(content);
+                }
+
+                // Show preview before importing
+                this.showImportPreview(content, file.name, Utils.formatBytes(file.size));
+
             } catch (error) {
                 console.error('Import error:', error);
                 Toast.show('Error', 'Failed to process imported file', 'error');
@@ -1241,70 +1440,355 @@ const ImportExport = {
     },
 
     /**
-     * Export as text file (or route to other formats)
+     * Show import preview
      */
-    exportText(format = 'txt') {
+    showImportPreview(content, filename, filesize) {
+        const preview = content.length > 500 ? content.substring(0, 500) + '...' : content;
+        const stats = Utils.getTextStats(content);
+
+        Modal.open(
+            '<i class="fas fa-eye"></i> Import Preview',
+            `
+                <div class="import-preview">
+                    <div class="preview-info">
+                        <div class="preview-stat">
+                            <i class="fas fa-file"></i>
+                            <span>${Utils.escapeHTML(filename)}</span>
+                        </div>
+                        <div class="preview-stat">
+                            <i class="fas fa-hdd"></i>
+                            <span>${filesize}</span>
+                        </div>
+                        <div class="preview-stat">
+                            <i class="fas fa-align-left"></i>
+                            <span>${stats.chars.toLocaleString()} chars, ${stats.words.toLocaleString()} words, ${stats.lines.toLocaleString()} lines</span>
+                        </div>
+                    </div>
+                    <div class="preview-content">
+                        <pre>${Utils.escapeHTML(preview)}</pre>
+                    </div>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="ImportExport.confirmImport(\`${content.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">Import</button>
+            `
+        );
+    },
+
+    /**
+     * Confirm import
+     */
+    confirmImport(content) {
+        Editor.textarea.value = content;
+        Editor.handleInput();
+        Modal.close();
+        Toast.show('Imported', 'File imported successfully', 'success');
+    },
+
+    /**
+     * Format CSV for display
+     */
+    formatCSV(csv) {
+        const lines = csv.split('\n');
+        return lines.map(line => line.split(',').join(' | ')).join('\n');
+    },
+
+    /**
+     * Show export modal with options
+     */
+    showExportModal(format) {
+        const hasContent = Editor.textarea.value.trim().length > 0;
+
+        if (!hasContent) {
+            Toast.show('Error', 'No content to export', 'error');
+            return;
+        }
+
+        const stats = Utils.getTextStats(Editor.textarea.value);
+        const formatInfo = this.getFormatInfo(format);
+
+        Modal.open(
+            `<i class="${formatInfo.icon}"></i> Export as ${formatInfo.name}`,
+            `
+                <div class="export-options-modal">
+                    <div class="export-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-align-left"></i>
+                            <span>${stats.chars.toLocaleString()} characters</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-font"></i>
+                            <span>${stats.words.toLocaleString()} words</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-list-ol"></i>
+                            <span>${stats.lines.toLocaleString()} lines</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Filename</label>
+                        <input type="text" id="exportFilename" class="form-input" value="textman-export" placeholder="Enter filename">
+                    </div>
+
+                    ${format === 'html' ? `
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="includeStyle" checked>
+                                <span>Include styling</span>
+                            </label>
+                        </div>
+                    ` : ''}
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeMetadata" checked>
+                            <span>Include metadata (timestamp, statistics)</span>
+                        </label>
+                    </div>
+                </div>
+            `,
+            `
+                <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+                <button class="btn btn-primary" onclick="ImportExport.confirmExport('${format}')">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            `
+        );
+    },
+
+    /**
+     * Get format info
+     */
+    getFormatInfo(format) {
+        const formats = {
+            'txt': { name: 'Plain Text', icon: 'fas fa-file-alt', ext: 'txt', mime: 'text/plain' },
+            'md': { name: 'Markdown', icon: 'fab fa-markdown', ext: 'md', mime: 'text/markdown' },
+            'json': { name: 'JSON', icon: 'fas fa-file-code', ext: 'json', mime: 'application/json' },
+            'html': { name: 'HTML', icon: 'fab fa-html5', ext: 'html', mime: 'text/html' },
+            'csv': { name: 'CSV', icon: 'fas fa-table', ext: 'csv', mime: 'text/csv' }
+        };
+        return formats[format] || formats['txt'];
+    },
+
+    /**
+     * Confirm export
+     */
+    confirmExport(format) {
+        const filename = document.getElementById('exportFilename').value.trim() || 'textman-export';
+        const includeMetadata = document.getElementById('includeMetadata')?.checked ?? true;
+        const includeStyle = document.getElementById('includeStyle')?.checked ?? true;
+
+        Modal.close();
+
         switch (format) {
             case 'txt':
-                const blob = new Blob([Editor.textarea.value], { type: 'text/plain' });
-                this.download(blob, 'textman-export.txt');
+                this.exportText(filename, includeMetadata);
                 break;
             case 'md':
-                const mdBlob = new Blob([Editor.textarea.value], { type: 'text/markdown' });
-                this.download(mdBlob, 'textman-export.md');
+                this.exportMarkdown(filename, includeMetadata);
                 break;
             case 'json':
-                this.exportJSON();
+                this.exportJSON(filename, includeMetadata);
                 break;
             case 'html':
-                this.exportHTML();
+                this.exportHTML(filename, includeMetadata, includeStyle);
                 break;
-            default:
-                const defaultBlob = new Blob([Editor.textarea.value], { type: 'text/plain' });
-                this.download(defaultBlob, 'textman-export.txt');
+            case 'csv':
+                this.exportCSV(filename);
+                break;
         }
+    },
+
+    /**
+     * Export as plain text
+     */
+    exportText(filename, includeMetadata) {
+        let content = Editor.textarea.value;
+
+        if (includeMetadata) {
+            const stats = Utils.getTextStats(content);
+            const metadata = `
+================================================================================
+Exported from textMan v${APP_CONFIG.version}
+Date: ${new Date().toLocaleString()}
+Statistics: ${stats.chars} characters, ${stats.words} words, ${stats.lines} lines
+================================================================================
+
+`;
+            content = metadata + content;
+        }
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        this.download(blob, `${filename}.txt`);
+    },
+
+    /**
+     * Export as Markdown
+     */
+    exportMarkdown(filename, includeMetadata) {
+        let content = Editor.textarea.value;
+
+        if (includeMetadata) {
+            const stats = Utils.getTextStats(content);
+            const metadata = `---
+exported: ${new Date().toISOString()}
+version: ${APP_CONFIG.version}
+characters: ${stats.chars}
+words: ${stats.words}
+lines: ${stats.lines}
+---
+
+`;
+            content = metadata + content;
+        }
+
+        const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+        this.download(blob, `${filename}.md`);
     },
 
     /**
      * Export as JSON
      */
-    exportJSON() {
+    exportJSON(filename, includeMetadata) {
+        const stats = Utils.getTextStats(Editor.textarea.value);
         const data = {
             text: Editor.textarea.value,
-            metadata: {
-                exported: new Date().toISOString(),
-                version: APP_CONFIG.version
-            }
+            ...(includeMetadata && {
+                metadata: {
+                    exported: new Date().toISOString(),
+                    version: APP_CONFIG.version,
+                    statistics: {
+                        characters: stats.chars,
+                        words: stats.words,
+                        lines: stats.lines,
+                        readingTime: stats.readTime
+                    }
+                }
+            })
         };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        this.download(blob, 'textman-export.json');
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+        this.download(blob, `${filename}.json`);
     },
 
     /**
      * Export as HTML
      */
-    exportHTML() {
-        const html = `
-<!DOCTYPE html>
-<html>
+    exportHTML(filename, includeMetadata, includeStyle) {
+        const stats = Utils.getTextStats(Editor.textarea.value);
+        const content = Utils.escapeHTML(Editor.textarea.value);
+
+        const styles = includeStyle ? `
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                padding: 2rem;
+                max-width: 900px;
+                margin: 0 auto;
+                background: #f5f5f5;
+            }
+            .container {
+                background: white;
+                padding: 2rem;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            h1 {
+                color: #10b981;
+                margin-bottom: 0.5rem;
+                border-bottom: 3px solid #10b981;
+                padding-bottom: 0.5rem;
+            }
+            .metadata {
+                background: #f0f9ff;
+                border-left: 4px solid #3b82f6;
+                padding: 1rem;
+                margin: 1rem 0;
+                border-radius: 4px;
+                font-size: 0.9rem;
+                color: #1e40af;
+            }
+            .metadata strong { color: #1e3a8a; }
+            pre {
+                background: #1e293b;
+                color: #e2e8f0;
+                padding: 1.5rem;
+                border-radius: 8px;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                font-family: 'Courier New', monospace;
+                line-height: 1.5;
+            }
+            .footer {
+                margin-top: 2rem;
+                padding-top: 1rem;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+                color: #6b7280;
+                font-size: 0.875rem;
+            }
+            @media print {
+                body { background: white; }
+                .container { box-shadow: none; }
+            }
+        </style>` : '';
+
+        const metadata = includeMetadata ? `
+            <div class="metadata">
+                <strong>📅 Exported:</strong> ${new Date().toLocaleString()}<br>
+                <strong>🔢 Statistics:</strong> ${stats.chars.toLocaleString()} characters, ${stats.words.toLocaleString()} words, ${stats.lines.toLocaleString()} lines<br>
+                <strong>📖 Reading Time:</strong> ~${stats.readTime}<br>
+                <strong>⚡ Generated by:</strong> textMan v${APP_CONFIG.version}
+            </div>` : '';
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>textMan Export</title>
-    <style>
-        body { font-family: monospace; padding: 2rem; max-width: 800px; margin: 0 auto; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="textMan v${APP_CONFIG.version}">
+    <title>${filename}</title>${styles}
 </head>
 <body>
-    <h1>textMan Export</h1>
-    <p>Exported: ${new Date().toLocaleString()}</p>
-    <hr>
-    <pre>${Editor.textarea.value}</pre>
+    <div class="container">
+        <h1>📄 ${filename}</h1>
+        ${metadata}
+        <pre>${content}</pre>
+        <div class="footer">
+            <p>Generated by <strong>textMan</strong> — Professional Text Editor</p>
+        </div>
+    </div>
 </body>
-</html>
-        `;
-        const blob = new Blob([html], { type: 'text/html' });
-        this.download(blob, 'textman-export.html');
+</html>`;
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        this.download(blob, `${filename}.html`);
+    },
+
+    /**
+     * Export as CSV
+     */
+    exportCSV(filename) {
+        const lines = Editor.textarea.value.split('\n');
+
+        // Try to detect if it's already CSV-like or convert
+        const csvContent = lines.map(line => {
+            // If line contains tabs or pipes, convert to CSV
+            if (line.includes('\t')) {
+                return line.split('\t').map(cell => `"${cell.replace(/"/g, '""')}"`).join(',');
+            } else if (line.includes('|')) {
+                return line.split('|').map(cell => `"${cell.trim().replace(/"/g, '""')}"`).join(',');
+            }
+            return `"${line.replace(/"/g, '""')}"`;
+        }).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+        this.download(blob, `${filename}.csv`);
     },
 
     /**
@@ -1327,16 +1811,31 @@ const ImportExport = {
      */
     renderExportOptions() {
         const container = document.getElementById('exportOptions');
+        if (!container) return;
+
         container.innerHTML = `
-            <button class="tool-btn" onclick="ImportExport.exportText()">
-                <i class="fas fa-file-alt"></i> Export TXT
-            </button>
-            <button class="tool-btn" onclick="ImportExport.exportJSON()">
-                <i class="fas fa-file-code"></i> Export JSON
-            </button>
-            <button class="tool-btn" onclick="ImportExport.exportHTML()">
-                <i class="fas fa-file-code"></i> Export HTML
-            </button>
+            <div class="export-grid">
+                <button class="export-card" onclick="ImportExport.showExportModal('txt')" data-tooltip="Export as Plain Text">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Plain Text</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('md')" data-tooltip="Export as Markdown">
+                    <i class="fab fa-markdown"></i>
+                    <span>Markdown</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('json')" data-tooltip="Export as JSON">
+                    <i class="fas fa-file-code"></i>
+                    <span>JSON</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('html')" data-tooltip="Export as HTML">
+                    <i class="fab fa-html5"></i>
+                    <span>HTML</span>
+                </button>
+                <button class="export-card" onclick="ImportExport.showExportModal('csv')" data-tooltip="Export as CSV">
+                    <i class="fas fa-table"></i>
+                    <span>CSV</span>
+                </button>
+            </div>
         `;
     }
 };
@@ -1361,6 +1860,13 @@ const ToolsManager = {
         document.getElementById('downloadBtn').addEventListener('click', () => ImportExport.exportText());
         document.getElementById('printBtn').addEventListener('click', () => window.print());
         document.getElementById('clearBtn').addEventListener('click', () => Editor.clear());
+
+        // Editor enhancement buttons
+        document.getElementById('fontSizeDecBtn').addEventListener('click', () => Editor.decreaseFontSize());
+        document.getElementById('fontSizeIncBtn').addEventListener('click', () => Editor.increaseFontSize());
+        document.getElementById('focusModeBtn').addEventListener('click', () => Editor.toggleFocusMode());
+        document.getElementById('zenModeBtn').addEventListener('click', () => Editor.toggleZenMode());
+        document.getElementById('zenExitBtn').addEventListener('click', () => Editor.exitZenMode());
 
         // Text formatting buttons (markdown style)
         document.getElementById('boldBtn')?.addEventListener('click', () => this.wrapSelection('**', '**'));
@@ -2211,11 +2717,38 @@ const ClipboardHistory = {
 
 const Templates = {
     defaultTemplates: [
-        { name: 'Email Template', content: 'Dear [Name],\n\n[Your message here]\n\nBest regards,\n[Your name]' },
-        { name: 'Meeting Notes', content: '# Meeting Notes\n\nDate: [Date]\nAttendees: [Names]\n\n## Agenda\n- \n\n## Discussion\n- \n\n## Action Items\n- ' },
-        { name: 'TODO List', content: '# TODO List\n\n## Today\n- [ ] \n\n## This Week\n- [ ] \n\n## This Month\n- [ ] ' },
-        { name: 'Bug Report', content: '# Bug Report\n\n## Description\n[Describe the bug]\n\n## Steps to Reproduce\n1. \n\n## Expected Behavior\n[What should happen]\n\n## Actual Behavior\n[What actually happens]\n\n## Environment\n- Browser: \n- OS: ' },
-        { name: 'Code Review', content: '# Code Review\n\n## Summary\n[Brief overview]\n\n## Positives\n- \n\n## Suggestions\n- \n\n## Issues\n- \n\n## Conclusion\n[Overall assessment]' }
+        {
+            name: '📧 Professional Email',
+            content: 'Subject: [Email Subject]\n\nDear [Recipient Name],\n\nI hope this email finds you well.\n\n[Introduction - State purpose]\n\n[Main content - Detail your message]\n• Key point 1\n• Key point 2\n• Key point 3\n\n[Call to action or next steps]\n\nPlease let me know if you have any questions or need any clarification.\n\nBest regards,\n[Your Name]\n[Your Title]\n[Contact Information]'
+        },
+        {
+            name: '📝 Meeting Notes',
+            content: '# Meeting Notes\n\n**Date:** [MM/DD/YYYY]\n**Time:** [Start - End]\n**Location/Platform:** [Room/Zoom/Teams]\n**Attendees:** [Names]\n**Facilitator:** [Name]\n\n## Objectives\n• [Objective 1]\n• [Objective 2]\n\n## Agenda\n1. [Topic 1] - [Time allocation]\n2. [Topic 2] - [Time allocation]\n3. [Topic 3] - [Time allocation]\n\n## Discussion Summary\n### [Topic 1]\n• Key points discussed\n• Decisions made\n• Questions raised\n\n### [Topic 2]\n• Key points discussed\n• Decisions made\n• Questions raised\n\n## Action Items\n- [ ] [Task 1] - Assigned to: [Name] - Due: [Date]\n- [ ] [Task 2] - Assigned to: [Name] - Due: [Date]\n- [ ] [Task 3] - Assigned to: [Name] - Due: [Date]\n\n## Next Meeting\n**Date:** [MM/DD/YYYY]\n**Topics:** [List topics]\n\n## Notes\n[Additional notes or observations]'
+        },
+        {
+            name: '✅ Project TODO List',
+            content: '# Project TODO List\n\n**Project:** [Project Name]\n**Last Updated:** [Date]\n**Owner:** [Your Name]\n\n## 🔴 High Priority (Due Soon)\n- [ ] [Urgent task 1] - Due: [Date]\n- [ ] [Urgent task 2] - Due: [Date]\n\n## 🟡 Medium Priority (This Week)\n- [ ] [Task 1] - Due: [Date]\n- [ ] [Task 2] - Due: [Date]\n- [ ] [Task 3] - Due: [Date]\n\n## 🟢 Low Priority (This Month)\n- [ ] [Task 1]\n- [ ] [Task 2]\n- [ ] [Task 3]\n\n## ✅ Completed\n- [x] [Completed task 1] - Completed: [Date]\n- [x] [Completed task 2] - Completed: [Date]\n\n## 💡 Ideas/Future Tasks\n• [Idea 1]\n• [Idea 2]\n\n## 📌 Notes\n[Additional context or notes]'
+        },
+        {
+            name: '🐛 Bug Report',
+            content: '# Bug Report\n\n**Report ID:** #[Number]\n**Date:** [MM/DD/YYYY]\n**Reporter:** [Your Name]\n**Priority:** [Critical/High/Medium/Low]\n**Status:** [New/In Progress/Resolved]\n\n## Summary\n[Brief, clear description of the bug]\n\n## Environment\n• **Browser/App:** [Chrome 120, Firefox 121, etc.]\n• **OS:** [Windows 11, macOS 14, iOS 17, etc.]\n• **Device:** [Desktop, Mobile, Tablet]\n• **Version:** [App/Website version]\n• **Screen Resolution:** [1920x1080, etc.]\n\n## Steps to Reproduce\n1. [Step 1]\n2. [Step 2]\n3. [Step 3]\n4. [Step that triggers the bug]\n\n## Expected Behavior\n[Describe what should happen]\n\n## Actual Behavior\n[Describe what actually happens]\n\n## Screenshots/Video\n[Attach screenshots or video if available]\n\n## Error Messages\n```\n[Paste any error messages or console output]\n```\n\n## Additional Context\n• Does this happen consistently? [Yes/No]\n• Did this work before? [Yes/No]\n• Related issues: [Link to related bugs]\n\n## Workaround\n[Temporary solution if any]\n\n## Severity Impact\n[How does this affect users?]'
+        },
+        {
+            name: '💻 Code Review',
+            content: '# Code Review\n\n**PR/MR:** #[Number]\n**Author:** [Developer Name]\n**Reviewer:** [Your Name]\n**Date:** [MM/DD/YYYY]\n**Branch:** [feature/branch-name]\n\n## Summary\n[Brief overview of changes]\n\n## Changes Overview\n• [File/Module 1] - [What changed]\n• [File/Module 2] - [What changed]\n• [File/Module 3] - [What changed]\n\n## ✅ Positives\n• Well-structured code\n• Good test coverage\n• Clear documentation\n• [Other positive aspects]\n\n## 💡 Suggestions for Improvement\n### Major\n• [Suggestion 1 with code reference]\n• [Suggestion 2 with code reference]\n\n### Minor\n• [Suggestion 1]\n• [Suggestion 2]\n\n## 🔧 Code Quality\n- [ ] Code follows style guidelines\n- [ ] Functions are properly documented\n- [ ] Error handling is appropriate\n- [ ] No console.logs or debug code\n- [ ] Variables are well-named\n\n## 🧪 Testing\n- [ ] Unit tests included\n- [ ] Tests pass locally\n- [ ] Edge cases covered\n- [ ] Manual testing completed\n\n## 🔒 Security\n- [ ] No sensitive data exposed\n- [ ] Input validation present\n- [ ] No SQL injection vulnerabilities\n- [ ] XSS protection in place\n\n## 📝 Specific Issues\n### Issue 1\n**File:** [filename:line]\n**Problem:** [Description]\n**Suggestion:** [How to fix]\n\n### Issue 2\n**File:** [filename:line]\n**Problem:** [Description]\n**Suggestion:** [How to fix]\n\n## 📚 Documentation\n- [ ] README updated if needed\n- [ ] API docs updated if needed\n- [ ] Comments explain complex logic\n\n## Conclusion\n**Approval Status:** [Approved/Needs Changes/Rejected]\n\n[Overall assessment and next steps]'
+        },
+        {
+            name: '📋 Project Plan',
+            content: '# Project Plan\n\n**Project Name:** [Name]\n**Project Manager:** [Name]\n**Start Date:** [MM/DD/YYYY]\n**Target Completion:** [MM/DD/YYYY]\n**Status:** [Planning/In Progress/On Hold/Completed]\n\n## Executive Summary\n[2-3 sentence project overview]\n\n## Objectives\n• [Objective 1]\n• [Objective 2]\n• [Objective 3]\n\n## Scope\n### In Scope\n• [Item 1]\n• [Item 2]\n\n### Out of Scope\n• [Item 1]\n• [Item 2]\n\n## Deliverables\n1. [Deliverable 1] - Due: [Date]\n2. [Deliverable 2] - Due: [Date]\n3. [Deliverable 3] - Due: [Date]\n\n## Timeline\n### Phase 1: [Name] ([Dates])\n• [Milestone 1]\n• [Milestone 2]\n\n### Phase 2: [Name] ([Dates])\n• [Milestone 1]\n• [Milestone 2]\n\n### Phase 3: [Name] ([Dates])\n• [Milestone 1]\n• [Milestone 2]\n\n## Team & Responsibilities\n• **[Role 1]:** [Name] - [Responsibilities]\n• **[Role 2]:** [Name] - [Responsibilities]\n• **[Role 3]:** [Name] - [Responsibilities]\n\n## Budget\n• **Total Budget:** $[Amount]\n• **Allocated:** $[Amount]\n• **Remaining:** $[Amount]\n\n## Risks & Mitigation\n1. **Risk:** [Description]\n   **Impact:** [High/Medium/Low]\n   **Mitigation:** [Strategy]\n\n## Success Metrics\n• [Metric 1]: [Target]\n• [Metric 2]: [Target]\n• [Metric 3]: [Target]\n\n## Communication Plan\n• **Status Updates:** [Frequency]\n• **Stakeholder Meetings:** [Schedule]\n• **Reporting:** [Method and frequency]'
+        },
+        {
+            name: '📊 Daily Standup',
+            content: '# Daily Standup\n\n**Date:** [MM/DD/YYYY]\n**Team:** [Team Name]\n**Sprint:** [Sprint Number]\n\n## Team Member: [Your Name]\n\n### ✅ Yesterday\n• [What I completed]\n• [What I completed]\n\n### 🎯 Today\n• [What I plan to do]\n• [What I plan to do]\n\n### 🚧 Blockers\n• [Any blockers or issues]\n• [Help needed from team]\n\n---\n\n## Team Member: [Name 2]\n\n### ✅ Yesterday\n• [What they completed]\n\n### 🎯 Today\n• [What they plan to do]\n\n### 🚧 Blockers\n• [Any blockers]\n\n---\n\n## Action Items\n- [ ] [Action from standup]\n- [ ] [Action from standup]\n\n## Notes\n[Additional team discussions or decisions]'
+        },
+        {
+            name: '📖 Documentation',
+            content: '# [Feature/Component Name]\n\n## Overview\n[Brief description of what this is and why it exists]\n\n## Table of Contents\n1. [Installation](#installation)\n2. [Configuration](#configuration)\n3. [Usage](#usage)\n4. [API Reference](#api-reference)\n5. [Examples](#examples)\n6. [Troubleshooting](#troubleshooting)\n\n## Installation\n\n```bash\n# Installation command\nnpm install [package-name]\n```\n\n## Configuration\n\n```javascript\n// Configuration example\nconst config = {\n  option1: \'value1\',\n  option2: \'value2\'\n};\n```\n\n## Usage\n\n### Basic Usage\n```javascript\n// Basic example\nimport { Feature } from \'package\';\n\nconst instance = new Feature(config);\ninstance.doSomething();\n```\n\n### Advanced Usage\n```javascript\n// Advanced example with options\n```\n\n## API Reference\n\n### `methodName(param1, param2)`\n**Description:** [What this method does]\n\n**Parameters:**\n• `param1` (type) - [Description]\n• `param2` (type) - [Description]\n\n**Returns:** [Return type and description]\n\n**Example:**\n```javascript\nconst result = instance.methodName(\'value1\', \'value2\');\n```\n\n## Examples\n\n### Example 1: [Use Case]\n```javascript\n// Code example\n```\n\n### Example 2: [Use Case]\n```javascript\n// Code example\n```\n\n## Troubleshooting\n\n### Issue: [Common problem]\n**Solution:** [How to fix it]\n\n### Issue: [Common problem]\n**Solution:** [How to fix it]\n\n## Contributing\n[Guidelines for contributing]\n\n## License\n[License information]\n\n## Changelog\n### v1.0.0 ([Date])\n• [Change 1]\n• [Change 2]'
+        }
     ],
 
     /**
@@ -2291,10 +2824,17 @@ const Templates = {
         }
 
         container.innerHTML = allTemplates.map((template, index) => `
-            <button class="tool-btn" onclick="Templates.load(${JSON.stringify(template).replace(/"/g, '&quot;')})">
-                <i class="fas fa-file-alt"></i> ${template.name}
-            </button>
-            ${template.custom ? `<button class="item-btn" onclick="Templates.delete(${template.id})"><i class="fas fa-trash"></i></button>` : ''}
+            <div class="template-item">
+                <button class="template-btn" onclick="Templates.load(${JSON.stringify(template).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="template-name">${template.name}</span>
+                </button>
+                ${template.custom ? `
+                    <button class="template-delete-btn" onclick="Templates.delete(${template.id})" title="Delete template">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
         `).join('');
     },
 

@@ -1,0 +1,131 @@
+/* ============================================================================
+   Tooltips - Mobile-friendly tooltips for touch devices
+   ========================================================================= */
+
+/* Custom tooltip system for mobile - using data-tooltip attribute */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: var(--z-tooltip);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+[data-tooltip]::after {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    border: 6px solid transparent;
+    border-top-color: var(--bg-elevated);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: var(--z-tooltip);
+}
+
+/* Show tooltip on hover for desktop */
+@media (hover: hover) and (pointer: fine) {
+    [data-tooltip]:hover::before,
+    [data-tooltip]:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+/* Show tooltip on active/tap for mobile */
+@media (hover: none) or (pointer: coarse) {
+    [data-tooltip]:active::before,
+    [data-tooltip]:active::after,
+    [data-tooltip].show-tooltip::before,
+    [data-tooltip].show-tooltip::after {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+/* Position adjustments for buttons at screen edges */
+.header-controls [data-tooltip]:first-child::before {
+    left: 0;
+    transform: translateX(0) scale(0.9);
+}
+
+.header-controls [data-tooltip]:first-child:hover::before,
+.header-controls [data-tooltip]:first-child:active::before {
+    transform: translateX(0) scale(1);
+}
+
+.header-controls [data-tooltip]:last-child::before {
+    left: auto;
+    right: 0;
+    transform: translateX(0) scale(0.9);
+}
+
+.header-controls [data-tooltip]:last-child:hover::before,
+.header-controls [data-tooltip]:last-child:active::before {
+    transform: translateX(0) scale(1);
+}
+
+/* Arrow adjustments for edge buttons */
+.header-controls [data-tooltip]:first-child::after {
+    left: 12px;
+    transform: translateX(0) scale(0.9);
+}
+
+.header-controls [data-tooltip]:first-child:hover::after,
+.header-controls [data-tooltip]:first-child:active::after {
+    transform: translateX(0) scale(1);
+}
+
+.header-controls [data-tooltip]:last-child::after {
+    left: auto;
+    right: 12px;
+    transform: translateX(0) scale(0.9);
+}
+
+.header-controls [data-tooltip]:last-child:hover::after,
+.header-controls [data-tooltip]:last-child:active::after {
+    transform: translateX(0) scale(1);
+}
+
+/* Tooltip variants for different positions */
+[data-tooltip-pos="bottom"]::before {
+    bottom: auto;
+    top: calc(100% + 8px);
+}
+
+[data-tooltip-pos="bottom"]::after {
+    bottom: auto;
+    top: calc(100% + 2px);
+    border-top-color: transparent;
+    border-bottom-color: var(--bg-elevated);
+    transform: translateX(-50%) rotate(180deg) scale(0.9);
+}
+
+[data-tooltip-pos="bottom"]:hover::after,
+[data-tooltip-pos="bottom"]:active::after {
+    transform: translateX(-50%) rotate(180deg) scale(1);
+}
+
+/* Ensure tooltips don't cause layout shifts */
+[data-tooltip] {
+    overflow: visible;
+}
