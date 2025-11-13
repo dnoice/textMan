@@ -82,5 +82,19 @@ const Utils = {
      */
     validateFileSize(file) {
         return file.size <= APP_CONFIG.maxFileSize;
+    },
+
+    /**
+     * Safely add event listener to element by ID
+     * Returns true if successful, false if element not found
+     */
+    addEventListenerById(elementId, eventType, handler) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.addEventListener(eventType, handler);
+            return true;
+        }
+        console.warn(`Element with ID '${elementId}' not found`);
+        return false;
     }
 };

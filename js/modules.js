@@ -20,18 +20,23 @@ const Modal = {
         this.footerEl = document.getElementById('modalFooter');
 
         // Close button
-        document.getElementById('modalClose').addEventListener('click', () => this.close());
+        const modalClose = document.getElementById('modalClose');
+        if (modalClose) {
+            modalClose.addEventListener('click', () => this.close());
+        }
 
         // Click outside to close
-        this.backdrop.addEventListener('click', (e) => {
-            if (e.target === this.backdrop) {
-                this.close();
-            }
-        });
+        if (this.backdrop) {
+            this.backdrop.addEventListener('click', (e) => {
+                if (e.target === this.backdrop) {
+                    this.close();
+                }
+            });
+        }
 
         // ESC key to close
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !this.backdrop.hasAttribute('hidden')) {
+            if (e.key === 'Escape' && this.backdrop && !this.backdrop.hasAttribute('hidden')) {
                 this.close();
             }
         });
