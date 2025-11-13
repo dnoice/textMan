@@ -76,6 +76,12 @@ const Editor = {
     init() {
         this.textarea = document.getElementById('mainEditor');
 
+        // Exit early if textarea doesn't exist
+        if (!this.textarea) {
+            console.error('[Editor] Main editor textarea not found');
+            return;
+        }
+
         // Load saved content
         const savedContent = Storage.load('editorContent', '');
         this.textarea.value = savedContent;
@@ -916,24 +922,26 @@ const SearchManager = {
         this.findInput = document.getElementById('findInput');
         this.replaceInput = document.getElementById('replaceInput');
 
-        // Event listeners
-        document.getElementById('searchBtn').addEventListener('click', () => this.open());
-        document.getElementById('searchClose').addEventListener('click', () => this.close());
-        document.getElementById('findPrevBtn').addEventListener('click', () => this.findPrev());
-        document.getElementById('findNextBtn').addEventListener('click', () => this.findNext());
-        document.getElementById('replaceBtn').addEventListener('click', () => this.replace());
-        document.getElementById('replaceAllBtn').addEventListener('click', () => this.replaceAll());
+        // Event listeners with null checks
+        Utils.addEventListenerById('searchBtn', 'click', () => this.open());
+        Utils.addEventListenerById('searchClose', 'click', () => this.close());
+        Utils.addEventListenerById('findPrevBtn', 'click', () => this.findPrev());
+        Utils.addEventListenerById('findNextBtn', 'click', () => this.findNext());
+        Utils.addEventListenerById('replaceBtn', 'click', () => this.replace());
+        Utils.addEventListenerById('replaceAllBtn', 'click', () => this.replaceAll());
 
         // Close on backdrop click
-        this.overlay.addEventListener('click', (e) => {
-            if (e.target === this.overlay) {
-                this.close();
-            }
-        });
+        if (this.overlay) {
+            this.overlay.addEventListener('click', (e) => {
+                if (e.target === this.overlay) {
+                    this.close();
+                }
+            });
+        }
 
         // ESC to close
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !this.overlay.hasAttribute('hidden')) {
+            if (e.key === 'Escape' && this.overlay && !this.overlay.hasAttribute('hidden')) {
                 this.close();
             }
         });
@@ -1313,12 +1321,12 @@ const ImportExport = {
      */
     init() {
         // Import button - opens enhanced import modal
-        document.getElementById('importBtn').addEventListener('click', () => {
+        Utils.addEventListenerById('importBtn', 'click', () => {
             this.showImportModal();
         });
 
         // File input handler
-        document.getElementById('fileInput').addEventListener('change', (e) => {
+        Utils.addEventListenerById('fileInput', 'change', (e) => {
             this.importFile(e.target.files[0]);
         });
 
@@ -1855,38 +1863,38 @@ const ToolsManager = {
      */
     init() {
         // Toolbar buttons
-        document.getElementById('undoBtn').addEventListener('click', () => Editor.undo());
-        document.getElementById('redoBtn').addEventListener('click', () => Editor.redo());
-        document.getElementById('copyBtn').addEventListener('click', () => this.copyText());
-        document.getElementById('cutBtn').addEventListener('click', () => this.cutText());
-        document.getElementById('pasteBtn').addEventListener('click', () => this.pasteText());
-        document.getElementById('selectAllBtn').addEventListener('click', () => Editor.textarea.select());
-        document.getElementById('saveBtn').addEventListener('click', () => SavedTexts.save());
-        document.getElementById('downloadBtn').addEventListener('click', () => ImportExport.exportText());
-        document.getElementById('printBtn').addEventListener('click', () => window.print());
-        document.getElementById('clearBtn').addEventListener('click', () => Editor.clear());
+        Utils.addEventListenerById('undoBtn', 'click', () => Editor.undo());
+        Utils.addEventListenerById('redoBtn', 'click', () => Editor.redo());
+        Utils.addEventListenerById('copyBtn', 'click', () => this.copyText());
+        Utils.addEventListenerById('cutBtn', 'click', () => this.cutText());
+        Utils.addEventListenerById('pasteBtn', 'click', () => this.pasteText());
+        Utils.addEventListenerById('selectAllBtn', 'click', () => Editor.textarea.select());
+        Utils.addEventListenerById('saveBtn', 'click', () => SavedTexts.save());
+        Utils.addEventListenerById('downloadBtn', 'click', () => ImportExport.exportText());
+        Utils.addEventListenerById('printBtn', 'click', () => window.print());
+        Utils.addEventListenerById('clearBtn', 'click', () => Editor.clear());
 
         // Editor enhancement buttons
-        document.getElementById('fontSizeDecBtn').addEventListener('click', () => Editor.decreaseFontSize());
-        document.getElementById('fontSizeIncBtn').addEventListener('click', () => Editor.increaseFontSize());
-        document.getElementById('focusModeBtn').addEventListener('click', () => Editor.toggleFocusMode());
-        document.getElementById('zenModeBtn').addEventListener('click', () => Editor.toggleZenMode());
-        document.getElementById('zenExitBtn').addEventListener('click', () => Editor.exitZenMode());
+        Utils.addEventListenerById('fontSizeDecBtn', 'click', () => Editor.decreaseFontSize());
+        Utils.addEventListenerById('fontSizeIncBtn', 'click', () => Editor.increaseFontSize());
+        Utils.addEventListenerById('focusModeBtn', 'click', () => Editor.toggleFocusMode());
+        Utils.addEventListenerById('zenModeBtn', 'click', () => Editor.toggleZenMode());
+        Utils.addEventListenerById('zenExitBtn', 'click', () => Editor.exitZenMode());
 
         // Text formatting buttons (markdown style)
-        document.getElementById('boldBtn')?.addEventListener('click', () => this.wrapSelection('**', '**'));
-        document.getElementById('italicBtn')?.addEventListener('click', () => this.wrapSelection('*', '*'));
-        document.getElementById('underlineBtn')?.addEventListener('click', () => this.wrapSelection('__', '__'));
+        Utils.addEventListenerById('boldBtn', 'click', () => this.wrapSelection('**', '**'));
+        Utils.addEventListenerById('italicBtn', 'click', () => this.wrapSelection('*', '*'));
+        Utils.addEventListenerById('underlineBtn', 'click', () => this.wrapSelection('__', '__'));
 
         // Quick action buttons (header)
-        document.getElementById('newTextBtn')?.addEventListener('click', () => CommandPalette.newText());
-        document.getElementById('compareBtn')?.addEventListener('click', () => AdvancedTools.showDiff());
+        Utils.addEventListenerById('newTextBtn', 'click', () => CommandPalette.newText());
+        Utils.addEventListenerById('compareBtn', 'click', () => AdvancedTools.showDiff());
 
         // Header buttons
-        document.getElementById('fullAnalyticsBtn')?.addEventListener('click', () => Analytics.showFull());
-        document.getElementById('themeToggle').addEventListener('click', () => ThemeManager.toggle());
-        document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
-        document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
+        Utils.addEventListenerById('fullAnalyticsBtn', 'click', () => Analytics.showFull());
+        Utils.addEventListenerById('themeToggle', 'click', () => ThemeManager.toggle());
+        Utils.addEventListenerById('fullscreenBtn', 'click', () => this.toggleFullscreen());
+        Utils.addEventListenerById('settingsBtn', 'click', () => this.showSettings());
 
         // Attach tool button listeners using event delegation
         this.attachToolListeners();
@@ -2241,6 +2249,12 @@ const ContextMenu = {
     init() {
         this.menu = document.getElementById('contextMenu');
 
+        // Exit early if menu or textarea don't exist
+        if (!this.menu || !Editor.textarea) {
+            console.warn('[ContextMenu] Required elements not found');
+            return;
+        }
+
         // Show context menu on right click
         Editor.textarea.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -2378,17 +2392,22 @@ const CommandPalette = {
             { id: 'regex', icon: 'fa-asterisk', title: 'Regex Tester', description: 'Test regular expressions', action: () => AdvancedTools.showRegex() }
         ];
 
-        // Event listeners
-        document.getElementById('commandPaletteBtn').addEventListener('click', () => this.open());
-        this.input.addEventListener('input', () => this.handleInput());
-        this.input.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        // Event listeners with null checks
+        Utils.addEventListenerById('commandPaletteBtn', 'click', () => this.open());
+
+        if (this.input) {
+            this.input.addEventListener('input', () => this.handleInput());
+            this.input.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        }
 
         // Close on backdrop click
-        this.overlay.addEventListener('click', (e) => {
-            if (e.target === this.overlay) {
-                this.close();
-            }
-        });
+        if (this.overlay) {
+            this.overlay.addEventListener('click', (e) => {
+                if (e.target === this.overlay) {
+                    this.close();
+                }
+            });
+        }
     },
 
     /**
@@ -2531,6 +2550,12 @@ const DragDrop = {
     init() {
         this.wrapper = document.getElementById('editorWrapper');
         this.dropZone = document.getElementById('dropZoneOverlay');
+
+        // Exit early if elements don't exist
+        if (!this.wrapper || !this.dropZone) {
+            console.warn('[DragDrop] Required elements not found');
+            return;
+        }
 
         // Prevent default drag behaviors
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -3152,10 +3177,12 @@ const CursorTracker = {
      * Initialize
      */
     init() {
-        Editor.textarea.addEventListener('keyup', () => this.update());
-        Editor.textarea.addEventListener('mouseup', () => this.update());
-        Editor.textarea.addEventListener('select', () => this.update());
-        this.update();
+        if (Editor.textarea) {
+            Editor.textarea.addEventListener('keyup', () => this.update());
+            Editor.textarea.addEventListener('mouseup', () => this.update());
+            Editor.textarea.addEventListener('select', () => this.update());
+            this.update();
+        }
     }
 };
 
